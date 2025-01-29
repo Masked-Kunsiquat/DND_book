@@ -2,14 +2,17 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import Notes from "./pages/Notes";
 import Placeholder from "./components/Placeholder";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
+import Locations from "./pages/Locations";
+import LocationDetail from "./pages/LocationDetail";
 
 const App = () => {
   const isAuthenticated = !!localStorage.getItem("authToken"); // Check if the user is authenticated
 
-  return (
+  return (  
     <Router>
       {isAuthenticated && <Navbar />} {/* Show Navbar only when logged in */}
       <Routes>
@@ -32,7 +35,7 @@ const App = () => {
           path="/notes"
           element={
             <ProtectedRoute>
-              <Placeholder pageName="Notes" />
+              <Notes />
             </ProtectedRoute>
           }
         />
@@ -40,10 +43,18 @@ const App = () => {
           path="/locations"
           element={
             <ProtectedRoute>
-              <Placeholder pageName="Locations" />
+              <Locations />
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/locations/:locationId"
+          element={
+            <ProtectedRoute>
+              <LocationDetail />
+            </ProtectedRoute>
+          }
+        />        
         <Route
           path="/npcs"
           element={
