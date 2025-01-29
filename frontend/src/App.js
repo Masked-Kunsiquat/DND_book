@@ -6,6 +6,8 @@ import Notes from "./pages/Notes";
 import Placeholder from "./components/Placeholder";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
+import Locations from "./pages/Locations";
+import LocationDetail from "./pages/LocationDetail";
 
 const App = () => {
   const isAuthenticated = !!localStorage.getItem("authToken"); // Check if the user is authenticated
@@ -41,10 +43,18 @@ const App = () => {
           path="/locations"
           element={
             <ProtectedRoute>
-              <Placeholder pageName="Locations" />
+              <Locations />
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/locations/:locationId"
+          element={
+            <ProtectedRoute>
+              <LocationDetail />
+            </ProtectedRoute>
+          }
+        />        
         <Route
           path="/npcs"
           element={

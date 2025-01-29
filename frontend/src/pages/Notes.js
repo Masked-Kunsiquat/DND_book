@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { fetchNotes } from "../api/api";
 import { useNavigate } from "react-router-dom";
+import { getTagColor } from "../utils/colors"; // Import the color utility
 
 const Notes = () => {
   const [notes, setNotes] = useState([]);
@@ -65,6 +66,23 @@ const Notes = () => {
               <p className="mb-3 font-normal text-gray-700">
                 {note.content.substring(0, 100)}...
               </p>
+
+              {/* Tags Display in the Card */}
+              {note.expand?.tags?.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {note.expand.tags.map((tag) => (
+                    <span
+                      key={tag.id}
+                      className={`text-xs font-medium px-2.5 py-0.5 rounded-sm ${getTagColor(
+                        tag.id
+                      )}`} // Apply dynamic colors
+                    >
+                      {tag.name}
+                    </span>
+                  ))}
+                </div>
+              )}
+
               <button
                 onClick={() => openModal(note)}
                 className="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300"
@@ -134,6 +152,8 @@ const Notes = () => {
               <p className="text-base leading-relaxed text-gray-700 dark:text-gray-300">
                 {selectedNote.content}
               </p>
+
+              {/* Locations */}
               {selectedNote.expand?.locations?.length > 0 && (
                 <p className="text-base leading-relaxed text-gray-700 dark:text-gray-300">
                   <strong>Locations:</strong>
@@ -148,6 +168,25 @@ const Notes = () => {
                     </span>
                   ))}
                 </p>
+              )}
+
+              {/* Tags Display in Modal */}
+              {selectedNote.expand?.tags?.length > 0 && (
+                <div>
+                  <strong>Tags:</strong>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedNote.expand.tags.map((tag) => (
+                      <span
+                        key={tag.id}
+                        className={`text-xs font-medium px-2.5 py-0.5 rounded-sm ${getTagColor(
+                          tag.id
+                        )}`} // Apply dynamic colors
+                      >
+                        {tag.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
 
