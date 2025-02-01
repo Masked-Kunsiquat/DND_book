@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { fetchLocationWithParents } from "../api/api";
+import { fetchLocationWithParents } from "../api/locations";
 import { Link } from "react-router-dom";
 import { useParams } from "react-router-dom";
 

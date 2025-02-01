@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { fetchLocations } from "../api/api";
+import { fetchLocations } from "../api/locations";
 import { useNavigate } from "react-router-dom";
 
 const Locations = () => {

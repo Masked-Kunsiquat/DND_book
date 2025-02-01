@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import Breadcrumbs from "../components/Breadcrumbs";
-import { fetchLocationWithParents } from "../api/api";
+import { fetchLocationWithParents } from "../api/locations";
 
 const LocationDetail = () => {
   const { locationId } = useParams();

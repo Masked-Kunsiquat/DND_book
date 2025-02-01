@@ -8,11 +8,12 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
 import Locations from "./pages/Locations";
 import LocationDetail from "./pages/LocationDetail";
+import RelatedItemsModal from "./components/RelatedItemsModal"; // Import the new RelatedItems page
 
 const App = () => {
   const isAuthenticated = !!localStorage.getItem("authToken"); // Check if the user is authenticated
 
-  return (  
+  return (
     <Router>
       {isAuthenticated && <Navbar />} {/* Show Navbar only when logged in */}
       <Routes>
@@ -54,12 +55,22 @@ const App = () => {
               <LocationDetail />
             </ProtectedRoute>
           }
-        />        
+        />
         <Route
           path="/npcs"
           element={
             <ProtectedRoute>
               <Placeholder pageName="NPCs" />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* New route for viewing related items by tag */}
+        <Route
+          path="/tags/:tagId"
+          element={
+            <ProtectedRoute>
+              <RelatedItemsModal />
             </ProtectedRoute>
           }
         />
