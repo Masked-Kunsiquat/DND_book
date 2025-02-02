@@ -28,6 +28,11 @@ const NoteDetail = () => {
     const loadNote = async () => {
       try {
         const authToken = localStorage.getItem("authToken");
+        if (!authToken) {
+          setError("Please log in to view note details.");
+          navigate("/login");
+          return;
+        }
         const noteData = await fetchNoteDetails(noteId, authToken);
         setNote(noteData);
       } catch (err) {

@@ -16,7 +16,9 @@ export const RelatedItemsModal = ({ tagId, onClose }) => {
 
         const authToken = localStorage.getItem("authToken");
         if (!authToken) {
-          throw new Error("No authentication token found.");
+          setError("Please log in to view related items.");
+          navigate("/login");
+          return;
         }
 
         const items = await fetchRelatedItems(tagId, authToken); // Use the modular API function
