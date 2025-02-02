@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { fetchLocations } from "../api/locations";
 import { useNavigate } from "react-router-dom";
+import iconMap from "../utils/iconMap"; // Import icon map
 
 const Locations = () => {
   const [groupedLocations, setGroupedLocations] = useState({});
@@ -51,9 +52,16 @@ const Locations = () => {
             className="max-w-sm bg-white border border-gray-200 rounded-lg shadow-md hover:shadow-lg transition-shadow"
           >
             <div className="p-5">
-              <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900">
-                {type}
-              </h5>
+              <div className="flex items-center mb-2">
+                <img
+                  src={iconMap[type] || iconMap.default}
+                  alt={`${type} icon`}
+                  className="w-8 h-8 mr-3"
+                />
+                <h5 className="text-2xl font-bold tracking-tight text-gray-900">
+                  {type}
+                </h5>
+              </div>
               <ul className="space-y-1">
                 {groupedLocations[type].map((location) => (
                   <li key={location.id}>
