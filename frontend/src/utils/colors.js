@@ -9,10 +9,22 @@ export const tagColors = [
     "bg-pink-100 text-pink-800",
   ];
   
-  export const getTagColor = (tagId) => {
-    const index = tagId
-      .split("")
-      .reduce((sum, char) => sum + char.charCodeAt(0), 0) % tagColors.length;
-    return tagColors[index];
-  };
+const tagColorCache = new Map();
+
+export const getTagColor = (tagId) => {
+  if (!tagId) {
+    throw new Error('tagId is required');
+  }
+
+  if (tagColorCache.has(tagId)) {
+    return tagColorCache.get(tagId);
+  }
+
+  const index = tagId
+    .split("")
+    .reduce((sum, char) => sum + char.charCodeAt(0), 0) % tagColors.length;
+  const color = tagColors[index];
+  tagColorCache.set(tagId, color);
+  return color;
+};
   

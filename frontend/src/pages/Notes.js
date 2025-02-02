@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { fetchNotes } from "../api/notes";
 import { getTagColor } from "../utils/colors";
-import RelatedItemsModal from "../components/RelatedItemsModal"; // Ensure this is correctly imported
+import { useNavigate } from "react-router-dom"; // Import navigation hook
+import RelatedItemsModal from "../components/RelatedItemsModal";
 
 const Notes = () => {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selectedTagId, setSelectedTagId] = useState(null); // Track selected tag
-  const [isRelatedItemsModalOpen, setIsRelatedItemsModalOpen] = useState(false); // Track modal state
+  const [selectedTagId, setSelectedTagId] = useState(null);
+  const [isRelatedItemsModalOpen, setIsRelatedItemsModalOpen] = useState(false);
+  const navigate = useNavigate(); // Hook for navigating
 
   const openRelatedItemsModal = (tagId) => {
     setSelectedTagId(tagId);
@@ -86,6 +88,7 @@ const Notes = () => {
               )}
 
               <button
+                onClick={() => navigate(`/notes/${note.id}`)} // Navigate to NoteDetail page
                 className="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300"
               >
                 Read more

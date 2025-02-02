@@ -7,7 +7,7 @@ const Breadcrumbs = () => {
   const { locationId } = useParams(); // Get locationId from URL params
   const [breadcrumbs, setBreadcrumbs] = useState([]);
 
-  console.log("Breadcrumbs received locationId:", locationId); // Debug log
+ // console.log("Breadcrumbs received locationId:", locationId); // Debug log
 
   useEffect(() => {
     const loadBreadcrumbs = async () => {

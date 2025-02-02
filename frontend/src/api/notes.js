@@ -5,7 +5,7 @@ export const fetchNotes = async (authToken) => {
     throw new Error("Authentication token is required");
   }
 
-  console.log("Fetching notes with authToken:", authToken);
+  console.log("Fetching notes...");
 
   const response = await api.get("/collections/notes/records", {
     params: { expand: "locations,tags" }, // Expand both locations and tags
@@ -21,3 +21,25 @@ export const fetchNotes = async (authToken) => {
   console.log("Expanded Notes with Tags:", response.data.items);
   return response.data.items;
 };
+
+export const fetchNoteDetails = async (noteId, authToken) => {
+  if (!authToken) {
+    throw new Error("Authentication token is required");
+  }
+  if (!noteId) {
+    throw new Error("Note ID is required");
+  }
+
+  try {
+    const response = await api.get(`/collections/notes/records/${noteId}`, {
+      params: { expand: "locations,tags" },
+      headers: { Authorization: `Bearer ${authToken}` },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching note details:", error.message);
+    throw error;
+  }
+};
+

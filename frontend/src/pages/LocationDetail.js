@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import Breadcrumbs from "../components/Breadcrumbs";
 import { fetchLocationWithParents } from "../api/locations";
+import map from "../img/placeholder-map.png";
 
 const LocationDetail = () => {
   const { locationId } = useParams();
@@ -55,18 +56,18 @@ const LocationDetail = () => {
       <p className="text-gray-700">{location.description || "No description available for this location."}</p>
 
       {/* Display Map */}
-      {mapUrl ? (
-        <div className="mt-4">
-          <h2 className="text-xl font-bold mb-2">Map</h2>
-          <img
-            src={mapUrl}
-            alt={`${location.name} map`}
-            className="h-auto max-w-sm rounded-lg shadow-lg"
-          />
-        </div>
-      ) : (
-        <p className="mt-6 text-gray-500">No map available for this location.</p>
-      )}
+      <div className="mt-4">
+        <h2 className="text-xl font-bold mb-2">Map</h2>
+        <img
+          src={mapUrl || map}
+          alt={`${location.name} map`}
+          onError={(e) => {
+            e.target.onerror = null; // Prevent infinite loop
+            e.target.src = map; // Fallback to placeholder
+          }}
+          className="h-auto max-w-sm rounded-lg shadow-lg"
+        />
+      </div>
     </div>
   );
 };

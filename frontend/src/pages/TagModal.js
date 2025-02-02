@@ -31,16 +31,20 @@ const TagModal = ({ tagId, onClose }) => {
       id="modal-overlay"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
       role="dialog"
+      aria-labelledby="modal-title"
       aria-modal="true"
+      onKeyDown={(e) => e.key === 'Escape' && onClose()}
+      tabIndex="-1"
     >
       <div className="relative bg-white rounded-lg shadow-md w-full max-w-2xl p-4">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-500 hover:text-gray-800"
+          aria-label="Close modal"
         >
           X
         </button>
-        <h2 className="text-xl font-bold mb-4">Related Items</h2>
+        <h2 id="modal-title" className="text-xl font-bold mb-4">Related Items</h2>
         {relatedItems.length === 0 ? (
           <p>No related items found.</p>
         ) : (

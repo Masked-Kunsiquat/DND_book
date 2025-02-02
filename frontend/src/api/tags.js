@@ -13,7 +13,7 @@ export const fetchRelatedItems = async (tagId, authToken) => {
     console.log("Fetching related items for tag ID:", tagId);
 
     const response = await api.get(`/collections/tagged_combined/records`, {
-      params: { filter: `(tag_ids~'${tagId}')` }, // Matches tag ID in the tag_ids array
+      params: { filter: `(tag_ids~'${tagId.replace(/['\\]/g, '')}')` }, // Matches tag ID in the tag_ids array
       headers: { Authorization: `Bearer ${authToken}` },
     });
 

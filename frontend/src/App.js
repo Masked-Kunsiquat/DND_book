@@ -8,7 +8,9 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
 import Locations from "./pages/Locations";
 import LocationDetail from "./pages/LocationDetail";
-import RelatedItemsModal from "./components/RelatedItemsModal"; // Import the new RelatedItems page
+import RelatedItemsModal from "./components/RelatedItemsModal";
+import NoteDetail from "./pages/NoteDetail";
+
 
 const App = () => {
   const isAuthenticated = !!localStorage.getItem("authToken"); // Check if the user is authenticated
@@ -71,6 +73,15 @@ const App = () => {
           element={
             <ProtectedRoute>
               <RelatedItemsModal />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/notes/:noteId"
+          element={
+            <ProtectedRoute>
+              <NoteDetail />
             </ProtectedRoute>
           }
         />
