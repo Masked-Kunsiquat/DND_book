@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { fetchNoteDetails } from "../api/notes";
-import { fetchRelatedItems } from "../api/tags";
+// import { fetchRelatedItems } from "../api/tags";
 import { getTagColor } from "../utils/colors"; // For dynamic tag colors
 import RelatedItemsModal from "../components/RelatedItemsModal"; // Related Items Modal
 
