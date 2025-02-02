@@ -46,7 +46,7 @@ const NoteDetail = () => {
     if (noteId) {
       loadNote();
     }
-  }, [noteId]);
+  }, [noteId, navigate]);
 
   if (loading)
     return (

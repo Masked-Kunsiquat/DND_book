@@ -34,7 +34,7 @@ export const RelatedItemsModal = ({ tagId, onClose }) => {
     if (tagId) {
       loadRelatedItems();
     }
-  }, [tagId]);
+  }, [tagId, navigate]);
 
   if (!tagId) return null;
 

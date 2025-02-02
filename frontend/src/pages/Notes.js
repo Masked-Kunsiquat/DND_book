@@ -42,7 +42,7 @@ const Notes = () => {
     };
 
     loadNotes();
-  }, []);
+  }, [navigate]);
 
   if (loading)
     return (
