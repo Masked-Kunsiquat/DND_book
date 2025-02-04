@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { fetchNoteDetails } from "../api/notes";
-// import { fetchRelatedItems } from "../api/tags";
 import { getTagColor } from "../utils/colors"; // For dynamic tag colors
 import RelatedItemsModal from "../components/RelatedItemsModal"; // Related Items Modal
 
@@ -73,13 +72,20 @@ const NoteDetail = () => {
       <h1 className="text-3xl font-bold mb-4">{note.title}</h1>
       <p className="text-gray-700 mb-4">{note.content}</p>
 
-      {/* Locations */}
+      {/* 🔥 Fixed Location Links */}
       {note.expand?.locations?.length > 0 && (
         <div className="mb-4">
           <strong>Locations:</strong>
           <ul className="list-disc ml-6">
             {note.expand.locations.map((location) => (
-              <li key={location.id}>{location.name}</li>
+              <li key={location.id}>
+                <Link
+                  to={`/locations/${location.id}`}
+                  className="text-blue-600 hover:underline"
+                >
+                  {location.name}
+                </Link>
+              </li>
             ))}
           </ul>
         </div>

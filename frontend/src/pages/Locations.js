@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { fetchLocations } from "../api/locations";
 import { useNavigate } from "react-router-dom";
 import iconMap from "../utils/iconMap"; // Import icon map
@@ -8,23 +8,41 @@ const Locations = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const effectRan = useRef(false); // Prevent double execution in Strict Mode
 
   useEffect(() => {
+    if (effectRan.current) return;
+    effectRan.current = true;
+
     const loadLocations = async () => {
       try {
         const authToken = localStorage.getItem("authToken");
-        const locationsData = await fetchLocations(authToken);
-        setGroupedLocations(locationsData);
+        if (!authToken) {
+          setError("Please log in to view locations.");
+          navigate("/login");
+          return;
+        }
+
+        console.log("📡 Fetching locations...");
+        const locationsData = await fetchLocations(authToken, { requestKey: null }); // Prevent auto-cancellation
+
+        if (typeof locationsData === "object" && locationsData !== null) {
+          console.log("✅ Setting groupedLocations state:", locationsData);
+          setGroupedLocations(locationsData);
+        } else {
+          setError("Invalid response format from API.");
+          console.error("Expected an object but got:", locationsData);
+        }
       } catch (err) {
         setError("Failed to load locations. Please try again.");
-        console.error(err);
+        console.error("❌ Error in loadLocations:", err);
       } finally {
         setLoading(false);
       }
     };
 
     loadLocations();
-  }, []);
+  }, [navigate]);
 
   if (loading) {
     return (

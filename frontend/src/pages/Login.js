@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import api from "../api/base";
+import pb from "../api/base";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -13,31 +13,16 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await api.post(
-        "/collections/users/auth-with-password",
-        {
-          identity: email,
-          password,
-        }
-      );
+      const authData = await pb.collection("users").authWithPassword(email, password);
 
       // Save token and user info
-      localStorage.setItem("authToken", response.data.token);
-      localStorage.setItem("userId", response.data.record.id);
+      localStorage.setItem("authToken", authData.token);
+      localStorage.setItem("userId", authData.record.id);
 
       // Redirect to the dashboard
       window.location.href = "/dashboard";
     } catch (err) {
-      if (err.response) {
-        // Server responded with an error
-        setError(err.response.data?.message || "Invalid email or password");
-      } else if (err.request) {
-        // No response from the server
-        setError("Server is unreachable. Please try again later.");
-      } else {
-        // Other errors
-        setError("An unexpected error occurred. Please try again.");
-      }
+      setError(err.message || "Invalid email or password");
     } finally {
       setLoading(false);
     }
@@ -89,22 +74,6 @@ const Login = () => {
             required
             disabled={loading}
           />
-        </div>
-        <div className="flex items-start mb-5">
-          <div className="flex items-center h-5">
-            <input
-              id="remember"
-              type="checkbox"
-              className="w-4 h-4 border border-gray-300 rounded-sm bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800"
-              disabled={loading}
-            />
-          </div>
-          <label
-            htmlFor="remember"
-            className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
-          >
-            Remember me
-          </label>
         </div>
         <button
           type="submit"

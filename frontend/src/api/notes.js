@@ -1,45 +1,56 @@
-import api from "./base";
+import pb from "./base";
 
 export const fetchNotes = async (authToken) => {
   if (!authToken) {
-    throw new Error("Authentication token is required");
+    throw new Error("❌ Authentication token is required.");
   }
 
-  console.log("Fetching notes...");
+  console.log("🔄 Fetching notes...");
 
-  const response = await api.get("/collections/notes/records", {
-    params: { expand: "locations,tags" }, // Expand both locations and tags
-    headers: { Authorization: `Bearer ${authToken}` },
-  });
-
-  console.log("API Response (Notes):", response.data);
-
-  if (!response.data || !Array.isArray(response.data.items)) {
-    throw new Error("Invalid response format");
+  // Ensure auth token is set only if it's not already valid
+  if (!pb.authStore.isValid || pb.authStore.token !== authToken) {
+    pb.authStore.save(authToken, null);
   }
 
-  console.log("Expanded Notes with Tags:", response.data.items);
-  return response.data.items;
+  try {
+    const notes = await pb.collection("notes").getFullList({
+      expand: "locations,tags",
+      requestKey: null, // Prevent auto-cancellation
+    });
+
+    console.log("✅ API Response (Notes):", notes);
+    return notes;
+  } catch (error) {
+    console.error("❌ Error fetching notes:", error);
+    throw new Error("Failed to fetch notes. Please try again.");
+  }
 };
 
 export const fetchNoteDetails = async (noteId, authToken) => {
   if (!authToken) {
-    throw new Error("Authentication token is required");
+    throw new Error("❌ Authentication token is required.");
   }
   if (!noteId) {
-    throw new Error("Note ID is required");
+    throw new Error("❌ Note ID is required.");
   }
 
   try {
-    const response = await api.get(`/collections/notes/records/${noteId}`, {
-      params: { expand: "locations,tags" },
-      headers: { Authorization: `Bearer ${authToken}` },
+    console.log(`🔄 Fetching note details for ID: ${noteId}`);
+
+    // Ensure auth token is set only if it's not already valid
+    if (!pb.authStore.isValid || pb.authStore.token !== authToken) {
+      pb.authStore.save(authToken, null);
+    }
+
+    const note = await pb.collection("notes").getOne(noteId, {
+      expand: "locations,tags",
+      requestKey: null, // Prevent auto-cancellation
     });
 
-    return response.data;
+    console.log("✅ Fetched Note Details:", note);
+    return note;
   } catch (error) {
-    console.error("Error fetching note details:", error.message);
-    throw error;
+    console.error("❌ Error fetching note details:", error);
+    throw new Error("Failed to fetch note details. Please try again.");
   }
 };
-

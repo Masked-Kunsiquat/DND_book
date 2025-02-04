@@ -9,8 +9,13 @@ export const RelatedItemsModal = ({ tagId, onClose }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (!tagId) return;
+
+    let isMounted = true; // Prevent state updates if component unmounts
+
     const loadRelatedItems = async () => {
       try {
+        console.log("🔄 Fetching related items for tag:", tagId);
         setLoading(true);
         setError("");
 
@@ -21,19 +26,26 @@ export const RelatedItemsModal = ({ tagId, onClose }) => {
           return;
         }
 
-        const items = await fetchRelatedItems(tagId, authToken); // Use the modular API function
-        setRelatedItems(items);
+        const items = await fetchRelatedItems(tagId, authToken, { requestKey: null }); // Prevent auto-cancellation
+
+        if (isMounted) {
+          console.log("✅ Fetched Related Items:", items);
+          setRelatedItems(items);
+        }
       } catch (err) {
-        console.error("Error fetching related items:", err.message);
-        setError("Failed to load related items.");
+        console.error("❌ Error fetching related items:", err);
+        if (isMounted) setError("Failed to load related items. Please try again.");
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
-    if (tagId) {
-      loadRelatedItems();
-    }
+    loadRelatedItems();
+
+    return () => {
+      isMounted = false; // Cleanup function
+      console.log("🧹 Cleanup executed for RelatedItemsModal.");
+    };
   }, [tagId, navigate]);
 
   if (!tagId) return null;
@@ -47,9 +59,10 @@ export const RelatedItemsModal = ({ tagId, onClose }) => {
 
     const targetRoute = routes[item.related_type];
     if (targetRoute) {
+      console.log("🔗 Navigating to:", targetRoute);
       navigate(targetRoute);
     } else {
-      console.error(`No route found for type: ${item.related_type}`);
+      console.error(`❌ No route found for type: ${item.related_type}`);
     }
   };
 

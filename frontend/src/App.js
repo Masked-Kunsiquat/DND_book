@@ -1,5 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import pb from "./api/base";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Notes from "./pages/Notes";
@@ -11,9 +12,8 @@ import LocationDetail from "./pages/LocationDetail";
 import RelatedItemsModal from "./components/RelatedItemsModal";
 import NoteDetail from "./pages/NoteDetail";
 
-
 const App = () => {
-  const isAuthenticated = !!localStorage.getItem("authToken"); // Check if the user is authenticated
+  const isAuthenticated = pb.authStore.isValid; // Check if the user is authenticated using PocketBase
 
   return (
     <Router>

@@ -1,5 +1,13 @@
 frontend/src/output.css 
 
+# Pocketbase files
+backend/pocketbase
+backend/pb_data/
+backend/data.db
+backend/pb_public/
+backend/pb_storage/
+
+
 # Logs
 logs
 *.log

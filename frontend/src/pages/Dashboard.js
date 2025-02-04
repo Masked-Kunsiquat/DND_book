@@ -1,15 +1,11 @@
 import React from "react";
-import Pocketbase from "pocketbase";
-// import axios from "axios";
+import pb from "../api/base";
 
 const Dashboard = () => {
-    // Initialize the Pocketbase client
-    const client = new Pocketbase(process.env.REACT_APP_API_BASE_URL);
-
     const handleLogout = async () => {
         try {
-            // Clear the authenitcation store
-            client.authStore.clear();
+            // Clear the authentication store
+            pb.authStore.clear();
 
             // Clear localStorage (optional, for extra cleanup)
             localStorage.removeItem("authToken");
