@@ -7,22 +7,47 @@ import map from "../img/placeholder-map.png";
 const LocationDetail = () => {
   const { locationId } = useParams();
   const [location, setLocation] = useState(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true; // Track component mount status
+
     const fetchLocation = async () => {
       try {
+        console.log("🔄 Fetching location...");
         const authToken = localStorage.getItem("authToken");
-        const data = await fetchLocationWithParents(authToken, locationId);
-        setLocation(data);
-      } catch (error) {
-        console.error("Failed to fetch location:", error);
+        if (!authToken) {
+          setError("Authentication required. Please log in.");
+          return;
+        }
+
+        const data = await fetchLocationWithParents(authToken, locationId, { requestKey: null }); // Prevent auto-cancellation
+        
+        if (isMounted) {
+          setLocation(data);
+          setError("");
+          console.log("✅ Fetched Location Data:", data);
+        }
+      } catch (err) {
+        console.error("❌ Failed to fetch location:", err);
+        if (isMounted) {
+          setError("Failed to load location. Please try again.");
+        }
+      } finally {
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchLocation();
+
+    return () => {
+      isMounted = false; // Cleanup on component unmount
+      console.log("🧹 Cleanup executed.");
+    };
   }, [locationId]);
 
-  if (!location) {
+  if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div role="status">
@@ -42,6 +67,14 @@ const LocationDetail = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <p className="text-red-500">{error}</p>
+      </div>
+    );
+  }
+
   const baseUrl = process.env.REACT_APP_API_BASE_URL; // PocketBase URL
   const mapUrl =
     location.map && `${baseUrl}/files/${location.collectionId}/${location.id}/${location.map}`;
@@ -53,7 +86,9 @@ const LocationDetail = () => {
 
       {/* Location Info */}
       <h1 className="text-3xl font-bold mt-4">{location.name}</h1>
-      <p className="text-gray-700">{location.description || "No description available for this location."}</p>
+      <p className="text-gray-700">
+        {location.description || "No description available for this location."}
+      </p>
 
       {/* Display Map */}
       <div className="mt-4">

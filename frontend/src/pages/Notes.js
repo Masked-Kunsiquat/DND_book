@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { fetchNotes } from "../api/notes";
 import { getTagColor } from "../utils/colors";
-import { useNavigate } from "react-router-dom"; // Import navigation hook
+import { useNavigate } from "react-router-dom";
 import RelatedItemsModal from "../components/RelatedItemsModal";
 
 const Notes = () => {
@@ -10,7 +10,8 @@ const Notes = () => {
   const [error, setError] = useState("");
   const [selectedTagId, setSelectedTagId] = useState(null);
   const [isRelatedItemsModalOpen, setIsRelatedItemsModalOpen] = useState(false);
-  const navigate = useNavigate(); // Hook for navigating
+  const navigate = useNavigate();
+  const effectRan = useRef(false); // Prevent double execution
 
   const openRelatedItemsModal = (tagId) => {
     setSelectedTagId(tagId);
@@ -23,6 +24,11 @@ const Notes = () => {
   };
 
   useEffect(() => {
+    if (effectRan.current) return; // Prevent running twice in Strict Mode
+    effectRan.current = true;
+
+    console.log("🔄 useEffect triggered: Loading notes...");
+
     const loadNotes = async () => {
       try {
         const authToken = localStorage.getItem("authToken");
@@ -31,11 +37,20 @@ const Notes = () => {
           navigate("/login");
           return;
         }
-        const notesData = await fetchNotes(authToken);
-        setNotes(notesData);
+
+        console.log("📡 Fetching notes...");
+        const notesData = await fetchNotes(authToken, { requestKey: null });
+
+        if (Array.isArray(notesData)) {
+          console.log("✅ Setting notes state:", notesData);
+          setNotes([...notesData]);
+        } else {
+          setError("Invalid response format from API.");
+          console.error("Expected an array but got:", notesData);
+        }
       } catch (err) {
         setError("Failed to load notes.");
-        console.error(err);
+        console.error("❌ Error in loadNotes:", err);
       } finally {
         setLoading(false);
       }
@@ -93,7 +108,7 @@ const Notes = () => {
               )}
 
               <button
-                onClick={() => navigate(`/notes/${note.id}`)} // Navigate to NoteDetail page
+                onClick={() => navigate(`/notes/${note.id}`)}
                 className="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300"
               >
                 Read more
