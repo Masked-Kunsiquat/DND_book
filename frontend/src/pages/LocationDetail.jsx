@@ -75,7 +75,7 @@ const LocationDetail = () => {
     );
   }
 
-  const baseUrl = process.env.REACT_APP_API_BASE_URL; // PocketBase URL
+  const baseUrl = import.meta.env.VITE_API_BASE_URL; // PocketBase URL
   const mapUrl =
     location.map && `${baseUrl}/files/${location.collectionId}/${location.id}/${location.map}`;
 
