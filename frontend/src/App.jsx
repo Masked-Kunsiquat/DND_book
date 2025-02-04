@@ -1,5 +1,10 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import {
+  HashRouter,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import pb from "./api/base";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -13,10 +18,19 @@ import RelatedItemsModal from "./components/RelatedItemsModal";
 import NoteDetail from "./pages/NoteDetail";
 
 const App = () => {
-  const isAuthenticated = pb.authStore.isValid; // Check if the user is authenticated using PocketBase
+  // State to track authentication dynamically
+  const [isAuthenticated, setIsAuthenticated] = useState(pb.authStore.isValid);
+
+  // Listen for authentication changes
+  useEffect(() => {
+    const unsubscribe = pb.authStore.onChange(() => {
+      setIsAuthenticated(pb.authStore.isValid);
+    });
+    return () => unsubscribe();
+  }, []);
 
   return (
-    <Router>
+    <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       {isAuthenticated && <Navbar />} {/* Show Navbar only when logged in */}
       <Routes>
         {/* Redirect / to /login */}
@@ -86,7 +100,7 @@ const App = () => {
           }
         />
       </Routes>
-    </Router>
+    </HashRouter>
   );
 };
 

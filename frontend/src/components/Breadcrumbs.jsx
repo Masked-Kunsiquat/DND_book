@@ -59,7 +59,7 @@ const Breadcrumbs = () => {
         {/* Home Link */}
         <li className="inline-flex items-center">
           <Link
-            to="/"
+            to="/locations"
             className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600"
           >
             <svg
