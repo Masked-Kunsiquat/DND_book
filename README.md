@@ -25,15 +25,15 @@ DND Book is a **campaign management application** designed for Dungeon Masters a
 ## 📌 Features (Current & Planned)
 ### ✅ Current Features
 - **User authentication** via PocketBase
-- **Dashboard with campaign-wide data summary**
 - **Notes, Locations, NPCs pages**
-- **Basic campaign filtering on the dashboard**
 
 ### 🏗️ Planned Features
 - **Global campaign selection in navbar** to persist across all entity pages
 - **Improved authentication security** (HttpOnly cookies)
 - **Expanded filtering and sorting options** for notes and locations
 - **Improved UI/UX with additional Flowbite components**
+- **Basic campaign filtering on the dashboard**
+- **Dashboard with campaign-wide data summary**
 
 ## 🚀 Deployment
 🚧 *Coming soon...*
