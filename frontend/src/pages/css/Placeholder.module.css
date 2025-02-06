@@ -1,0 +1,45 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Centers vertically */
+  align-items: center; /* Centers horizontally */
+  height: 100vh; /* Full viewport height */
+  text-align: center; /* Center-align text */
+  padding-top: 80px;
+  padding-bottom: 80px;
+  background-color: var(--mantine-color-dark-9); /* Matches dark theme */
+}
+
+.label {
+  text-align: center;
+  font-weight: 900;
+  font-size: 5rem; /* Combines your style */
+  line-height: 1;
+  margin-bottom: calc(1.5 * var(--mantine-spacing-xl));
+  color: var(--mantine-color-blue-light); /* Matches your theme */
+}
+
+.description {
+  max-width: 500px; /* From docs */
+  margin: auto;
+  margin-top: var(--mantine-spacing-xl);
+  margin-bottom: calc(1.5 * var(--mantine-spacing-xl));
+  color: var(--mantine-color-gray-4); /* From your version */
+}
+
+.title {
+  font-family: 'Greycliff CF', var(--mantine-font-family);
+  text-align: center;
+  font-weight: 900;
+  font-size: 2.5rem; /* Matches your size */
+  color: var(--mantine-color-white); /* From your version */
+  margin-bottom: 1rem;
+
+  @media (max-width: 768px) {
+    font-size: 32px; /* Responsive design */
+  }
+}
+
+button {
+  margin-top: 1rem;
+}

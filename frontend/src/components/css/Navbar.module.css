@@ -1,0 +1,65 @@
+.header {
+    width: 100%;
+    height: 56px;
+    background-color: var(--mantine-color-body);
+    border-bottom: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+    display: flex;
+    align-items: center;
+    position: fixed; /* Fix navbar to the top */
+    top: 0;
+    z-index: 100; /* Ensure it stays above other elements */
+  }
+  
+  .inner {
+    width: 100%;
+    max-width: 100%;
+    padding: 0 16px; /* Add spacing on the left and right */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--mantine-color-dark-0);
+  }
+  
+  .links {
+    display: flex;
+    gap: 16px;
+  }
+  
+  .link {
+    text-decoration: none;
+    color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-0));
+    font-size: var(--mantine-font-size-sm);
+    font-weight: 500;
+    padding: 8px 12px;
+    border-radius: var(--mantine-radius-sm);
+    transition: background-color 0.2s ease;
+  
+    &:hover {
+      background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+    }
+  }
+  
+  .link.active {
+    background-color: var(--mantine-color-blue-filled);
+    color: var(--mantine-color-white);
+  }
+  
+  .burger {
+    display: none;
+  }
+  
+  @media (max-width: 768px) {
+    .burger {
+      display: block;
+    }
+  
+    .links {
+      display: none;
+    }
+  }
+  
