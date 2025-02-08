@@ -1,12 +1,14 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import "./output.css";
 import "./index.css";
-import "flowbite";
+import { Flowbite, ThemeModeScript } from "flowbite-react";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <App />
+    <ThemeModeScript />
+    <Flowbite>
+      <App />
+    </Flowbite>
   </React.StrictMode>
 );

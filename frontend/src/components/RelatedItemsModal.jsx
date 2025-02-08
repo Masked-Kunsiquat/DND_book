@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { fetchRelatedItems } from "../api/tags"; // Use the modular API function
-import { useNavigate } from "react-router-dom"; // For navigation
+import { fetchRelatedItems } from "../api/tags";
+import { useNavigate } from "react-router-dom";
+import { Modal, Button, Spinner, Alert } from "flowbite-react";
+import { getTagDisplayName } from "../utils/tagUtils"; // Import the utility function
 
-export const RelatedItemsModal = ({ tagId, onClose }) => {
+const RelatedItemsModal = ({ tagId, onClose }) => {
+  const [openModal, setOpenModal] = useState(!!tagId); // Control modal state
   const [relatedItems, setRelatedItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -11,11 +14,11 @@ export const RelatedItemsModal = ({ tagId, onClose }) => {
   useEffect(() => {
     if (!tagId) return;
 
-    let isMounted = true; // Prevent state updates if component unmounts
+    setOpenModal(true); // Ensure modal opens when tagId is set
+    let isMounted = true;
 
     const loadRelatedItems = async () => {
       try {
-        console.log("🔄 Fetching related items for tag:", tagId);
         setLoading(true);
         setError("");
 
@@ -26,14 +29,12 @@ export const RelatedItemsModal = ({ tagId, onClose }) => {
           return;
         }
 
-        const items = await fetchRelatedItems(tagId, authToken, { requestKey: null }); // Prevent auto-cancellation
+        const items = await fetchRelatedItems(tagId, authToken, { requestKey: null });
 
         if (isMounted) {
-          console.log("✅ Fetched Related Items:", items);
           setRelatedItems(items);
         }
       } catch (err) {
-        console.error("❌ Error fetching related items:", err);
         if (isMounted) setError("Failed to load related items. Please try again.");
       } finally {
         if (isMounted) setLoading(false);
@@ -43,12 +44,9 @@ export const RelatedItemsModal = ({ tagId, onClose }) => {
     loadRelatedItems();
 
     return () => {
-      isMounted = false; // Cleanup function
-      console.log("🧹 Cleanup executed for RelatedItemsModal.");
+      isMounted = false;
     };
   }, [tagId, navigate]);
-
-  if (!tagId) return null;
 
   const handleNavigate = (item) => {
     const routes = {
@@ -59,49 +57,45 @@ export const RelatedItemsModal = ({ tagId, onClose }) => {
 
     const targetRoute = routes[item.related_type];
     if (targetRoute) {
-      console.log("🔗 Navigating to:", targetRoute);
       navigate(targetRoute);
-    } else {
-      console.error(`❌ No route found for type: ${item.related_type}`);
+      setOpenModal(false); // Close modal on navigation
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-      <div className="bg-white rounded-lg shadow-md w-full max-w-2xl">
-        <div className="flex justify-between items-center p-4 border-b">
-          <h3 className="text-xl font-bold">Related Items</h3>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-800 focus:outline-none text-lg"
-          >
-            &times;
-          </button>
-        </div>
-        <div className="p-4">
+    <Modal dismissible show={openModal} size="sm" onClose={() => { setOpenModal(false); onClose(); }}>
+      <Modal.Header>Related Items</Modal.Header>
+      <Modal.Body>
+        <div className="text-center">
           {loading ? (
-            <p>Loading...</p>
+            <Spinner size="lg" />
           ) : error ? (
-            <p className="text-red-500">{error}</p>
+            <Alert color="failure">{error}</Alert>
           ) : relatedItems.length > 0 ? (
-            <ul className="list-disc list-inside space-y-2">
+            <ul className="space-y-2 text-left">
               {relatedItems.map((item) => (
                 <li key={item.related_id}>
-                  <button
-                    className="text-blue-600 hover:underline"
+                  <Button 
+                    color="blue" 
+                    className="w-full text-left" 
                     onClick={() => handleNavigate(item)}
                   >
-                    {item.related_name} ({item.related_type})
-                  </button>
+                    {item.related_name} ({getTagDisplayName(item.related_type)}) {/* Use the mapping utility */}
+                  </Button>
                 </li>
               ))}
             </ul>
           ) : (
-            <p>No related items found.</p>
+            <p className="text-gray-500">No related items found.</p>
           )}
         </div>
-      </div>
-    </div>
+      </Modal.Body>
+      <Modal.Footer>
+        <Button color="gray" onClick={() => { setOpenModal(false); onClose(); }}>
+          Close
+        </Button>
+      </Modal.Footer>
+    </Modal>
   );
 };
 

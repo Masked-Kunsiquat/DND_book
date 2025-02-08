@@ -22,7 +22,7 @@ const LocationDetail = () => {
           return;
         }
 
-        const data = await fetchLocationWithParents(authToken, locationId, { requestKey: null }); // Prevent auto-cancellation
+        const data = await fetchLocationWithParents(authToken, locationId, { requestKey: null });
         
         if (isMounted) {
           setLocation(data);
@@ -42,14 +42,14 @@ const LocationDetail = () => {
     fetchLocation();
 
     return () => {
-      isMounted = false; // Cleanup on component unmount
+      isMounted = false;
       console.log("🧹 Cleanup executed.");
     };
   }, [locationId]);
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900">
         <div role="status">
           <svg
             aria-hidden="true"
@@ -69,39 +69,41 @@ const LocationDetail = () => {
 
   if (error) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900">
         <p className="text-red-500">{error}</p>
       </div>
     );
   }
 
-  const baseUrl = import.meta.env.VITE_API_BASE_URL; // PocketBase URL
+  const baseUrl = import.meta.env.VITE_API_BASE_URL;
   const mapUrl =
     location.map && `${baseUrl}/files/${location.collectionId}/${location.id}/${location.map}`;
 
   return (
-    <div className="p-6">
+    <div className="p-6 min-h-screen bg-gray-100 dark:bg-gray-900">
       {/* Breadcrumbs */}
       <Breadcrumbs locationId={locationId} />
 
       {/* Location Info */}
-      <h1 className="text-3xl font-bold mt-4">{location.name}</h1>
-      <p className="text-gray-700">
-        {location.description || "No description available for this location."}
-      </p>
+      <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+        <h1 className="text-3xl font-bold mt-4 text-gray-900 dark:text-white">{location.name}</h1>
+        <p className="text-gray-700 dark:text-gray-300">
+          {location.description || "No description available for this location."}
+        </p>
 
-      {/* Display Map */}
-      <div className="mt-4">
-        <h2 className="text-xl font-bold mb-2">Map</h2>
-        <img
-          src={mapUrl || map}
-          alt={`${location.name} map`}
-          onError={(e) => {
-            e.target.onerror = null; // Prevent infinite loop
-            e.target.src = map; // Fallback to placeholder
-          }}
-          className="h-auto max-w-sm rounded-lg shadow-lg"
-        />
+        {/* Display Map */}
+        <div className="mt-4">
+          <h2 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">Map</h2>
+          <img
+            src={mapUrl || map}
+            alt={`${location.name} map`}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = map;
+            }}
+            className="h-auto w-full rounded-lg shadow-lg"
+          />
+        </div>
       </div>
     </div>
   );
