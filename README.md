@@ -5,6 +5,8 @@ DND Book is a **campaign management application** designed for Dungeon Masters a
 
 ## 🎯 Goals
 - Provide an **overview dashboard** summarizing campaign data.
+![Dashboard](docs/img/page-dashboard_expanded.png)
+
 - Allow filtering by **specific campaigns** across all entities (notes, NPCs, locations, etc.).
 - Store and retrieve data efficiently via **PocketBase**.
 - Ensure a **smooth, responsive UI** using **React, TailwindCSS, and Flowbite**.
@@ -19,13 +21,29 @@ DND Book is a **campaign management application** designed for Dungeon Masters a
 
 ## 📖 Credits
 - **PocketBase**: The lightweight backend framework powering our data storage, authentication, and API layer. [Learn more](https://pocketbase.io/)
-- **Flowbite**: UI components for TailwindCSS, making our design more seamless.
-- **Vite**: A modern frontend tooling alternative to Create React App, providing fast development and optimized builds.
+- **Flowbite**: UI components for TailwindCSS, making our design more seamless. [Learn more](https://flowbite-react.com/)
+- **Vite**: A modern frontend tooling alternative to Create React App, providing fast development and optimized builds. [Learn more](https://vite.dev/)
 
 ## 📌 Features (Current & Planned)
 ### ✅ Current Features
 - **User authentication** via PocketBase
+![Login Page](docs/img/page-login.png)
+
 - **Notes, Locations, NPCs pages**
+![Locations Page](docs/img/page-location.png)
+![Notes Page](docs/img/page-notes.png)
+![NPCs Page](docs/img/page-npcs.png)
+
+- Detailed individual views for entries
+![Location Detail Page](docs/img/page-location_detail.png)
+![Note Detail Page](docs/img/page-note_detail.png)
+![NPC Detail Page](docs/img/page-npc_detail.png)
+
+- Viewing related items based on **tags**
+![Related-Items Modal](docs/img/modal-related_items.png)
+
+- Breadcrumb navigation on the **Location** page
+![Breadcrumbs Component](docs/img/component-breadcrumbs.png)
 
 ### 🏗️ Planned Features
 - **Global campaign selection in navbar** to persist across all entity pages

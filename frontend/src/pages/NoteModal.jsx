@@ -1,55 +1,57 @@
-import React from "react";
-import { getTagColor } from "../utils/colors";
+import React, { useState } from "react";
+import { Button, Label, Modal, TextInput } from "flowbite-react";
 import { useNavigate } from "react-router-dom";
+import { getTagColor } from "../utils/colors";
 
 export const NoteModal = ({ note, onClose }) => {
   const navigate = useNavigate();
+  const [title, setTitle] = useState(note?.title || "");
+  const [content, setContent] = useState(note?.content || "");
 
   if (!note) return null;
 
+  const handleSave = () => {
+    // Add logic to save the note here
+    console.log("Saving note...", { title, content });
+    onClose(); // Close the modal after saving
+  };
+
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
-      role="dialog"
-      aria-labelledby="note-modal-title"
-      aria-modal="true"
-    >
-      <div className="relative bg-white rounded-lg shadow-md w-full max-w-2xl">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h3 id="note-modal-title" className="text-xl font-semibold">
-            {note.title}
+    <Modal show={true} size="md" onClose={onClose} popup>
+      <Modal.Header />
+      <Modal.Body>
+        <div className="space-y-6">
+          <h3 className="text-xl font-medium text-gray-900 dark:text-white">
+            {note.title ? "Edit Note" : "Add Note"}
           </h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 bg-transparent hover:bg-gray-200 rounded-lg text-sm w-8 h-8 inline-flex justify-center items-center"
-            aria-label="Close modal"
-          >
-            <svg
-              className="w-4 h-4"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 14 14"
-            >
-              <path
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M1 1l6 6m0 0l6 6M7 7l6-6M7 7l-6 6"
-              />
-            </svg>
-          </button>
-        </div>
-
-        {/* Modal Body */}
-        <div className="p-4 space-y-4">
-          <p className="text-base text-gray-700">{note.content}</p>
-
+          <div>
+            <div className="mb-2 block">
+              <Label htmlFor="title" className="text-gray-900 dark:text-white" value="Title" />
+            </div>
+            <TextInput
+              id="title"
+              placeholder="Enter note title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <div className="mb-2 block">
+              <Label htmlFor="content" className="text-gray-900 dark:text-white" value="Content" />
+            </div>
+            <TextInput
+              id="content"
+              placeholder="Enter note content"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              required
+            />
+          </div>
           {/* Locations */}
           {note.expand?.locations?.length > 0 && (
             <div>
-              <strong>Locations:</strong>
+              <strong className="text-gray-900 dark:text-white">Locations:</strong>
               <div className="flex flex-wrap gap-2 mt-2">
                 {note.expand.locations.map((location) => (
                   <button
@@ -67,7 +69,7 @@ export const NoteModal = ({ note, onClose }) => {
           {/* Tags */}
           {note.expand?.tags?.length > 0 && (
             <div>
-              <strong>Tags:</strong>
+              <strong className="text-gray-900 dark:text-white">Tags:</strong>
               <div className="flex flex-wrap gap-2 mt-2">
                 {note.expand.tags.map((tag) => (
                   <span
@@ -83,17 +85,15 @@ export const NoteModal = ({ note, onClose }) => {
             </div>
           )}
         </div>
-
-        {/* Modal Footer */}
-        <div className="flex justify-end p-4 border-t border-gray-200">
-          <button
-            onClick={onClose}
-            className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 rounded-lg text-sm px-4 py-2"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
+      </Modal.Body>
+      <Modal.Footer>
+        <Button onClick={handleSave} className="mr-2">
+          Save
+        </Button>
+        <Button color="gray" onClick={onClose}>
+          Cancel
+        </Button>
+      </Modal.Footer>
+    </Modal>
   );
 };

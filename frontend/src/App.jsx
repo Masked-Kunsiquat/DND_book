@@ -16,6 +16,8 @@ import Locations from "./pages/Locations";
 import LocationDetail from "./pages/LocationDetail";
 import RelatedItemsModal from "./components/RelatedItemsModal";
 import NoteDetail from "./pages/NoteDetail";
+import NPCs from "./pages/NPCs";
+import NPCDetail from "./pages/NPCDetail";
 
 const App = () => {
   // State to track authentication dynamically
@@ -76,11 +78,18 @@ const App = () => {
           path="/npcs"
           element={
             <ProtectedRoute>
-              <Placeholder pageName="NPCs" />
+              <NPCs />
             </ProtectedRoute>
           }
         />
-
+        <Route
+          path="/npcs/:npcId"
+          element={
+            <ProtectedRoute>
+              <NPCDetail />
+            </ProtectedRoute>
+          }
+        />
         {/* New route for viewing related items by tag */}
         <Route
           path="/tags/:tagId"
@@ -90,7 +99,6 @@ const App = () => {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/notes/:noteId"
           element={
