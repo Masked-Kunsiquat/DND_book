@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { fetchNoteDetails } from "../api/notes";
 import RelatedItemsModal from "../components/RelatedItemsModal";
+import NoteModal from "../components/NoteModal";
 import { Button, Spinner, Alert, Card } from "flowbite-react";
 
 const NoteDetail = () => {
@@ -11,41 +12,42 @@ const NoteDetail = () => {
   const [error, setError] = useState("");
   const [selectedTagId, setSelectedTagId] = useState(null);
   const [isRelatedItemsModalOpen, setIsRelatedItemsModalOpen] = useState(false);
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const navigate = useNavigate();
   const effectRan = useRef(false);
+
+  const refreshNotes = async () => {
+    try {
+      console.log("🔄 Refreshing note details...");
+      const authToken = localStorage.getItem("authToken");
+      if (!authToken) {
+        setError("Please log in to refresh note details.");
+        return;
+      }
+      const noteData = await fetchNoteDetails(noteId, authToken);
+      setNote(noteData);
+      console.log("✅ Note details refreshed:", noteData);
+    } catch (err) {
+      setError("Failed to refresh the note.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (effectRan.current) return;
     effectRan.current = true;
-  
-    const loadNote = async () => {
-      try {
-        const authToken = localStorage.getItem("authToken");
-        if (!authToken) {
-          setError("Please log in to view note details.");
-          navigate("/login", { replace: true });
-          return;
-        }
-        const noteData = await fetchNoteDetails(noteId, authToken);
-        setNote(noteData);
-      } catch (err) {
-        setError("Failed to load the note.");
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-  
-    if (noteId) {
-      loadNote();
-    }
-  }, [noteId, navigate]);
-  
+
+    console.log("🔄 Initializing NoteDetail component...");
+    refreshNotes();
+  }, [noteId]);
 
   if (loading)
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
         <Spinner size="lg" />
+        <p className="text-gray-500 mt-4">Loading note details...</p>
       </div>
     );
 
@@ -58,24 +60,35 @@ const NoteDetail = () => {
 
   return (
     <div className="p-6 min-h-screen bg-gray-100 dark:bg-gray-900">
-      {/* Back Button */}
-      <Button
-        color="blue"
-        onClick={() => navigate(-1)}
-        className="mb-4 hover:opacity-90 transition-opacity"
-      >
-        &larr; Back
-      </Button>
+      {/* Back and Edit Buttons */}
+      <div className="flex gap-2 mb-4">
+        <Button
+          color="blue"
+          onClick={() => navigate(-1)}
+          className="hover:opacity-90 transition-opacity"
+        >
+          &larr; Back
+        </Button>
+        <Button
+          color="blue"
+          onClick={() => setIsNoteModalOpen(true)}
+          className="hover:opacity-90 transition-opacity"
+        >
+          ✏️ Edit Note
+        </Button>
+      </div>
 
       {/* Note Card */}
       <Card className="max-w-3xl mx-auto p-6 bg-white dark:bg-gray-800">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          {note.title}
+          {note?.title || "Untitled"}
         </h1>
-        <p className="text-gray-700 dark:text-gray-300 mt-4">{note.content}</p>
+        <p className="text-gray-700 dark:text-gray-300 mt-4">
+          {note?.content || "No content available."}
+        </p>
 
         {/* Locations Section */}
-        {note.expand?.locations?.length > 0 && (
+        {note?.expand?.locations?.length > 0 && (
           <div className="mb-4">
             <strong>Locations:</strong>
             <ul className="list-disc ml-6">
@@ -94,7 +107,7 @@ const NoteDetail = () => {
         )}
 
         {/* Tags Section */}
-        {note.expand?.tags?.length > 0 && (
+        {note?.expand?.tags?.length > 0 && (
           <div className="mb-4">
             <strong>Tags:</strong>
             <div className="flex flex-wrap gap-2 mt-2">
@@ -122,6 +135,16 @@ const NoteDetail = () => {
         <RelatedItemsModal
           tagId={selectedTagId}
           onClose={() => setIsRelatedItemsModalOpen(false)}
+        />
+      )}
+
+      {/* Note Editing Modal */}
+      {isNoteModalOpen && (
+        <NoteModal
+          isOpen={isNoteModalOpen}
+          onClose={() => setIsNoteModalOpen(false)}
+          note={note}
+          refreshNotes={refreshNotes}
         />
       )}
     </div>

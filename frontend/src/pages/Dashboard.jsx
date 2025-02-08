@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import pb from "../api/base";
-import { fetchNpcs } from "../api/npc";
+import { fetchNPCs } from "../api/npc";
 import { Card } from "flowbite-react";
+import placeholderAvatar from "../img/placeholder-avatar.png";
 
 const Dashboard = () => {
   const [npcs, setNpcs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isNpcSectionVisible, setNpcSectionVisible] = useState(true); // Collapsible state
+  const navigate = useNavigate(); // Initialize the navigate hook
 
   const handleLogout = async () => {
     try {
@@ -23,7 +26,7 @@ const Dashboard = () => {
     const loadNpcs = async () => {
       try {
         const authToken = pb.authStore.token;
-        const npcData = await fetchNpcs(authToken, 1, 10); // Fetch first 10 NPCs
+        const npcData = await fetchNPCs(authToken, 1, 10); // Fetch first 10 NPCs
         setNpcs(npcData.items);
       } catch (error) {
         console.error("Error loading NPCs:", error);
@@ -34,6 +37,12 @@ const Dashboard = () => {
 
     loadNpcs();
   }, []);
+
+  const handleCardClick = (npcId) => {
+    navigate(`/npcs/${npcId}`); // Navigate to the NPC detail page
+  };
+
+  const baseUrl = import.meta.env.VITE_API_BASE_URL;
 
   return (
     <div className="dark:bg-gray-900 dark:text-white min-h-screen p-8">
@@ -65,23 +74,33 @@ const Dashboard = () => {
               <p>Loading NPCs...</p>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {npcs.map((npc) => (
-                  <Card key={npc.id} className="max-w-sm dark:bg-gray-800 dark:border-gray-700">
-                    <div className="flex flex-col items-center pb-6">
-                      <img
-                        src={npc.image ? pb.files.getUrl(npc, npc.image) : "/placeholder-avatar.jpg"}
-                        alt={npc.name || "NPC"}
-                        className="mb-4 h-24 w-24 rounded-full shadow-lg"
-                      />
-                      <h5 className="text-lg font-medium dark:text-white">
-                        {npc.name || "Unnamed NPC"}
-                      </h5>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {npc.role || "Unknown Role"}
-                      </p>
-                    </div>
-                  </Card>
-                ))}
+                {npcs.map((npc) => {
+                  const imageUrl = npc.image
+                    ? `${baseUrl}/api/files/${npc.collectionId}/${npc.id}/${npc.image}`
+                    : placeholderAvatar;
+
+                  return (
+                    <Card
+                      key={npc.id}
+                      className="max-w-sm dark:bg-gray-800 dark:border-gray-700 cursor-pointer"
+                      onClick={() => handleCardClick(npc.id)} // Add click handler to navigate
+                    >
+                      <div className="flex flex-col items-center pb-6">
+                        <img
+                          src={imageUrl}
+                          alt={npc.name || "NPC"}
+                          className="mb-4 h-24 w-24 rounded-full shadow-lg object-cover"
+                        />
+                        <h5 className="text-lg font-medium dark:text-white">
+                          {npc.name || "Unnamed NPC"}
+                        </h5>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {npc.role || "Unknown Role"}
+                        </p>
+                      </div>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </div>
