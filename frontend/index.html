@@ -9,16 +9,6 @@
         background-color: #f3f4f6; /* Match your app's background color */
       }
     </style>
-    <script>
-      // ThemeModeScript equivalent: sets 'dark' or removes it from <html> before app loads
-      const storedTheme = localStorage.getItem('color-theme');
-      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (storedTheme === 'dark' || (!storedTheme && systemPrefersDark)) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    </script>
   </head>
   <body>
     <div id="root"></div>
