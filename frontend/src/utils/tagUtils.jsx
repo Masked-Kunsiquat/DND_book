@@ -5,7 +5,7 @@ export const tagTypeMapping = {
     note: "Note",
     session_log: "Session Log",
     location: "Location",
-    npcs: "NPC"
+    npc: "NPC"
   };
   
   // Utility function to get the display name for a tag type
