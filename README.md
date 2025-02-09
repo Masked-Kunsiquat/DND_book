@@ -1,4 +1,6 @@
 # DND Book
+[![ReadTheDocs](https://img.shields.io/badge/Readthedocs-%23000000.svg?style=for-the-badge&logo=readthedocs&logoColor=white)](https://masked-kunsiquat.github.io/DND_book/)
+
 
 ## 📌 Project Overview
 DND Book is a **campaign management application** designed for Dungeon Masters and players to organize notes, NPCs, locations, and other key details of their tabletop RPG adventures. The project is built on **PocketBase** for backend storage and authentication, with a **React-based frontend powered by Vite**.
