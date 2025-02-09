@@ -17,8 +17,8 @@ COPY ./pb_migrations /pb/pb_migrations
 # COPY ./pb_hooks /pb/pb_hooks
 
 # Copy initialization script
-COPY init.sh /app/init.sh
-RUN chmod +x /app/init.sh
+COPY init.sh /pb/init.sh
+RUN chmod +x /pb/init.sh
 
 EXPOSE 8080
 

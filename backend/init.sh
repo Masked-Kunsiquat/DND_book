@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 PB_URL="http://localhost:8090"
 PB_EXEC="pb/pocketbase"
