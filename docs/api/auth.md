@@ -1,3 +1,7 @@
+---
+title: "Authentication API"
+---
+
 # 🔐 Authentication API
 
 ## **Login**

@@ -1,3 +1,7 @@
+---
+title: "Notes API"
+---
+
 # 📝 Notes API
 
 ## **Fetch All Notes**

@@ -1,3 +1,7 @@
+---
+title: "Locations API"
+---
+
 # 🌍 Locations API
 
 ## **Fetch All Locations**

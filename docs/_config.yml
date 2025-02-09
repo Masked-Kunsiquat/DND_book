@@ -1,0 +1,5 @@
+# Use pretty URLs without the .html extension
+permalink: pretty
+
+# (Optional) Specify the Markdown processor
+markdown: kramdown
