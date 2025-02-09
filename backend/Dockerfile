@@ -6,17 +6,16 @@ RUN apk add --no-cache \
     unzip \
     ca-certificates \
     curl \
-    jq 
+    jq
 
 # Download and unzip PocketBase
 ADD https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_amd64.zip /tmp/pb.zip
 RUN unzip /tmp/pb.zip -d /pb/
 
-# Copy the init script and ensure execution permissions
-COPY ./init.sh /pb/init.sh
-RUN chmod +x /pb/init.sh
+# Apply migrations (collections, app user)
+COPY ./pb_migrations /pb/pb_migrations
 
 EXPOSE 8080
 
-# Start PocketBase and initialize the superuser
+# Ensure PocketBase runs AFTER superuser creation
 CMD ["/bin/sh", "-c", "/pb/pocketbase serve --http=0.0.0.0:8080"]
