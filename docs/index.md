@@ -6,4 +6,4 @@ title: "Documentation Home"
 
 Here’s an overview of the docs...
 
-[Go to API Documentation](/api/)
+[Go to API Documentation]({{ "/api/" | relative_url }})

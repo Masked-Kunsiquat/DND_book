@@ -1,3 +1,4 @@
+baseurl: "/DND_book"
 # Use pretty URLs without the .html extension
 permalink: pretty
 
