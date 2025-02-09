@@ -1,4 +1,8 @@
-// Import PNG icons
+// utils/iconMap.js
+
+/**
+ * Import location-based icons.
+ */
 import ContinentIcon from "../img/locations/continent.png";
 import LandmarkIcon from "../img/locations/landmark.png";
 import LocaleIcon from "../img/locations/locale.png";
@@ -8,8 +12,10 @@ import RealmIcon from "../img/locations/realm.png";
 import TerritoryIcon from "../img/locations/territory.png";
 import DefaultIcon from "../img/locations/default.png";
 
-// Icon mapping object
-const iconMap = {
+/**
+ * Mapping of location types to their respective icons.
+ */
+export const iconMap = {
   Continent: ContinentIcon,
   Landmark: LandmarkIcon,
   Locale: LocaleIcon,
@@ -19,5 +25,3 @@ const iconMap = {
   Territory: TerritoryIcon,
   default: DefaultIcon,
 };
-
-export default iconMap;
