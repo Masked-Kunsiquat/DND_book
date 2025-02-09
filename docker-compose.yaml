@@ -5,6 +5,12 @@ services:
       - "8090:8080"
     volumes:
       - ./pocketbase_data:/app/pb_data
+    environment:
+      - ADMIN_EMAIL="admin@example.com"
+      - ADMIN_PASSWORD="ThisisAtEsT123@*"
+    env_file:
+      - ./app.env
+    entrypoint: ["/bin/sh", "-c", "/pb/pocketbase serve --http=0.0.0.0:8080 & /pb/init.sh"]
     restart: unless-stopped
 
   frontend:
@@ -13,6 +19,8 @@ services:
       - "3110:80"
     depends_on:
       - backend
+    env_file:
+      - ./app.env
     restart: unless-stopped
 
 #volumes:

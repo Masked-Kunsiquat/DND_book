@@ -16,6 +16,10 @@ COPY ./pb_migrations /pb/pb_migrations
 # uncomment to copy the local pb_hooks dir into the image
 # COPY ./pb_hooks /pb/pb_hooks
 
+# Copy initialization script
+COPY init.sh /app/init.sh
+RUN chmod +x /app/init.sh
+
 EXPOSE 8080
 
 # start PocketBase
