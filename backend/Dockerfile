@@ -4,23 +4,19 @@ ARG PB_VERSION=0.25.1
 
 RUN apk add --no-cache \
     unzip \
-    ca-certificates
+    ca-certificates \
+    curl \
+    jq 
 
-# download and unzip PocketBase
+# Download and unzip PocketBase
 ADD https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_amd64.zip /tmp/pb.zip
 RUN unzip /tmp/pb.zip -d /pb/
 
-# uncomment to copy the local pb_migrations dir into the image
-COPY ./pb_migrations /pb/pb_migrations
-
-# uncomment to copy the local pb_hooks dir into the image
-# COPY ./pb_hooks /pb/pb_hooks
-
-# Copy initialization script
-COPY init.sh /pb/init.sh
+# Copy the init script and ensure execution permissions
+COPY ./init.sh /pb/init.sh
 RUN chmod +x /pb/init.sh
 
 EXPOSE 8080
 
-# start PocketBase
-CMD ["/pb/pocketbase", "serve", "--http=0.0.0.0:8080"]
+# Start PocketBase and initialize the superuser
+CMD ["/bin/sh", "-c", "/pb/init.sh & /pb/pocketbase serve --http=0.0.0.0:8080"]
