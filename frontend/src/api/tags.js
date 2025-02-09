@@ -1,35 +1,26 @@
-import pb from "./base";
+import { pb } from "./base";
+import { ensureAuth } from "./utils"; // Utility function for auth validation
 
-// Fetch related items for a specific tag
+/**
+ * Fetch related items for a specific tag.
+ */
 export const fetchRelatedItems = async (tagId, authToken) => {
-  if (!authToken) {
-    throw new Error("❌ Authentication token is required.");
-  }
-  if (!tagId) {
-    throw new Error("❌ Tag ID is required.");
-  }
+  ensureAuth(authToken);
+  if (!tagId) throw new Error("❌ Tag ID is required.");
+
+  if (import.meta.env.DEV) console.log(`🔄 Fetching related items for tag ID: ${tagId}`);
 
   try {
-    console.log("🔄 Fetching related items for tag ID:", tagId);
-
-    // Ensure auth token is set properly without overwriting
-    if (!pb.authStore.isValid || pb.authStore.token !== authToken) {
-      pb.authStore.save(authToken, null);
-    }
-
-    // Sanitize tagId: Remove anything except alphanumeric, hyphen, and underscore
-    const safeTagId = tagId.replace(/[^a-zA-Z0-9-_]/g, "");
-
     // Fetch related items with no auto-cancellation
     const relatedItems = await pb.collection("tagged_combined").getFullList({
-      filter: `(tag_ids~'${safeTagId}')`,
+      filter: `tag_ids~'${tagId}'`,
       requestKey: null, // Prevent auto-cancellation
     });
 
-    console.log("✅ Related items response:", relatedItems);
+    if (import.meta.env.DEV) console.log("✅ Related items fetched:", relatedItems);
     return relatedItems;
   } catch (error) {
-    console.error("❌ Error fetching related items:", error);
-    throw new Error("Failed to fetch related items. Please try again.");
+    console.error(`❌ Error fetching related items (Tag ID: ${tagId}):`, error.message);
+    throw new Error(error.message || "Failed to fetch related items.");
   }
 };

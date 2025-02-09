@@ -1,16 +1,12 @@
-import pb from "./base";
+import { pb } from "./base";
+import { ensureAuth } from "./utils"; // Utility function for auth validation
 
+/**
+ * Fetch all notes.
+ */
 export const fetchNotes = async (authToken) => {
-  if (!authToken) {
-    throw new Error("❌ Authentication token is required.");
-  }
-
-  console.log("🔄 Fetching notes...");
-
-  // Ensure auth token is set only if it's not already valid
-  if (!pb.authStore.isValid || pb.authStore.token !== authToken) {
-    pb.authStore.save(authToken, null);
-  }
+  ensureAuth(authToken);
+  if (import.meta.env.DEV) console.log("🔄 Fetching notes...");
 
   try {
     const notes = await pb.collection("notes").getFullList({
@@ -18,39 +14,33 @@ export const fetchNotes = async (authToken) => {
       requestKey: null, // Prevent auto-cancellation
     });
 
-    console.log("✅ API Response (Notes):", notes);
+    if (import.meta.env.DEV) console.log("✅ API Response (Notes):", notes);
     return notes;
   } catch (error) {
-    console.error("❌ Error fetching notes:", error);
-    throw new Error("Failed to fetch notes. Please try again.");
+    console.error("❌ Error fetching notes:", error.message);
+    throw new Error(error.message || "Failed to fetch notes.");
   }
 };
 
+/**
+ * Fetch details of a specific note.
+ */
 export const fetchNoteDetails = async (noteId, authToken) => {
-  if (!authToken) {
-    throw new Error("❌ Authentication token is required.");
-  }
-  if (!noteId) {
-    throw new Error("❌ Note ID is required.");
-  }
+  ensureAuth(authToken);
+  if (!noteId) throw new Error("❌ Note ID is required.");
+
+  if (import.meta.env.DEV) console.log(`🔄 Fetching note details for ID: ${noteId}`);
 
   try {
-    console.log(`🔄 Fetching note details for ID: ${noteId}`);
-
-    // Ensure auth token is set only if it's not already valid
-    if (!pb.authStore.isValid || pb.authStore.token !== authToken) {
-      pb.authStore.save(authToken, null);
-    }
-
     const note = await pb.collection("notes").getOne(noteId, {
       expand: "locations,tags",
-      requestKey: null, // Prevent auto-cancellation
+      requestKey: null,
     });
 
-    console.log("✅ Fetched Note Details:", note);
+    if (import.meta.env.DEV) console.log("✅ Fetched Note Details:", note);
     return note;
   } catch (error) {
-    console.error("❌ Error fetching note details:", error);
-    throw new Error("Failed to fetch note details. Please try again.");
+    console.error(`❌ Error fetching note details (ID: ${noteId}):`, error.message);
+    throw new Error(error.message || "Failed to fetch note details.");
   }
 };

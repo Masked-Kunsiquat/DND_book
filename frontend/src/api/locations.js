@@ -1,19 +1,12 @@
-import pb from "./base";
+import { pb } from "./base";
+import { ensureAuth } from "./utils"; // Utility function for auth validation
 
 /**
  * Fetch all locations and group them by type.
  */
 export const fetchLocations = async (authToken) => {
-  if (!authToken) {
-    throw new Error("❌ Authentication token is required.");
-  }
-
-  console.log("📍 Fetching all locations...");
-
-  // Ensure the token is valid, but don't overwrite if already set
-  if (!pb.authStore.isValid || pb.authStore.token !== authToken) {
-    pb.authStore.save(authToken, null);
-  }
+  ensureAuth(authToken);
+  if (import.meta.env.DEV) console.log("📍 Fetching all locations...");
 
   try {
     const locations = await pb.collection("locations").getFullList({
@@ -21,7 +14,7 @@ export const fetchLocations = async (authToken) => {
       requestKey: null, // Prevent auto-cancellation
     });
 
-    console.log("✅ API Response (Locations):", locations);
+    if (import.meta.env.DEV) console.log("✅ API Response (Locations):", locations);
 
     const groupedLocations = locations.reduce((acc, location) => {
       if (!acc[location.type]) acc[location.type] = [];
@@ -29,11 +22,10 @@ export const fetchLocations = async (authToken) => {
       return acc;
     }, {});
 
-    console.log("📌 Grouped Locations:", groupedLocations);
     return groupedLocations;
-  } catch (err) {
-    console.error("❌ Failed to fetch locations:", err);
-    throw new Error("Failed to load locations. Please try again.");
+  } catch (error) {
+    console.error("❌ Failed to fetch locations:", error.message);
+    throw new Error(error.message || "Failed to load locations.");
   }
 };
 
@@ -41,53 +33,34 @@ export const fetchLocations = async (authToken) => {
  * Fetch a single location along with its parent.
  */
 export const fetchLocationWithParents = async (authToken, locationId) => {
-  if (!authToken) {
-    throw new Error("❌ Authentication token is required.");
-  }
-  if (!locationId) {
-    throw new Error("❌ Location ID is required.");
-  }
+  ensureAuth(authToken);
+  if (!locationId) throw new Error("❌ Location ID is required.");
 
-  console.log("📍 Fetching location with ID:", locationId);
-
-  // Ensure the token is valid, but don't overwrite if already set
-  if (!pb.authStore.isValid || pb.authStore.token !== authToken) {
-    pb.authStore.save(authToken, null);
-  }
+  if (import.meta.env.DEV) console.log(`📍 Fetching location with ID: ${locationId}`);
 
   try {
     const location = await pb.collection("locations").getOne(locationId, {
       expand: "parent",
-      requestKey: null, // Prevent auto-cancellation
+      requestKey: null,
     });
 
-    if (!location) {
-      throw new Error("❌ Location not found or invalid response format.");
-    }
-
-    // Debugging: Log the retrieved location data
-    console.log("✅ Fetched Location Data:", location);
-    console.log("🔍 Checking if 'map' exists:", location.map);
-
-    if (!location.map) {
-      console.warn("⚠️ No map found for this location, default placeholder will be used.");
-    } else {
-      console.log("🗺️ Map found:", location.map);
-    }
+    if (import.meta.env.DEV) console.log("✅ Fetched Location Data:", location);
 
     return location;
-  } catch (err) {
-    console.error("❌ Failed to fetch location:", err);
-    throw new Error("Failed to load location. Please try again.");
+  } catch (error) {
+    console.error(`❌ Failed to fetch location (ID: ${locationId}):`, error.message);
+    throw new Error(error.message || "Failed to load location.");
   }
 };
 
-
+/**
+ * Fetch full ancestry of a location.
+ */
 export const fetchLocationAncestry = async (authToken, locationId) => {
-  if (!authToken) throw new Error("Authentication token is required");
-  if (!locationId) throw new Error("Location ID is required");
+  ensureAuth(authToken);
+  if (!locationId) throw new Error("❌ Location ID is required.");
 
-  console.log("🔄 Fetching full ancestry for location:", locationId);
+  if (import.meta.env.DEV) console.log(`🔄 Fetching ancestry for location: ${locationId}`);
 
   let ancestry = [];
   let currentLocationId = locationId;
@@ -96,52 +69,41 @@ export const fetchLocationAncestry = async (authToken, locationId) => {
     while (currentLocationId) {
       const location = await pb.collection("locations").getOne(currentLocationId, {
         expand: "parent",
-        requestKey: null, //  Prevent auto-cancellation
+        requestKey: null,
       });
 
-      if (!location) break; // Stop if no location is found
+      if (!location) break;
 
-      ancestry.unshift(location); // Add to the beginning
+      ancestry.unshift(location);
       currentLocationId = location.expand?.parent?.id || null;
     }
 
-    console.log("✅ Full location ancestry:", ancestry);
+    if (import.meta.env.DEV) console.log("✅ Full location ancestry:", ancestry);
     return ancestry;
   } catch (error) {
-    console.error("❌ Error fetching location ancestry:", error);
-    throw error;
+    console.error(`❌ Error fetching location ancestry (ID: ${locationId}):`, error.message);
+    throw new Error(error.message || "Failed to fetch location ancestry.");
   }
 };
 
 /**
- * Save or update a location.
+ * Create or update a location.
  */
 export const saveOrUpdateLocation = async (authToken, locationData) => {
-  if (!authToken) {
-    throw new Error("❌ Authentication token is required.");
-  }
+  ensureAuth(authToken);
+  if (!locationData || typeof locationData !== "object") throw new Error("❌ Location data is required.");
 
-  console.log(`💾 ${locationData.id ? "Updating" : "Creating"} location...`);
-
-  // Ensure the token is valid, but don't overwrite if already set
-  if (!pb.authStore.isValid || pb.authStore.token !== authToken) {
-    pb.authStore.save(authToken, null);
-  }
+  if (import.meta.env.DEV) console.log(`💾 ${locationData.id ? "Updating" : "Creating"} location...`);
 
   try {
-    let response;
-    if (locationData.id) {
-      // Update existing location
-      response = await pb.collection("locations").update(locationData.id, locationData);
-    } else {
-      // Create new location
-      response = await pb.collection("locations").create(locationData);
-    }
+    const response = locationData.id
+      ? await pb.collection("locations").update(locationData.id, locationData)
+      : await pb.collection("locations").create(locationData);
 
-    console.log("✅ Location saved successfully:", response);
+    if (import.meta.env.DEV) console.log("✅ Location saved successfully:", response);
     return response;
-  } catch (err) {
-    console.error("❌ Error saving location:", err);
-    throw new Error("Failed to save location. Please try again.");
+  } catch (error) {
+    console.error(`❌ Error saving location (ID: ${locationData.id || "new"}):`, error.message);
+    throw new Error(error.message || "Failed to save location.");
   }
 };
