@@ -19,4 +19,4 @@ RUN chmod +x /pb/init.sh
 EXPOSE 8080
 
 # Start PocketBase and initialize the superuser
-CMD ["/bin/sh", "-c", "/pb/pocketbase serve --http=0.0.0.0:8080 & /pb/init.sh"]
+CMD ["/bin/sh", "-c", "/pb/pocketbase serve --http=0.0.0.0:8080"]
