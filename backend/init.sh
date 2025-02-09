@@ -4,8 +4,8 @@ PB_EXEC="/pb/pocketbase"
 PB_URL="http://localhost:8080"
 
 # Superuser Credentials (Environment Variables or Defaults)
-PB_SUPERUSER_EMAIL=${PB_SUPERUSER_EMAIL:-"superadmin@example.com"}
-PB_SUPERUSER_PASSWORD=${PB_SUPERUSER_PASSWORD:-"SuperSecret123"}
+SUPERUSER_EMAIL=${SUPERUSER_EMAIL:-"superadmin@example.com"}
+SUPERUSER_PASSWORD=${SUPERUSER_PASSWORD:-"SuperSecret123"}
 
 # First App User Credentials
 ADMIN_EMAIL=${ADMIN_EMAIL:-"admin@example.com"}
@@ -20,7 +20,7 @@ echo "✅ PocketBase is ready!"
 # Create Superuser (Only if Database is Empty)
 if [ ! -f "/pb/pb_data/data.db" ]; then
   echo "🔑 Creating PocketBase Superuser..."
-  $PB_EXEC superuser create "$PB_SUPERUSER_EMAIL" "$PB_SUPERUSER_PASSWORD"
+  $PB_EXEC superuser create "$SUPERUSER_EMAIL" "$SUPERUSER_PASSWORD"
   echo "✅ Superuser created successfully!"
 else
   echo "🔑 Superuser already exists, skipping creation."
