@@ -43,7 +43,7 @@ export function UserProfileForm({ user, setUser }: UserProfileFormProps) {
     setError(null);
     try {
       const updatedUser = await updateUserProfile(user.id, name, avatar ?? undefined);
-      setUser(updatedUser as unknown as UsersResponse);
+      setUser(updatedUser); // ✅ No need for type assertion
       setAvatar(null);
     } catch (err: any) {
       console.error("❌ Profile update failed:", err);

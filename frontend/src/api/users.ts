@@ -1,11 +1,12 @@
 import { pb } from "./base";
+import type { UsersResponse } from "../types/pocketbase-types";
 
 /**
  * Updates user profile (name & avatar).
  * - Validates input parameters.
  * - Handles API errors gracefully.
  */
-export async function updateUserProfile(userId: string, name: string, avatar?: File) {
+export async function updateUserProfile(userId: string, name: string, avatar?: File): Promise<UsersResponse> {
   // Input validation
   if (!userId || typeof userId !== "string") {
     throw new Error("❌ Invalid user ID.");
@@ -22,7 +23,7 @@ export async function updateUserProfile(userId: string, name: string, avatar?: F
   if (avatar) formData.append("avatar", avatar);
 
   try {
-    const updatedUser = await pb.collection("users").update(userId, formData);
+    const updatedUser = await pb.collection("users").update<UsersResponse>(userId, formData);
 
     if (import.meta.env.DEV) {
       console.log("✅ User profile updated successfully:", updatedUser);
