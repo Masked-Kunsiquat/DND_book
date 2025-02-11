@@ -1,20 +1,32 @@
 import { useNavigate } from "react-router-dom";
-import { Dropdown, Button } from "flowbite-react";
+import { Dropdown, Button, Spinner } from "flowbite-react";
 import { pb } from "../../api/base";
 import type { UsersResponse } from "../../types/pocketbase-types";
 import { UserAvatar } from "./UserAvatar";
 
 interface UserDropdownProps {
   user: UsersResponse | null;
+  loading: boolean;
+  error: string | null;
 }
 
-export function UserDropdown({ user }: UserDropdownProps) {
+export function UserDropdown({ user, loading, error }: UserDropdownProps) {
   const navigate = useNavigate();
 
   const handleSignOut = () => {
     pb.authStore.clear();
     navigate("/login"); // Redirect after signing out
   };
+
+  // ✅ Show loading spinner while fetching user data
+  if (loading) {
+    return <Spinner size="sm" color="blue" aria-label="Loading user info..." />;
+  }
+
+  // ✅ Show error message if fetching user data fails
+  if (error) {
+    return <span className="text-red-500">{error}</span>;
+  }
 
   // ✅ Show "Sign In" button if no user is logged in
   if (!user) {

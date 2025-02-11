@@ -5,28 +5,37 @@ import type { UsersResponse } from "../types/pocketbase-types";
 /**
  * Custom hook to manage the authenticated user state in PocketBase.
  * - Subscribes to auth store changes to stay in sync.
- * - Cleans up subscription on unmount.
- * - Ensures correct type handling.
+ * - Handles loading and errors.
  */
 export function useAuthUser() {
   const [user, setUser] = useState<UsersResponse | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Function to update user state when auth changes
+    setLoading(true);
+    setError(null);
+
     const updateUser = () => {
-      const authUser = pb.authStore.model;
-      setUser(authUser && "id" in authUser ? (authUser as UsersResponse) : null);
+      try {
+        const authUser = pb.authStore.record;
+        setUser(authUser && "id" in authUser ? (authUser as UsersResponse) : null);
+      } catch (err: any) {
+        setError("Failed to load user data.");
+      } finally {
+        setLoading(false);
+      }
     };
 
     // Initialize user state
     updateUser();
 
-    // Subscribe to auth store changes and return the cleanup function
+    // Subscribe to auth store changes
     const unsubscribe = pb.authStore.onChange(updateUser);
 
     // Cleanup function to unsubscribe on unmount
     return unsubscribe;
   }, []);
 
-  return user;
+  return { user, loading, error };
 }

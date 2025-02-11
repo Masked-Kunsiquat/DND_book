@@ -1,11 +1,5 @@
 import { pb } from "./base";
-
-interface DashboardStats {
-  notes: number;
-  locations: number;
-  tags: number;
-  sessionLogs: number;
-}
+import { DashboardStats } from "../types/DashboardStats";
 
 /**
  * Fetch total counts for dashboard statistics.
@@ -26,7 +20,7 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
       sessionLogs: sessionLogs.totalItems,
     };
   } catch (error: any) {
-    console.error("❌ Failed to fetch dashboard stats:", error);
-    return { notes: 0, locations: 0, tags: 0, sessionLogs: 0 };
+    console.error("❌ Failed to fetch dashboard stats:", error.message);
+    throw new Error("Failed to fetch dashboard statistics. Please try again.");
   }
 }

@@ -2,7 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { useDashboardStats } from "../hooks/useDashboardStats";
 import { Loader } from "../components/shared/Loader";
 import { ErrorMessage } from "../components/shared/ErrorMessage";
-import { StatCard } from "../components/shared/StatCard"; // ✅ Import StatCard
+import { StatCard } from "../components/shared/StatCard";
+import { DashboardStats } from "../types/DashboardStats"; // ✅ Import shared type
 
 export function Dashboard() {
   const { stats, loading, error } = useDashboardStats();

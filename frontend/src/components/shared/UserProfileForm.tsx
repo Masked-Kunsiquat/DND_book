@@ -16,7 +16,26 @@ export function UserProfileForm({ user, setUser }: UserProfileFormProps) {
   const [error, setError] = useState<string | null>(null);
 
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files?.[0]) setAvatar(event.target.files[0]);
+    const file = event.target.files?.[0];
+
+    if (file) {
+      // ✅ Validate file type
+      const allowedTypes = ["image/png", "image/jpeg", "image/webp"];
+      if (!allowedTypes.includes(file.type)) {
+        setError("Invalid file type. Please upload a PNG, JPEG, or WEBP image.");
+        return;
+      }
+
+      // ✅ Validate file size (max 2MB)
+      const maxSizeMB = 2;
+      if (file.size > maxSizeMB * 1024 * 1024) {
+        setError(`File is too large. Max size allowed is ${maxSizeMB}MB.`);
+        return;
+      }
+
+      setError(null);
+      setAvatar(file);
+    }
   };
 
   const handleUpdateProfile = async () => {
@@ -40,12 +59,24 @@ export function UserProfileForm({ user, setUser }: UserProfileFormProps) {
 
       <div>
         <Label htmlFor="name" className="text-gray-900 dark:text-white">Name</Label>
-        <TextInput id="name" value={name} onChange={(e) => setName(e.target.value)} className="dark:bg-gray-700 dark:text-white" />
+        <TextInput
+          id="name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="dark:bg-gray-700 dark:text-white"
+          required
+        />
       </div>
 
       <div>
         <Label htmlFor="avatar" className="text-gray-900 dark:text-white">Avatar</Label>
-        <FileInput id="avatar" accept="image/*" onChange={handleAvatarChange} className="dark:bg-gray-700 dark:text-white" />
+        <FileInput
+          id="avatar"
+          accept="image/png, image/jpeg, image/webp"
+          onChange={handleAvatarChange}
+          className="dark:bg-gray-700 dark:text-white"
+        />
+        {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
       </div>
 
       <Button onClick={handleUpdateProfile} disabled={loading}>
