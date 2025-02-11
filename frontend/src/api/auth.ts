@@ -19,10 +19,6 @@ export async function loginWithEmailPassword(email: string, password: string): P
   try {
     const authData = await pb.collection("users").authWithPassword(email, password);
 
-    // Save auth token & user ID securely
-    localStorage.setItem("authToken", authData.token);
-    localStorage.setItem("userId", authData.record.id);
-
     return { success: true, data: { token: authData.token, userId: authData.record.id } };
   } catch (error: any) {
     console.error("❌ Login failed:", error);
@@ -36,8 +32,6 @@ export async function loginWithEmailPassword(email: string, password: string): P
 export const logout = async (): Promise<boolean> => {
   try {
     pb.authStore.clear();
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("userId");
     return true;
   } catch (err) {
     console.error("❌ Error logging out:", err);
