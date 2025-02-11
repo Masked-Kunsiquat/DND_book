@@ -15,22 +15,28 @@ export function UserAvatar({ user }: UserAvatarProps) {
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
 
   useEffect(() => {
+    let mounted = true;
     if (user?.avatar) {
       const img = new Image();
       img.src = `${pb.baseURL}/api/files/_pb_users_auth_/${user.id}/${user.avatar}`;
 
       img.onload = () => {
+        if (!mounted) return;
         setAvatarUrl(img.src);
         setLoading(false);
       };
 
       img.onerror = () => {
+        if (!mounted) return;
         setError("Failed to load avatar.");
         setLoading(false);
       };
     } else {
       setLoading(false);
     }
+    return () => {
+      mounted = false;
+    };
   }, [user?.avatar, user?.id]);
 
   if (loading) return <Loader />; // ✅ Uses Loader component
