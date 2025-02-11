@@ -20,9 +20,9 @@ export function MainLayout({ children }: MainLayoutProps) {
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
       <SidebarComponent />
-      <div className="flex-1 flex flex-col bg-white dark:bg-gray-800">
+      <div className="flex-1 flex flex-col">
         <Navbar />
-        <main className="flex-1 p-6 bg-gray-100 dark:bg-gray-900">{children}</main>
+        <main className="flex-1 p-6">{children}</main> {/* ✅ Removed duplicate background colors */}
       </div>
     </div>
   );

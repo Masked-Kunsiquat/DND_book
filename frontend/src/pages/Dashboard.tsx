@@ -1,52 +1,15 @@
-import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, Spinner, Alert } from "flowbite-react";
-import { fetchDashboardStats } from "../api/dashboard";
+import { useDashboardStats } from "../hooks/useDashboardStats";
+import { Loader } from "../components/shared/Loader";
+import { ErrorMessage } from "../components/shared/ErrorMessage";
 import { StatCard } from "../components/shared/StatCard"; // ✅ Import StatCard
 
-interface DashboardStats {
-  notes: number;
-  locations: number;
-  tags: number;
-  sessionLogs: number;
-}
-
 export function Dashboard() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { stats, loading, error } = useDashboardStats();
   const navigate = useNavigate(); // ✅ Initialize navigation
 
-  useEffect(() => {
-    const loadStats = async () => {
-      try {
-        const data = await fetchDashboardStats();
-        setStats(data);
-      } catch (err: any) {
-        setError("Failed to load dashboard stats.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadStats();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex justify-center min-h-screen">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex justify-center min-h-screen">
-        <Alert color="failure">{error}</Alert>
-      </div>
-    );
-  }
+  if (loading) return <Loader />;
+  if (error) return <ErrorMessage message={error} />;
 
   return (
     <div className="max-w-4xl mx-auto p-6">
