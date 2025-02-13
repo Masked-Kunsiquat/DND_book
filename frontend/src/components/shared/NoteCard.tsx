@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, Badge } from "flowbite-react";
 import type { NotesResponse, TagsResponse } from "../../types/pocketbase-types";
 import { getTagColor } from "../../utils/colors";
+import React from "react";
 
 interface NoteCardProps {
   note: NotesResponse;

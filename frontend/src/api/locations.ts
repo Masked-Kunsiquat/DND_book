@@ -24,7 +24,7 @@ export const fetchLocations = async (authToken: string): Promise<Record<string, 
       return acc;
     }, {} as Record<string, LocationsResponse[]>);
 
-    return groupedLocations;
+    return groupedLocations ?? {};
   } catch (error: any) {
     console.error("❌ Failed to fetch locations:", error.message);
     throw new Error(error.message || "Failed to load locations.");

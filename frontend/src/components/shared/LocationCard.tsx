@@ -9,22 +9,25 @@ interface LocationCardProps {
 }
 
 /**
- * Reusable LocationCard component with improved accessibility.
+ * Reusable LocationCard component with improved formatting and accessibility.
  */
 export function LocationCard({ type, locations }: LocationCardProps) {
   const navigate = useNavigate();
 
   return (
-    <Card className="p-4 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-md">
-      <div className="flex items-center gap-4">
+    <Card className="p-6 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-md flex flex-col items-center text-center">
+      {/* Type with icon */}
+      <div className="flex flex-col items-center mb-3">
         <img 
           src={iconMap[type as keyof typeof iconMap] || iconMap.default} 
           alt={type} 
-          className="w-8 h-8" 
+          className="w-12 h-12 mb-2"
         />
-        <h2 className="text-xl font-bold">{type}</h2>
+        <h2 className="text-lg font-semibold tracking-wide uppercase">{type}</h2>
       </div>
-      <ul className="mt-2">
+
+      {/* Locations List */}
+      <ul className="w-full">
         {locations.map((loc) => (
           <li key={loc.id} className="mb-2">
             <button

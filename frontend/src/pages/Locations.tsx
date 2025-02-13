@@ -15,7 +15,7 @@ export function Locations() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {Object.entries(locations).map(([type, locs]) => (
-          <LocationCard key={type} type={type} locations={locs} />
+          <LocationCard key={type} type={type} locations={Array.isArray(locs) ? locs : []} />
         ))}
       </div>
     </div>
