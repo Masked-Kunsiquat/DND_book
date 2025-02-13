@@ -1,8 +1,9 @@
 "use client";
 
 import { Modal } from "flowbite-react";
+import { MapModalType } from "../../types/MapModal"; // ✅ Import shared type
 
-export function MapModal({ isOpen, onClose, mapUrl, locationName }) {
+export function MapModal({ isOpen, onClose, mapUrl, locationName }: MapModalType) {
   return (
     <Modal dismissible show={isOpen} onClose={onClose}>
       <Modal.Header className="text-center text-lg font-semibold">Map of {locationName}</Modal.Header>
