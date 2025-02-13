@@ -25,7 +25,14 @@ export function useLocations() {
 
         const locationsData = await fetchLocations(authToken);
         console.log("✅ Grouped Locations Data:", locationsData);
-        setLocations(locationsData);
+
+        // ✅ Ensure every key maps to an array
+        const validatedLocations: Record<string, LocationsResponse[]> = {};
+        for (const key in locationsData) {
+          validatedLocations[key] = Array.isArray(locationsData[key]) ? locationsData[key] : [];
+        }
+
+        setLocations(validatedLocations);
       } catch (err: any) {
         setError(err.message);
       } finally {

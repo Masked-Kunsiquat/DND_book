@@ -6,5 +6,6 @@ export interface DashboardStats {
     locations: number;
     tags: number;
     sessionLogs: number;
+    npcs: number;
   }
   

@@ -17,10 +17,12 @@ export function Dashboard() {
       <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">📊 Dashboard</h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-        <StatCard title="Notes" count={stats?.notes || 0} onClick={() => navigate("/notes")} />
         <StatCard title="Locations" count={stats?.locations || 0} onClick={() => navigate("/locations")} />
-        <StatCard title="Tags" count={stats?.tags || 0} onClick={() => navigate("/tags")} />
+        <StatCard title="Notes" count={stats?.notes || 0} onClick={() => navigate("/notes")} />
+        <StatCard title="NPCs" count={stats?.npcs || 0} onClick={() => navigate("/npcs")} />
         <StatCard title="Session Logs" count={stats?.sessionLogs || 0} onClick={() => navigate("/session_logs")} />
+        <StatCard title="Tags" count={stats?.tags || 0} onClick={() => navigate("/tags")} />
+
       </div>
     </div>
   );
