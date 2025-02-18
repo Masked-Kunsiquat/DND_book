@@ -1,14 +1,21 @@
 FROM alpine:latest
 
-WORKDIR /app
+ARG PB_VERSION=0.25.1
 
-# Download and install PocketBase
-RUN wget https://github.com/pocketbase/pocketbase/releases/latest/download/pocketbase_linux_amd64.zip \
-    && unzip pocketbase_linux_amd64.zip \
-    && rm pocketbase_linux_amd64.zip \
-    && chmod +x pocketbase
+RUN apk add --no-cache \
+    unzip \
+    ca-certificates \
+    curl \
+    jq
 
-# Expose the default PocketBase port
-EXPOSE 8090
+# Download and unzip PocketBase
+ADD https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_amd64.zip /tmp/pb.zip
+RUN unzip /tmp/pb.zip -d /pb/
 
-CMD ["./pocketbase", "serve", "--http", "0.0.0.0:8090"]
+# Apply migrations (collections, app user)
+COPY ./pb_migrations /pb/pb_migrations
+
+EXPOSE 8080
+
+# Ensure PocketBase runs AFTER superuser creation
+CMD ["/bin/sh", "-c", "/pb/pocketbase serve --http=0.0.0.0:8080"]
