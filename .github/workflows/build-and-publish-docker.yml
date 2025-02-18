@@ -14,10 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
 
       - name: Upload repository as an artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4.6.0
         with:
           name: repo-source
           path: .
@@ -27,13 +27,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download repository
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.8
         with:
           name: repo-source
           path: .
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@f4e78c080cd8ba55a85445d5b36e214a81df20a   # Pinned SHA (v2.1.0)
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567   # Pinned SHA (v3.3.0)
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -41,7 +41,7 @@ jobs:
 
       - name: Extract metadata for backend
         id: meta_backend
-        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7   # Pinned SHA (v)
+        uses: docker/metadata-action@b500d9c7b58dc41faecb7b4d263ab212e5f698dd   # Pinned SHA (v1.10.1)
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_BACKEND }}
           tags: |
@@ -51,7 +51,7 @@ jobs:
 
       - name: Build and push backend image
         id: push_backend
-        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671   # Pinned SHA (v)
+        uses: docker/build-push-action@ca877d9245402d1537745e0e356eab47c3520991   # Pinned SHA (v6.13.0)
         with:
           context: backend/
           push: true
@@ -63,13 +63,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download repository
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.8
         with:
           name: repo-source
           path: .
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@f4e78c080cd8ba55a85445d5b36e214a81df20a
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -77,7 +77,7 @@ jobs:
 
       - name: Extract metadata for frontend
         id: meta_frontend
-        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        uses: docker/metadata-action@b500d9c7b58dc41faecb7b4d263ab212e5f698dd
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_FRONTEND }}
           tags: |
@@ -87,7 +87,7 @@ jobs:
 
       - name: Build and push frontend image
         id: push_frontend
-        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        uses: docker/build-push-action@ca877d9245402d1537745e0e356eab47c3520991
         with:
           context: frontend/
           push: true
