@@ -7,6 +7,7 @@ export { AppCard, type AppCardProps } from './cards/AppCard';
 export { StatCard, type StatCardProps } from './cards/StatCard';
 export { CampaignCard, type CampaignCardProps } from './cards/CampaignCard';
 export { NoteCard, type NoteCardProps } from './cards/NoteCard';
+export { LocationCard, type LocationCardProps } from './cards/LocationCard';
 
 // Chips/Tags
 export { TagChip, type TagChipProps } from './chips/TagChip';

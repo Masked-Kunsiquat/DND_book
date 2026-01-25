@@ -322,10 +322,10 @@ Recommended sequence:
 - [x] `app/(tabs)/locations.tsx`
 
 ### Detail Screens
-- [ ] `app/campaign/[id].tsx`
-- [ ] `app/note/[id].tsx`
+- [x] `app/campaign/[id].tsx`
+- [x] `app/note/[id].tsx`
 - [ ] `app/npc/[id].tsx`
-- [ ] `app/location/[id].tsx`
+- [x] `app/location/[id].tsx`
 
 ### Sync Screens
 - [ ] `app/sync/index.tsx`
@@ -335,9 +335,9 @@ Recommended sequence:
 ### Components - Cards
 - [x] `src/components/cards/StatCard.tsx`
 - [x] `src/components/cards/CampaignCard.tsx`
-- [ ] `src/components/cards/NoteCard.tsx`
+- [x] `src/components/cards/NoteCard.tsx`
 - [ ] `src/components/cards/NPCCard.tsx`
-- [ ] `src/components/cards/LocationCard.tsx`
+- [x] `src/components/cards/LocationCard.tsx`
 
 ### Components - Forms
 - [ ] `src/components/forms/FormTextInput.tsx`
