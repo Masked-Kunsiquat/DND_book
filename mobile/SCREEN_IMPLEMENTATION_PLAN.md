@@ -330,9 +330,9 @@ Recommended sequence:
 - [x] `app/location/[id].tsx`
 
 ### Sync Screens
-- [ ] `app/sync/index.tsx`
-- [ ] `app/sync/host.tsx`
-- [ ] `app/sync/join.tsx`
+- [x] `app/sync/index.tsx`
+- [x] `app/sync/host.tsx`
+- [x] `app/sync/join.tsx`
 
 ### Components - Cards
 - [x] `src/components/cards/StatCard.tsx`
