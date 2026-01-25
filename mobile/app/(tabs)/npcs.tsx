@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
-import { Button, FAB, Modal, Portal, Switch, Text, TextInput } from 'react-native-paper';
+import { Button, FAB, Switch, Text, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import {
+  FormModal,
   FormImagePicker,
   FormMultiSelect,
   FormTextInput,
@@ -141,6 +142,76 @@ export default function NpcsScreen() {
     return id || undefined;
   };
 
+  const createModal = (
+    <FormModal
+      title="New NPC"
+      visible={isCreateOpen}
+      onDismiss={closeCreateModal}
+      actions={
+        <>
+          <Button mode="text" onPress={closeCreateModal} disabled={isCreating}>
+            Cancel
+          </Button>
+          <Button
+            mode="contained"
+            onPress={handleCreate}
+            loading={isCreating}
+            disabled={isCreating}
+          >
+            Create
+          </Button>
+        </>
+      }
+    >
+      <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+        Profile
+      </Text>
+      <FormTextInput label="Name" value={draftName} onChangeText={setDraftName} />
+      <FormTextInput label="Race" value={draftRace} onChangeText={setDraftRace} />
+      <FormTextInput label="Role" value={draftRole} onChangeText={setDraftRole} />
+      <FormTextInput
+        label="Background"
+        value={draftBackground}
+        onChangeText={setDraftBackground}
+        multiline
+        style={styles.modalContentInput}
+      />
+      <FormImagePicker label="Portrait" value={draftImage} onChange={setDraftImage} />
+      <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+        Links
+      </Text>
+      <FormMultiSelect
+        label="Campaigns"
+        value={draftCampaignIds}
+        options={campaignOptions}
+        onChange={setDraftCampaignIds}
+      />
+      <FormMultiSelect
+        label="Locations"
+        value={draftLocationIds}
+        options={locationOptions}
+        onChange={setDraftLocationIds}
+      />
+      <FormMultiSelect
+        label="Notes"
+        value={draftNoteIds}
+        options={noteOptions}
+        onChange={setDraftNoteIds}
+      />
+      <TagInput
+        tags={tags.map((tag) => ({ id: tag.id, name: tag.name }))}
+        selectedIds={draftTagIds}
+        onChange={setDraftTagIds}
+        onCreateTag={handleCreateTag}
+      />
+      {createError && (
+        <Text variant="bodySmall" style={{ color: theme.colors.error }}>
+          {createError}
+        </Text>
+      )}
+    </FormModal>
+  );
+
   if (filteredNpcs.length === 0) {
     return (
       <>
@@ -156,73 +227,7 @@ export default function NpcsScreen() {
             action={!isCreating ? { label: 'Create NPC', onPress: openCreateModal } : undefined}
           />
         </Screen>
-        <Portal>
-          <Modal
-            visible={isCreateOpen}
-            onDismiss={closeCreateModal}
-            contentContainerStyle={[
-              styles.modal,
-              { backgroundColor: theme.colors.surface },
-            ]}
-          >
-            <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-              New NPC
-            </Text>
-            <FormTextInput label="Name" value={draftName} onChangeText={setDraftName} />
-            <FormTextInput label="Race" value={draftRace} onChangeText={setDraftRace} />
-            <FormTextInput label="Role" value={draftRole} onChangeText={setDraftRole} />
-            <FormTextInput
-              label="Background"
-              value={draftBackground}
-              onChangeText={setDraftBackground}
-              multiline
-              style={styles.modalContentInput}
-            />
-            <FormImagePicker label="Portrait" value={draftImage} onChange={setDraftImage} />
-            <FormMultiSelect
-              label="Campaigns"
-              value={draftCampaignIds}
-              options={campaignOptions}
-              onChange={setDraftCampaignIds}
-            />
-            <FormMultiSelect
-              label="Locations"
-              value={draftLocationIds}
-              options={locationOptions}
-              onChange={setDraftLocationIds}
-            />
-            <FormMultiSelect
-              label="Notes"
-              value={draftNoteIds}
-              options={noteOptions}
-              onChange={setDraftNoteIds}
-            />
-            <TagInput
-              tags={tags.map((tag) => ({ id: tag.id, name: tag.name }))}
-              selectedIds={draftTagIds}
-              onChange={setDraftTagIds}
-              onCreateTag={handleCreateTag}
-            />
-            {createError && (
-              <Text variant="bodySmall" style={{ color: theme.colors.error }}>
-                {createError}
-              </Text>
-            )}
-            <View style={styles.modalActions}>
-              <Button mode="text" onPress={closeCreateModal} disabled={isCreating}>
-                Cancel
-              </Button>
-              <Button
-                mode="contained"
-                onPress={handleCreate}
-                loading={isCreating}
-                disabled={isCreating}
-              >
-                Create
-              </Button>
-            </View>
-          </Modal>
-        </Portal>
+        {createModal}
       </>
     );
   }
@@ -303,73 +308,7 @@ export default function NpcsScreen() {
           disabled={isCreating}
         />
       </Screen>
-      <Portal>
-        <Modal
-          visible={isCreateOpen}
-          onDismiss={closeCreateModal}
-          contentContainerStyle={[
-            styles.modal,
-            { backgroundColor: theme.colors.surface },
-          ]}
-        >
-          <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-            New NPC
-          </Text>
-          <FormTextInput label="Name" value={draftName} onChangeText={setDraftName} />
-          <FormTextInput label="Race" value={draftRace} onChangeText={setDraftRace} />
-          <FormTextInput label="Role" value={draftRole} onChangeText={setDraftRole} />
-          <FormTextInput
-            label="Background"
-            value={draftBackground}
-            onChangeText={setDraftBackground}
-            multiline
-            style={styles.modalContentInput}
-          />
-          <FormImagePicker label="Portrait" value={draftImage} onChange={setDraftImage} />
-          <FormMultiSelect
-            label="Campaigns"
-            value={draftCampaignIds}
-            options={campaignOptions}
-            onChange={setDraftCampaignIds}
-          />
-          <FormMultiSelect
-            label="Locations"
-            value={draftLocationIds}
-            options={locationOptions}
-            onChange={setDraftLocationIds}
-          />
-          <FormMultiSelect
-            label="Notes"
-            value={draftNoteIds}
-            options={noteOptions}
-            onChange={setDraftNoteIds}
-          />
-          <TagInput
-            tags={tags.map((tag) => ({ id: tag.id, name: tag.name }))}
-            selectedIds={draftTagIds}
-            onChange={setDraftTagIds}
-            onCreateTag={handleCreateTag}
-          />
-          {createError && (
-            <Text variant="bodySmall" style={{ color: theme.colors.error }}>
-              {createError}
-            </Text>
-          )}
-          <View style={styles.modalActions}>
-            <Button mode="text" onPress={closeCreateModal} disabled={isCreating}>
-              Cancel
-            </Button>
-            <Button
-              mode="contained"
-              onPress={handleCreate}
-              loading={isCreating}
-              disabled={isCreating}
-            >
-              Create
-            </Button>
-          </View>
-        </Modal>
-      </Portal>
+      {createModal}
     </>
   );
 }
@@ -414,17 +353,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: layout.fabMargin,
     bottom: layout.fabMargin,
-  },
-  modal: {
-    margin: spacing[4],
-    padding: spacing[4],
-    borderRadius: layout.cardBorderRadius,
-    gap: spacing[3],
-  },
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: spacing[2],
   },
   modalContentInput: {
     minHeight: 120,

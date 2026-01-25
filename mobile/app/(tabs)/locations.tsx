@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
 import { SectionList, StyleSheet, View } from 'react-native';
-import { Button, FAB, Modal, Portal, Switch, Text } from 'react-native-paper';
+import { Button, FAB, Switch, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import {
+  FormModal,
   FormSelect,
   FormTextInput,
   Screen,
@@ -162,6 +163,55 @@ export default function LocationsScreen() {
     }
   };
 
+  const createModal = (
+    <FormModal
+      title="New Location"
+      visible={isCreateOpen}
+      onDismiss={closeCreateModal}
+      actions={
+        <>
+          <Button mode="text" onPress={closeCreateModal} disabled={isCreating}>
+            Cancel
+          </Button>
+          <Button
+            mode="contained"
+            onPress={handleCreate}
+            loading={isCreating}
+            disabled={isCreating}
+          >
+            Create
+          </Button>
+        </>
+      }
+    >
+      <FormTextInput label="Name" value={draftName} onChangeText={setDraftName} />
+      <FormSelect
+        label="Type"
+        value={draftType}
+        options={LOCATION_TYPE_OPTIONS}
+        onChange={(value) => setDraftType(value as LocationType)}
+      />
+      <FormSelect
+        label="Parent location"
+        value={draftParentId}
+        options={parentOptions}
+        onChange={setDraftParentId}
+      />
+      <FormTextInput
+        label="Description"
+        value={draftDescription}
+        onChangeText={setDraftDescription}
+        multiline
+        style={styles.modalContentInput}
+      />
+      {createError && (
+        <Text variant="bodySmall" style={{ color: theme.colors.error }}>
+          {createError}
+        </Text>
+      )}
+    </FormModal>
+  );
+
   if (locations.length === 0) {
     return (
       <>
@@ -177,62 +227,7 @@ export default function LocationsScreen() {
             action={!isCreating ? { label: 'Create Location', onPress: openCreateModal } : undefined}
           />
         </Screen>
-        <Portal>
-          <Modal
-            visible={isCreateOpen}
-            onDismiss={closeCreateModal}
-            contentContainerStyle={[
-              styles.modal,
-              { backgroundColor: theme.colors.surface },
-            ]}
-          >
-            <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-              New Location
-            </Text>
-            <FormTextInput
-              label="Name"
-              value={draftName}
-              onChangeText={setDraftName}
-            />
-            <FormSelect
-              label="Type"
-              value={draftType}
-              options={LOCATION_TYPE_OPTIONS}
-              onChange={(value) => setDraftType(value as LocationType)}
-            />
-            <FormSelect
-              label="Parent location"
-              value={draftParentId}
-              options={parentOptions}
-              onChange={setDraftParentId}
-            />
-            <FormTextInput
-              label="Description"
-              value={draftDescription}
-              onChangeText={setDraftDescription}
-              multiline
-              style={styles.modalContentInput}
-            />
-            {createError && (
-              <Text variant="bodySmall" style={{ color: theme.colors.error }}>
-                {createError}
-              </Text>
-            )}
-            <View style={styles.modalActions}>
-              <Button mode="text" onPress={closeCreateModal} disabled={isCreating}>
-                Cancel
-              </Button>
-              <Button
-                mode="contained"
-                onPress={handleCreate}
-                loading={isCreating}
-                disabled={isCreating}
-              >
-                Create
-              </Button>
-            </View>
-          </Modal>
-        </Portal>
+        {createModal}
       </>
     );
   }
@@ -321,58 +316,7 @@ export default function LocationsScreen() {
           disabled={isCreating}
         />
       </Screen>
-      <Portal>
-        <Modal
-          visible={isCreateOpen}
-          onDismiss={closeCreateModal}
-          contentContainerStyle={[
-            styles.modal,
-            { backgroundColor: theme.colors.surface },
-          ]}
-        >
-          <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-            New Location
-          </Text>
-          <FormTextInput label="Name" value={draftName} onChangeText={setDraftName} />
-          <FormSelect
-            label="Type"
-            value={draftType}
-            options={LOCATION_TYPE_OPTIONS}
-            onChange={(value) => setDraftType(value as LocationType)}
-          />
-          <FormSelect
-            label="Parent location"
-            value={draftParentId}
-            options={parentOptions}
-            onChange={setDraftParentId}
-          />
-          <FormTextInput
-            label="Description"
-            value={draftDescription}
-            onChangeText={setDraftDescription}
-            multiline
-            style={styles.modalContentInput}
-          />
-          {createError && (
-            <Text variant="bodySmall" style={{ color: theme.colors.error }}>
-              {createError}
-            </Text>
-          )}
-          <View style={styles.modalActions}>
-            <Button mode="text" onPress={closeCreateModal} disabled={isCreating}>
-              Cancel
-            </Button>
-            <Button
-              mode="contained"
-              onPress={handleCreate}
-              loading={isCreating}
-              disabled={isCreating}
-            >
-              Create
-            </Button>
-          </View>
-        </Modal>
-      </Portal>
+      {createModal}
     </>
   );
 }
@@ -421,17 +365,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: layout.fabMargin,
     bottom: layout.fabMargin,
-  },
-  modal: {
-    margin: spacing[4],
-    padding: spacing[4],
-    borderRadius: layout.cardBorderRadius,
-    gap: spacing[3],
-  },
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: spacing[2],
   },
   modalContentInput: {
     minHeight: 120,

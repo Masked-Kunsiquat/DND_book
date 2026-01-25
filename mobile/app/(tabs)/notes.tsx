@@ -1,8 +1,15 @@
 import { useMemo, useState } from 'react';
 import { StyleSheet, View, FlatList } from 'react-native';
-import { Button, FAB, Modal, Portal, Switch, Text, TextInput } from 'react-native-paper';
+import { Button, FAB, Switch, Text, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { FormSelect, FormTextInput, Screen, EmptyState, NoteCard } from '../../src/components';
+import {
+  FormModal,
+  FormSelect,
+  FormTextInput,
+  Screen,
+  EmptyState,
+  NoteCard,
+} from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { layout, spacing } from '../../src/theme';
 import { router } from 'expo-router';
@@ -97,6 +104,49 @@ export default function NotesScreen() {
     }
   };
 
+  const createModal = (
+    <FormModal
+      title="New Note"
+      visible={isCreateOpen}
+      onDismiss={closeCreateModal}
+      actions={
+        <>
+          <Button mode="text" onPress={closeCreateModal} disabled={isCreating}>
+            Cancel
+          </Button>
+          <Button
+            mode="contained"
+            onPress={handleCreate}
+            loading={isCreating}
+            disabled={isCreating}
+          >
+            Create
+          </Button>
+        </>
+      }
+    >
+      <FormSelect
+        label="Campaign"
+        value={draftCampaignId}
+        options={campaignOptions}
+        onChange={setDraftCampaignId}
+      />
+      <FormTextInput label="Title" value={draftTitle} onChangeText={setDraftTitle} />
+      <FormTextInput
+        label="Content"
+        value={draftContent}
+        onChangeText={setDraftContent}
+        multiline
+        style={styles.modalContentInput}
+      />
+      {createError && (
+        <Text variant="bodySmall" style={{ color: theme.colors.error }}>
+          {createError}
+        </Text>
+      )}
+    </FormModal>
+  );
+
   if (filteredNotes.length === 0) {
     return (
       <>
@@ -116,56 +166,7 @@ export default function NotesScreen() {
             }
           />
         </Screen>
-        <Portal>
-          <Modal
-            visible={isCreateOpen}
-            onDismiss={closeCreateModal}
-            contentContainerStyle={[
-              styles.modal,
-              { backgroundColor: theme.colors.surface },
-            ]}
-          >
-            <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-              New Note
-            </Text>
-            <FormSelect
-              label="Campaign"
-              value={draftCampaignId}
-              options={campaignOptions}
-              onChange={setDraftCampaignId}
-            />
-            <FormTextInput
-              label="Title"
-              value={draftTitle}
-              onChangeText={setDraftTitle}
-            />
-            <FormTextInput
-              label="Content"
-              value={draftContent}
-              onChangeText={setDraftContent}
-              multiline
-              style={styles.modalContentInput}
-            />
-            {createError && (
-              <Text variant="bodySmall" style={{ color: theme.colors.error }}>
-                {createError}
-              </Text>
-            )}
-            <View style={styles.modalActions}>
-              <Button mode="text" onPress={closeCreateModal} disabled={isCreating}>
-                Cancel
-              </Button>
-              <Button
-                mode="contained"
-                onPress={handleCreate}
-                loading={isCreating}
-                disabled={isCreating}
-              >
-                Create
-              </Button>
-            </View>
-          </Modal>
-        </Portal>
+        {createModal}
       </>
     );
   }
@@ -250,56 +251,7 @@ export default function NotesScreen() {
           disabled={campaigns.length === 0 || isCreating}
         />
       </Screen>
-      <Portal>
-        <Modal
-          visible={isCreateOpen}
-          onDismiss={closeCreateModal}
-          contentContainerStyle={[
-            styles.modal,
-            { backgroundColor: theme.colors.surface },
-          ]}
-        >
-          <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-            New Note
-          </Text>
-          <FormSelect
-            label="Campaign"
-            value={draftCampaignId}
-            options={campaignOptions}
-            onChange={setDraftCampaignId}
-          />
-          <FormTextInput
-            label="Title"
-            value={draftTitle}
-            onChangeText={setDraftTitle}
-          />
-          <FormTextInput
-            label="Content"
-            value={draftContent}
-            onChangeText={setDraftContent}
-            multiline
-            style={styles.modalContentInput}
-          />
-          {createError && (
-            <Text variant="bodySmall" style={{ color: theme.colors.error }}>
-              {createError}
-            </Text>
-          )}
-          <View style={styles.modalActions}>
-            <Button mode="text" onPress={closeCreateModal} disabled={isCreating}>
-              Cancel
-            </Button>
-            <Button
-              mode="contained"
-              onPress={handleCreate}
-              loading={isCreating}
-              disabled={isCreating}
-            >
-              Create
-            </Button>
-          </View>
-        </Modal>
-      </Portal>
+      {createModal}
     </>
   );
 }
@@ -344,17 +296,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: layout.fabMargin,
     bottom: layout.fabMargin,
-  },
-  modal: {
-    margin: spacing[4],
-    padding: spacing[4],
-    borderRadius: layout.cardBorderRadius,
-    gap: spacing[3],
-  },
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: spacing[2],
   },
   modalContentInput: {
     minHeight: 120,

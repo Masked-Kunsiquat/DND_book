@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View, FlatList, Pressable } from 'react-native';
-import { Button, FAB, Modal, Portal, Text } from 'react-native-paper';
+import { Button, FAB, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
@@ -14,6 +14,7 @@ import { useNpcs } from '../../src/hooks/useNpcs';
 import { useLocations } from '../../src/hooks/useLocations';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import {
+  FormModal,
   FormTextInput,
   Screen,
   EmptyState,
@@ -108,6 +109,40 @@ export default function CampaignsScreen() {
     }
   }, [openCreateModal, params.create]);
 
+  const createModal = (
+    <FormModal
+      title="New Campaign"
+      visible={isCreateOpen}
+      onDismiss={closeCreateModal}
+      actions={
+        <>
+          <Button mode="text" onPress={closeCreateModal} disabled={isCreating}>
+            Cancel
+          </Button>
+          <Button
+            mode="contained"
+            onPress={handleCreate}
+            loading={isCreating}
+            disabled={isCreating}
+          >
+            Create
+          </Button>
+        </>
+      }
+    >
+      <FormTextInput
+        label="Campaign name"
+        value={draftName}
+        onChangeText={setDraftName}
+      />
+      {createError && (
+        <Text variant="bodySmall" style={{ color: theme.colors.error }}>
+          {createError}
+        </Text>
+      )}
+    </FormModal>
+  );
+
   const header = (
     <View>
       <Section title="Current Campaign" icon="compass">
@@ -172,43 +207,7 @@ export default function CampaignsScreen() {
             action={{ label: 'Create Campaign', onPress: openCreateModal }}
           />
         </Screen>
-        <Portal>
-          <Modal
-            visible={isCreateOpen}
-            onDismiss={closeCreateModal}
-            contentContainerStyle={[
-              styles.modal,
-              { backgroundColor: theme.colors.surface },
-            ]}
-          >
-            <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-              New Campaign
-            </Text>
-            <FormTextInput
-              label="Campaign name"
-              value={draftName}
-              onChangeText={setDraftName}
-            />
-            {createError && (
-              <Text variant="bodySmall" style={{ color: theme.colors.error }}>
-                {createError}
-              </Text>
-            )}
-            <View style={styles.modalActions}>
-              <Button mode="text" onPress={closeCreateModal} disabled={isCreating}>
-                Cancel
-              </Button>
-              <Button
-                mode="contained"
-                onPress={handleCreate}
-                loading={isCreating}
-                disabled={isCreating}
-              >
-                Create
-              </Button>
-            </View>
-          </Modal>
-        </Portal>
+        {createModal}
       </>
     );
   }
@@ -258,43 +257,7 @@ export default function CampaignsScreen() {
           color={theme.colors.onPrimary}
         />
       </Screen>
-      <Portal>
-        <Modal
-          visible={isCreateOpen}
-          onDismiss={closeCreateModal}
-          contentContainerStyle={[
-            styles.modal,
-            { backgroundColor: theme.colors.surface },
-          ]}
-        >
-          <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-            New Campaign
-          </Text>
-          <FormTextInput
-            label="Campaign name"
-            value={draftName}
-            onChangeText={setDraftName}
-          />
-          {createError && (
-            <Text variant="bodySmall" style={{ color: theme.colors.error }}>
-              {createError}
-            </Text>
-          )}
-          <View style={styles.modalActions}>
-            <Button mode="text" onPress={closeCreateModal} disabled={isCreating}>
-              Cancel
-            </Button>
-            <Button
-              mode="contained"
-              onPress={handleCreate}
-              loading={isCreating}
-              disabled={isCreating}
-            >
-              Create
-            </Button>
-          </View>
-        </Modal>
-      </Portal>
+      {createModal}
     </>
   );
 }
@@ -323,16 +286,5 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: layout.fabMargin,
     bottom: layout.fabMargin,
-  },
-  modal: {
-    margin: spacing[4],
-    padding: spacing[4],
-    borderRadius: layout.cardBorderRadius,
-    gap: spacing[3],
-  },
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: spacing[2],
   },
 });

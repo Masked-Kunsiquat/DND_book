@@ -23,6 +23,7 @@ export { FormSelect, type FormSelectProps } from './forms/FormSelect';
 export { FormMultiSelect, type FormMultiSelectProps } from './forms/FormMultiSelect';
 export { FormImagePicker, type FormImagePickerProps } from './forms/FormImagePicker';
 export { TagInput, type TagInputProps } from './forms/TagInput';
+export { FormModal, type FormModalProps } from './forms/FormModal';
 
 // Shared
 export { EmptyState, type EmptyStateProps } from './shared/EmptyState';
