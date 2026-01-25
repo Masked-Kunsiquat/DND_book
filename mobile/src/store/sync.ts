@@ -21,6 +21,7 @@ export interface SyncSession {
   doc: Y.Doc;
   provider: WebrtcProvider;
   isHost: boolean;
+  cleanup?: () => void;
 }
 
 export interface SyncState {
@@ -54,24 +55,27 @@ export function generateRoomCode(): string {
 /**
  * Syncs TinyBase store data to/from Yjs document.
  */
-function syncStoreToYDoc(store: MergeableStore, doc: Y.Doc): void {
+function syncStoreToYDoc(store: MergeableStore, doc: Y.Doc): () => void {
   const yStore = doc.getMap('store');
+  let applyingRemote = false;
 
   // Initial sync: push current store state to Yjs
   const storeJson = store.getJson();
   yStore.set('data', storeJson);
 
   // Listen for local store changes -> push to Yjs
-  store.addTablesListener(() => {
+  const tablesListenerId = store.addTablesListener(() => {
+    if (applyingRemote) return;
     yStore.set('data', store.getJson());
   });
 
-  store.addValuesListener(() => {
+  const valuesListenerId = store.addValuesListener(() => {
+    if (applyingRemote) return;
     yStore.set('data', store.getJson());
   });
 
   // Listen for remote Yjs changes -> update local store
-  yStore.observe((event) => {
+  const handleYStoreChange = (event: Y.YMapEvent<unknown>) => {
     if (event.keysChanged.has('data')) {
       const remoteData = yStore.get('data') as string | undefined;
       if (remoteData) {
@@ -79,14 +83,24 @@ function syncStoreToYDoc(store: MergeableStore, doc: Y.Doc): void {
           // Only update if data is different (avoid loops)
           const currentData = store.getJson();
           if (remoteData !== currentData) {
+            applyingRemote = true;
             store.setJson(remoteData);
+            applyingRemote = false;
           }
         } catch (error) {
           log.error('Failed to apply remote sync data', error);
         }
       }
     }
-  });
+  };
+
+  yStore.observe(handleYStoreChange);
+
+  return () => {
+    store.delListener(tablesListenerId);
+    store.delListener(valuesListenerId);
+    yStore.unobserve(handleYStoreChange);
+  };
 }
 
 /**
@@ -107,13 +121,14 @@ export async function hostSession(store: MergeableStore): Promise<string> {
   });
 
   // Sync store with Yjs doc
-  syncStoreToYDoc(store, doc);
+  const cleanup = syncStoreToYDoc(store, doc);
 
   currentSession = {
     roomId: roomCode,
     doc,
     provider,
     isHost: true,
+    cleanup,
   };
 
   return roomCode;
@@ -136,13 +151,14 @@ export async function joinSession(store: MergeableStore, roomCode: string): Prom
   });
 
   // Sync store with Yjs doc
-  syncStoreToYDoc(store, doc);
+  const cleanup = syncStoreToYDoc(store, doc);
 
   currentSession = {
     roomId: normalizedCode,
     doc,
     provider,
     isHost: false,
+    cleanup,
   };
 }
 
@@ -151,6 +167,7 @@ export async function joinSession(store: MergeableStore, roomCode: string): Prom
  */
 export async function leaveSession(): Promise<void> {
   if (currentSession) {
+    currentSession.cleanup?.();
     currentSession.provider.destroy();
     currentSession.doc.destroy();
     currentSession = null;

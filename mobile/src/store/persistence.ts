@@ -77,8 +77,8 @@ export interface Persister {
  */
 export async function createPersister(store: MergeableStore): Promise<Persister> {
   const db = await initDatabase();
-  let autoSaveInterval: ReturnType<typeof setInterval> | null = null;
   let listenerId: string | null = null;
+  let valuesListenerId: string | null = null;
 
   const persister: Persister = {
     /**
@@ -112,7 +112,7 @@ export async function createPersister(store: MergeableStore): Promise<Persister>
       });
 
       // Also listen to values changes
-      store.addValuesListener(() => {
+      valuesListenerId = store.addValuesListener(() => {
         if (saveTimeout) clearTimeout(saveTimeout);
         saveTimeout = setTimeout(() => {
           persister.save().catch((error) => log.error('Failed to auto-save store', error));
@@ -124,13 +124,13 @@ export async function createPersister(store: MergeableStore): Promise<Persister>
      * Stops auto-saving.
      */
     stopAutoSave(): void {
-      if (autoSaveInterval) {
-        clearInterval(autoSaveInterval);
-        autoSaveInterval = null;
-      }
       if (listenerId) {
         store.delListener(listenerId);
         listenerId = null;
+      }
+      if (valuesListenerId) {
+        store.delListener(valuesListenerId);
+        valuesListenerId = null;
       }
     },
 
