@@ -3,6 +3,7 @@
  */
 
 import { useCallback, useMemo } from 'react';
+import { useTable } from 'tinybase/ui-react';
 import { useStore } from '../store';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
@@ -46,7 +47,7 @@ function rowToPlayerCharacter(row: PlayerCharacterRow): PlayerCharacter {
  */
 export function usePlayerCharacters(campaignId?: string): PlayerCharacter[] {
   const store = useStore();
-  const table = store.getTable('playerCharacters');
+  const table = useTable(store, 'playerCharacters');
 
   return useMemo(() => {
     const pcs = Object.values(table).map((row) => rowToPlayerCharacter(row as unknown as PlayerCharacterRow));
@@ -64,7 +65,7 @@ export function usePlayerCharacters(campaignId?: string): PlayerCharacter[] {
  */
 export function usePlayerCharactersByPlayer(playerName: string): PlayerCharacter[] {
   const store = useStore();
-  const table = store.getTable('playerCharacters');
+  const table = useTable(store, 'playerCharacters');
 
   return useMemo(() => {
     const lowerName = playerName.toLowerCase();

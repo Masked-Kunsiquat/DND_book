@@ -3,6 +3,7 @@
  */
 
 import { useCallback, useMemo } from 'react';
+import { useTable } from 'tinybase/ui-react';
 import { useStore } from '../store';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
@@ -27,7 +28,7 @@ function rowToCampaign(row: CampaignRow): Campaign {
  */
 export function useCampaigns(): Campaign[] {
   const store = useStore();
-  const table = store.getTable('campaigns');
+  const table = useTable(store, 'campaigns');
 
   return useMemo(() => {
     return Object.values(table).map((row) => rowToCampaign(row as unknown as CampaignRow));

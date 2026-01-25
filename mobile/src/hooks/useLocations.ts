@@ -3,6 +3,7 @@
  */
 
 import { useCallback, useMemo } from 'react';
+import { useRow, useTable } from 'tinybase/ui-react';
 import { useStore } from '../store';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
@@ -47,7 +48,7 @@ function rowToLocation(row: LocationRow): Location {
  */
 export function useLocations(campaignId?: string): Location[] {
   const store = useStore();
-  const table = store.getTable('locations');
+  const table = useTable(store, 'locations');
 
   return useMemo(() => {
     const locations = Object.values(table).map((row) => rowToLocation(row as unknown as LocationRow));
@@ -65,7 +66,7 @@ export function useLocations(campaignId?: string): Location[] {
  */
 export function useChildLocations(parentId: string): Location[] {
   const store = useStore();
-  const table = store.getTable('locations');
+  const table = useTable(store, 'locations');
 
   return useMemo(() => {
     return Object.values(table)
@@ -79,7 +80,7 @@ export function useChildLocations(parentId: string): Location[] {
  */
 export function useRootLocations(campaignId?: string): Location[] {
   const store = useStore();
-  const table = store.getTable('locations');
+  const table = useTable(store, 'locations');
 
   return useMemo(() => {
     const locations = Object.values(table)
@@ -99,7 +100,7 @@ export function useRootLocations(campaignId?: string): Location[] {
  */
 export function useLocationsByTag(tagId: string): Location[] {
   const store = useStore();
-  const table = store.getTable('locations');
+  const table = useTable(store, 'locations');
 
   return useMemo(() => {
     return Object.values(table)
@@ -113,7 +114,7 @@ export function useLocationsByTag(tagId: string): Location[] {
  */
 export function useLocation(id: string): Location | null {
   const store = useStore();
-  const row = store.getRow('locations', id);
+  const row = useRow(store, 'locations', id);
 
   return useMemo(() => {
     if (!row || Object.keys(row).length === 0) return null;
@@ -126,19 +127,26 @@ export function useLocation(id: string): Location | null {
  */
 export function useLocationPath(id: string): Location[] {
   const store = useStore();
-  const table = store.getTable('locations');
+  const table = useTable(store, 'locations');
 
   return useMemo(() => {
     const path: Location[] = [];
     let currentId = id;
+    const visited = new Set<string>();
 
     while (currentId) {
+      if (visited.has(currentId)) {
+        log.error('Detected location cycle', currentId);
+        break;
+      }
+      visited.add(currentId);
+
       const row = table[currentId] as unknown as LocationRow | undefined;
       if (!row) break;
 
       const location = rowToLocation(row);
       path.unshift(location);
-      currentId = location.parentId;
+      currentId = location.parentId || '';
     }
 
     return path;

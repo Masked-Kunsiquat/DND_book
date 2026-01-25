@@ -3,6 +3,7 @@
  */
 
 import { useCallback, useMemo } from 'react';
+import { useTable } from 'tinybase/ui-react';
 import { useStore } from '../store';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
@@ -50,7 +51,7 @@ function rowToSessionLog(row: SessionLogRow): SessionLog {
  */
 export function useSessionLogs(campaignId?: string): SessionLog[] {
   const store = useStore();
-  const table = store.getTable('sessionLogs');
+  const table = useTable(store, 'sessionLogs');
 
   return useMemo(() => {
     const logs = Object.values(table).map((row) => rowToSessionLog(row as unknown as SessionLogRow));

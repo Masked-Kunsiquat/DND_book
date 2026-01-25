@@ -3,6 +3,7 @@
  */
 
 import { useCallback, useMemo } from 'react';
+import { useTable } from 'tinybase/ui-react';
 import { useStore } from '../store';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
@@ -48,7 +49,7 @@ function rowToNpc(row: NpcRow): Npc {
  */
 export function useNpcs(campaignId?: string): Npc[] {
   const store = useStore();
-  const table = store.getTable('npcs');
+  const table = useTable(store, 'npcs');
 
   return useMemo(() => {
     const npcs = Object.values(table).map((row) => rowToNpc(row as unknown as NpcRow));
@@ -66,7 +67,7 @@ export function useNpcs(campaignId?: string): Npc[] {
  */
 export function useNpcsByLocation(locationId: string): Npc[] {
   const store = useStore();
-  const table = store.getTable('npcs');
+  const table = useTable(store, 'npcs');
 
   return useMemo(() => {
     return Object.values(table)
@@ -80,7 +81,7 @@ export function useNpcsByLocation(locationId: string): Npc[] {
  */
 export function useNpcsByTag(tagId: string): Npc[] {
   const store = useStore();
-  const table = store.getTable('npcs');
+  const table = useTable(store, 'npcs');
 
   return useMemo(() => {
     return Object.values(table)

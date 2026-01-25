@@ -3,6 +3,7 @@
  */
 
 import { useCallback, useMemo } from 'react';
+import { useTable } from 'tinybase/ui-react';
 import { useStore } from '../store';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
@@ -27,7 +28,7 @@ function rowToTag(row: TagRow): Tag {
  */
 export function useTags(): Tag[] {
   const store = useStore();
-  const table = store.getTable('tags');
+  const table = useTable(store, 'tags');
 
   return useMemo(() => {
     return Object.values(table).map((row) => rowToTag(row as unknown as TagRow));
@@ -52,7 +53,7 @@ export function useTag(id: string): Tag | null {
  */
 export function useTagsByIds(ids: string[]): Tag[] {
   const store = useStore();
-  const table = store.getTable('tags');
+  const table = useTable(store, 'tags');
 
   return useMemo(() => {
     return ids
@@ -69,7 +70,7 @@ export function useTagsByIds(ids: string[]): Tag[] {
  */
 export function useTagByName(name: string): Tag | null {
   const store = useStore();
-  const table = store.getTable('tags');
+  const table = useTable(store, 'tags');
 
   return useMemo(() => {
     const lowerName = name.toLowerCase();
@@ -117,10 +118,10 @@ export function useCreateTag(): (data: CreateTagInput) => string {
  */
 export function useGetOrCreateTag(): (name: string) => string {
   const store = useStore();
+  const table = useTable(store, 'tags');
 
   return useCallback(
     (name: string) => {
-      const table = store.getTable('tags');
       const lowerName = name.toLowerCase();
 
       // Check if tag already exists
@@ -147,7 +148,7 @@ export function useGetOrCreateTag(): (name: string) => string {
       log.debug('Created tag', id);
       return id;
     },
-    [store]
+    [store, table]
   );
 }
 

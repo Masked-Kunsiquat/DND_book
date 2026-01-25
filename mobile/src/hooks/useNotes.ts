@@ -3,6 +3,7 @@
  */
 
 import { useCallback, useMemo } from 'react';
+import { useTable } from 'tinybase/ui-react';
 import { useStore } from '../store';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
@@ -44,7 +45,7 @@ function rowToNote(row: NoteRow): Note {
  */
 export function useNotes(campaignId?: string): Note[] {
   const store = useStore();
-  const table = store.getTable('notes');
+  const table = useTable(store, 'notes');
 
   return useMemo(() => {
     const notes = Object.values(table).map((row) => rowToNote(row as unknown as NoteRow));
@@ -62,7 +63,7 @@ export function useNotes(campaignId?: string): Note[] {
  */
 export function useNotesByLocation(locationId: string): Note[] {
   const store = useStore();
-  const table = store.getTable('notes');
+  const table = useTable(store, 'notes');
 
   return useMemo(() => {
     return Object.values(table)
@@ -76,7 +77,7 @@ export function useNotesByLocation(locationId: string): Note[] {
  */
 export function useNotesByTag(tagId: string): Note[] {
   const store = useStore();
-  const table = store.getTable('notes');
+  const table = useTable(store, 'notes');
 
   return useMemo(() => {
     return Object.values(table)
