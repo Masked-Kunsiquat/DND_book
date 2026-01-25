@@ -5,7 +5,10 @@
 import { useCallback, useMemo } from 'react';
 import { useStore } from '../store';
 import { generateId, now } from '../utils/id';
+import { createLogger } from '../utils/logger';
 import type { SessionLog, SessionLogRow, RecordId } from '../types/schema';
+
+const log = createLogger('session-logs');
 
 /**
  * Safely parses a JSON array string, returning empty array on failure.
@@ -106,6 +109,7 @@ export function useCreateSessionLog(): (data: CreateSessionLogInput) => string {
 
   return useCallback(
     (data: CreateSessionLogInput) => {
+      log.debug('Creating session log', data.title);
       const id = generateId();
       const timestamp = now();
 
@@ -126,6 +130,7 @@ export function useCreateSessionLog(): (data: CreateSessionLogInput) => string {
         updated: timestamp,
       });
 
+      log.debug('Created session log', id);
       return id;
     },
     [store]
@@ -156,6 +161,7 @@ export function useUpdateSessionLog(): (id: string, data: UpdateSessionLogInput)
     (id: string, data: UpdateSessionLogInput) => {
       const existing = store.getRow('sessionLogs', id);
       if (!existing || Object.keys(existing).length === 0) {
+        log.error('Session log not found', id);
         throw new Error(`SessionLog ${id} not found`);
       }
 
@@ -178,6 +184,8 @@ export function useUpdateSessionLog(): (id: string, data: UpdateSessionLogInput)
         ...existing,
         ...updates,
       });
+
+      log.debug('Updated session log', id);
     },
     [store]
   );
@@ -192,6 +200,7 @@ export function useDeleteSessionLog(): (id: string) => void {
   return useCallback(
     (id: string) => {
       store.delRow('sessionLogs', id);
+      log.debug('Deleted session log', id);
     },
     [store]
   );

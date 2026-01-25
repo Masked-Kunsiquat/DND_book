@@ -5,7 +5,10 @@
 import { useCallback, useMemo } from 'react';
 import { useStore } from '../store';
 import { generateId, now } from '../utils/id';
+import { createLogger } from '../utils/logger';
 import type { Location, LocationRow, LocationType, RecordId } from '../types/schema';
+
+const log = createLogger('locations');
 
 /**
  * Safely parses a JSON array string, returning empty array on failure.
@@ -161,6 +164,7 @@ export function useCreateLocation(): (data: CreateLocationInput) => string {
 
   return useCallback(
     (data: CreateLocationInput) => {
+      log.debug('Creating location', data.name);
       const id = generateId();
       const timestamp = now();
 
@@ -178,6 +182,7 @@ export function useCreateLocation(): (data: CreateLocationInput) => string {
         updated: timestamp,
       });
 
+      log.debug('Created location', id);
       return id;
     },
     [store]
@@ -205,6 +210,7 @@ export function useUpdateLocation(): (id: string, data: UpdateLocationInput) => 
     (id: string, data: UpdateLocationInput) => {
       const existing = store.getRow('locations', id);
       if (!existing || Object.keys(existing).length === 0) {
+        log.error('Location not found', id);
         throw new Error(`Location ${id} not found`);
       }
 
@@ -223,6 +229,8 @@ export function useUpdateLocation(): (id: string, data: UpdateLocationInput) => 
         ...existing,
         ...updates,
       });
+
+      log.debug('Updated location', id);
     },
     [store]
   );
@@ -238,6 +246,7 @@ export function useDeleteLocation(): (id: string) => void {
   return useCallback(
     (id: string) => {
       store.delRow('locations', id);
+      log.debug('Deleted location', id);
     },
     [store]
   );

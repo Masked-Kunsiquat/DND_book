@@ -12,6 +12,9 @@ import {
   isInSession,
   type SyncState,
 } from '../store/sync';
+import { createLogger } from '../utils/logger';
+
+const log = createLogger('sync');
 
 export interface UseSyncReturn {
   /** Current sync state */
@@ -54,12 +57,15 @@ export function useSync(): UseSyncReturn {
     setIsLoading(true);
     setError(null);
     try {
+      log.debug('Hosting sync session');
       const roomCode = await hostSession(store);
+      log.debug('Hosted sync session', roomCode);
       setState(getSyncState());
       setInSession(true);
       return roomCode;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to host session';
+      log.error('Failed to host session', err);
       setError(message);
       throw err;
     } finally {
@@ -71,11 +77,14 @@ export function useSync(): UseSyncReturn {
     setIsLoading(true);
     setError(null);
     try {
+      log.debug('Joining sync session', roomCode);
       await joinSession(store, roomCode);
+      log.debug('Joined sync session', roomCode);
       setState(getSyncState());
       setInSession(true);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to join session';
+      log.error('Failed to join session', err);
       setError(message);
       throw err;
     } finally {
@@ -87,11 +96,14 @@ export function useSync(): UseSyncReturn {
     setIsLoading(true);
     setError(null);
     try {
+      log.debug('Leaving sync session');
       await leaveSession();
+      log.debug('Left sync session');
       setState(getSyncState());
       setInSession(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to leave session';
+      log.error('Failed to leave session', err);
       setError(message);
       throw err;
     } finally {

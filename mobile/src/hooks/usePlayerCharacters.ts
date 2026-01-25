@@ -5,7 +5,10 @@
 import { useCallback, useMemo } from 'react';
 import { useStore } from '../store';
 import { generateId, now } from '../utils/id';
+import { createLogger } from '../utils/logger';
 import type { PlayerCharacter, PlayerCharacterRow, RecordId } from '../types/schema';
+
+const log = createLogger('player-characters');
 
 /**
  * Safely parses a JSON array string, returning empty array on failure.
@@ -102,6 +105,7 @@ export function useCreatePlayerCharacter(): (data: CreatePlayerCharacterInput) =
 
   return useCallback(
     (data: CreatePlayerCharacterInput) => {
+      log.debug('Creating player character', data.name);
       const id = generateId();
       const timestamp = now();
 
@@ -118,6 +122,7 @@ export function useCreatePlayerCharacter(): (data: CreatePlayerCharacterInput) =
         updated: timestamp,
       });
 
+      log.debug('Created player character', id);
       return id;
     },
     [store]
@@ -144,6 +149,7 @@ export function useUpdatePlayerCharacter(): (id: string, data: UpdatePlayerChara
     (id: string, data: UpdatePlayerCharacterInput) => {
       const existing = store.getRow('playerCharacters', id);
       if (!existing || Object.keys(existing).length === 0) {
+        log.error('Player character not found', id);
         throw new Error(`PlayerCharacter ${id} not found`);
       }
 
@@ -161,6 +167,8 @@ export function useUpdatePlayerCharacter(): (id: string, data: UpdatePlayerChara
         ...existing,
         ...updates,
       });
+
+      log.debug('Updated player character', id);
     },
     [store]
   );
@@ -175,6 +183,7 @@ export function useDeletePlayerCharacter(): (id: string) => void {
   return useCallback(
     (id: string) => {
       store.delRow('playerCharacters', id);
+      log.debug('Deleted player character', id);
     },
     [store]
   );

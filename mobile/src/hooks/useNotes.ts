@@ -5,7 +5,10 @@
 import { useCallback, useMemo } from 'react';
 import { useStore } from '../store';
 import { generateId, now } from '../utils/id';
+import { createLogger } from '../utils/logger';
 import type { Note, NoteRow, RecordId } from '../types/schema';
+
+const log = createLogger('notes');
 
 /**
  * Safely parses a JSON array string, returning empty array on failure.
@@ -111,6 +114,7 @@ export function useCreateNote(): (data: CreateNoteInput) => string {
 
   return useCallback(
     (data: CreateNoteInput) => {
+      log.debug('Creating note', data.title);
       const id = generateId();
       const timestamp = now();
 
@@ -125,6 +129,7 @@ export function useCreateNote(): (data: CreateNoteInput) => string {
         updated: timestamp,
       });
 
+      log.debug('Created note', id);
       return id;
     },
     [store]
@@ -149,6 +154,7 @@ export function useUpdateNote(): (id: string, data: UpdateNoteInput) => void {
     (id: string, data: UpdateNoteInput) => {
       const existing = store.getRow('notes', id);
       if (!existing || Object.keys(existing).length === 0) {
+        log.error('Note not found', id);
         throw new Error(`Note ${id} not found`);
       }
 
@@ -164,6 +170,8 @@ export function useUpdateNote(): (id: string, data: UpdateNoteInput) => void {
         ...existing,
         ...updates,
       });
+
+      log.debug('Updated note', id);
     },
     [store]
   );
@@ -178,6 +186,7 @@ export function useDeleteNote(): (id: string) => void {
   return useCallback(
     (id: string) => {
       store.delRow('notes', id);
+      log.debug('Deleted note', id);
     },
     [store]
   );

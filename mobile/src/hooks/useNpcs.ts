@@ -5,7 +5,10 @@
 import { useCallback, useMemo } from 'react';
 import { useStore } from '../store';
 import { generateId, now } from '../utils/id';
+import { createLogger } from '../utils/logger';
 import type { Npc, NpcRow, RecordId } from '../types/schema';
+
+const log = createLogger('npcs');
 
 /**
  * Safely parses a JSON array string, returning empty array on failure.
@@ -119,6 +122,7 @@ export function useCreateNpc(): (data: CreateNpcInput) => string {
 
   return useCallback(
     (data: CreateNpcInput) => {
+      log.debug('Creating npc', data.name);
       const id = generateId();
       const timestamp = now();
 
@@ -137,6 +141,7 @@ export function useCreateNpc(): (data: CreateNpcInput) => string {
         updated: timestamp,
       });
 
+      log.debug('Created npc', id);
       return id;
     },
     [store]
@@ -165,6 +170,7 @@ export function useUpdateNpc(): (id: string, data: UpdateNpcInput) => void {
     (id: string, data: UpdateNpcInput) => {
       const existing = store.getRow('npcs', id);
       if (!existing || Object.keys(existing).length === 0) {
+        log.error('Npc not found', id);
         throw new Error(`NPC ${id} not found`);
       }
 
@@ -184,6 +190,8 @@ export function useUpdateNpc(): (id: string, data: UpdateNpcInput) => void {
         ...existing,
         ...updates,
       });
+
+      log.debug('Updated npc', id);
     },
     [store]
   );
@@ -198,6 +206,7 @@ export function useDeleteNpc(): (id: string) => void {
   return useCallback(
     (id: string) => {
       store.delRow('npcs', id);
+      log.debug('Deleted npc', id);
     },
     [store]
   );

@@ -5,7 +5,10 @@
 import { useCallback, useMemo } from 'react';
 import { useStore } from '../store';
 import { generateId, now } from '../utils/id';
+import { createLogger } from '../utils/logger';
 import type { Tag, TagRow } from '../types/schema';
+
+const log = createLogger('tags');
 
 /**
  * Converts a TinyBase row to a Tag object.
@@ -90,6 +93,7 @@ export function useCreateTag(): (data: CreateTagInput) => string {
 
   return useCallback(
     (data: CreateTagInput) => {
+      log.debug('Creating tag', data.name);
       const id = generateId();
       const timestamp = now();
 
@@ -100,6 +104,7 @@ export function useCreateTag(): (data: CreateTagInput) => string {
         updated: timestamp,
       });
 
+      log.debug('Created tag', id);
       return id;
     },
     [store]
@@ -124,6 +129,7 @@ export function useGetOrCreateTag(): (name: string) => string {
       ) as unknown as TagRow | undefined;
 
       if (existing) {
+        log.debug('Using existing tag', existing.id);
         return existing.id;
       }
 
@@ -138,6 +144,7 @@ export function useGetOrCreateTag(): (name: string) => string {
         updated: timestamp,
       });
 
+      log.debug('Created tag', id);
       return id;
     },
     [store]
@@ -158,6 +165,7 @@ export function useUpdateTag(): (id: string, data: UpdateTagInput) => void {
     (id: string, data: UpdateTagInput) => {
       const existing = store.getRow('tags', id);
       if (!existing || Object.keys(existing).length === 0) {
+        log.error('Tag not found', id);
         throw new Error(`Tag ${id} not found`);
       }
 
@@ -166,6 +174,8 @@ export function useUpdateTag(): (id: string, data: UpdateTagInput) => void {
         ...data,
         updated: now(),
       });
+
+      log.debug('Updated tag', id);
     },
     [store]
   );
@@ -181,6 +191,7 @@ export function useDeleteTag(): (id: string) => void {
   return useCallback(
     (id: string) => {
       store.delRow('tags', id);
+      log.debug('Deleted tag', id);
     },
     [store]
   );

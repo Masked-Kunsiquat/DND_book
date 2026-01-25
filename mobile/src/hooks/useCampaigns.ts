@@ -5,7 +5,10 @@
 import { useCallback, useMemo } from 'react';
 import { useStore } from '../store';
 import { generateId, now } from '../utils/id';
+import { createLogger } from '../utils/logger';
 import type { Campaign, CampaignRow } from '../types/schema';
+
+const log = createLogger('campaigns');
 
 /**
  * Converts a TinyBase row to a Campaign object.
@@ -62,6 +65,7 @@ export function useSetCurrentCampaign(): (id: string) => void {
 
   return useCallback(
     (id: string) => {
+      log.debug('Set current campaign', id);
       store.setValue('currentCampaignId', id);
     },
     [store]
@@ -80,6 +84,7 @@ export function useCreateCampaign(): (data: CreateCampaignInput) => string {
 
   return useCallback(
     (data: CreateCampaignInput) => {
+      log.debug('Creating campaign', data.name);
       const id = generateId();
       const timestamp = now();
 
@@ -90,6 +95,7 @@ export function useCreateCampaign(): (data: CreateCampaignInput) => string {
         updated: timestamp,
       });
 
+      log.debug('Created campaign', id);
       return id;
     },
     [store]
@@ -110,6 +116,7 @@ export function useUpdateCampaign(): (id: string, data: UpdateCampaignInput) => 
     (id: string, data: UpdateCampaignInput) => {
       const existing = store.getRow('campaigns', id);
       if (!existing || Object.keys(existing).length === 0) {
+        log.error('Campaign not found', id);
         throw new Error(`Campaign ${id} not found`);
       }
 
@@ -118,6 +125,8 @@ export function useUpdateCampaign(): (id: string, data: UpdateCampaignInput) => 
         ...data,
         updated: now(),
       });
+
+      log.debug('Updated campaign', id);
     },
     [store]
   );
@@ -132,6 +141,7 @@ export function useDeleteCampaign(): (id: string) => void {
   return useCallback(
     (id: string) => {
       store.delRow('campaigns', id);
+      log.debug('Deleted campaign', id);
 
       // Clear current campaign if it was deleted
       const currentId = store.getValue('currentCampaignId');
