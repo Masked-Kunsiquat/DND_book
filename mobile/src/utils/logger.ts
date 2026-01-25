@@ -84,14 +84,13 @@ function formatValue(value: unknown, depth: number, seen: Set<unknown>): string 
   if (value === null) return "null";
   if (value === undefined) return "undefined";
 
-  const valueType = typeof value;
-  if (valueType === "string") {
+  if (typeof value === "string") {
     const trimmed = value.length > MAX_STRING_LENGTH ? `${value.slice(0, MAX_STRING_LENGTH)}...` : value;
     return trimmed;
   }
-  if (valueType === "number" || valueType === "boolean" || valueType === "bigint") return String(value);
-  if (valueType === "symbol") return value.toString();
-  if (valueType === "function") return "[Function]";
+  if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") return String(value);
+  if (typeof value === "symbol") return value.toString();
+  if (typeof value === "function") return "[Function]";
 
   if (value instanceof Date) return value.toISOString();
   if (value instanceof Error) {
@@ -103,7 +102,7 @@ function formatValue(value: unknown, depth: number, seen: Set<unknown>): string 
     return message;
   }
 
-  if (valueType === "object") {
+  if (typeof value === "object") {
     if (seen.has(value)) return "[Circular]";
     seen.add(value);
 

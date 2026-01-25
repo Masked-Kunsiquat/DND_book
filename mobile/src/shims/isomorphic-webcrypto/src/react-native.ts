@@ -4,10 +4,11 @@
  */
 
 import * as Crypto from 'expo-crypto';
+import type { IntBasedTypedArray, UintBasedTypedArray } from 'expo-modules-core';
 
 type WebCryptoLike = {
   ensureSecure: () => void;
-  getRandomValues: <T extends ArrayBufferView>(array: T) => T;
+  getRandomValues: <T extends IntBasedTypedArray | UintBasedTypedArray>(array: T) => T;
   subtle?: unknown;
 };
 
@@ -15,7 +16,7 @@ const webcrypto: WebCryptoLike = {
   ensureSecure: () => {
     // No-op for native; Expo provides secure randomness via expo-crypto.
   },
-  getRandomValues: <T extends ArrayBufferView>(array: T) => {
+  getRandomValues: <T extends IntBasedTypedArray | UintBasedTypedArray>(array: T) => {
     Crypto.getRandomValues(array);
     return array;
   },
