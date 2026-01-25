@@ -12,7 +12,17 @@ import { createLogger } from '../utils/logger';
 const log = createLogger('sync');
 
 // Signaling servers for WebRTC connection establishment
-const SIGNALING_SERVERS = ['wss://signaling.yjs.dev'];
+const SIGNALING_SERVERS = [
+  'wss://signaling.yjs.dev',
+  'wss://y-webrtc-signaling-eu.herokuapp.com',
+  'wss://y-webrtc-signaling-us.herokuapp.com',
+];
+
+const ICE_SERVERS = [
+  { urls: 'stun:stun.cloudflare.com:3478' },
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+];
 
 // Room prefix for namespacing
 const ROOM_PREFIX = 'dndbook-';
@@ -135,6 +145,11 @@ export async function hostSession(store: MergeableStore): Promise<string> {
 
   const provider = new WebrtcProvider(roomId, doc, {
     signaling: SIGNALING_SERVERS,
+    peerOpts: {
+      config: {
+        iceServers: ICE_SERVERS,
+      },
+    },
   });
 
   // Sync store with Yjs doc
@@ -166,6 +181,11 @@ export async function joinSession(store: MergeableStore, roomCode: string): Prom
 
   const provider = new WebrtcProvider(roomId, doc, {
     signaling: SIGNALING_SERVERS,
+    peerOpts: {
+      config: {
+        iceServers: ICE_SERVERS,
+      },
+    },
   });
 
   // Sync store with Yjs doc
