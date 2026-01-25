@@ -314,12 +314,12 @@ Recommended sequence:
 ## File Checklist
 
 ### Navigation
-- [ ] `app/(tabs)/_layout.tsx`
-- [ ] `app/(tabs)/index.tsx` (dashboard)
-- [ ] `app/(tabs)/campaigns.tsx`
-- [ ] `app/(tabs)/notes.tsx`
-- [ ] `app/(tabs)/npcs.tsx`
-- [ ] `app/(tabs)/locations.tsx`
+- [x] `app/(tabs)/_layout.tsx`
+- [x] `app/(tabs)/index.tsx` (dashboard)
+- [x] `app/(tabs)/campaigns.tsx`
+- [x] `app/(tabs)/notes.tsx`
+- [x] `app/(tabs)/npcs.tsx`
+- [x] `app/(tabs)/locations.tsx`
 
 ### Detail Screens
 - [ ] `app/campaign/[id].tsx`
@@ -333,8 +333,8 @@ Recommended sequence:
 - [ ] `app/sync/join.tsx`
 
 ### Components - Cards
-- [ ] `src/components/cards/StatCard.tsx`
-- [ ] `src/components/cards/CampaignCard.tsx`
+- [x] `src/components/cards/StatCard.tsx`
+- [x] `src/components/cards/CampaignCard.tsx`
 - [ ] `src/components/cards/NoteCard.tsx`
 - [ ] `src/components/cards/NpcCard.tsx`
 - [ ] `src/components/cards/LocationCard.tsx`
