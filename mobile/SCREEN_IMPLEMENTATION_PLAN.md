@@ -28,7 +28,7 @@ This document outlines the plan for building out mobile screens, adapting patter
 
 Create bottom tab navigation with 5 tabs:
 
-```
+```text
 app/
 ├── (tabs)/
 │   ├── _layout.tsx      # Tab navigator config
@@ -40,6 +40,7 @@ app/
 ```
 
 **Tab Icons** (MaterialCommunityIcons):
+
 | Tab | Icon | Active Icon |
 |-----|------|-------------|
 | Dashboard | `view-dashboard-outline` | `view-dashboard` |
@@ -48,9 +49,10 @@ app/
 | NPCs | `account-group-outline` | `account-group` |
 | Locations | `map-marker-outline` | `map-marker` |
 
+
 ### 1.2 Stack Routes for Details
 
-```
+```text
 app/
 ├── campaign/[id].tsx    # Campaign detail
 ├── note/[id].tsx        # Note detail/edit
@@ -164,7 +166,7 @@ export default function EntitiesScreen() {
 Home screen showing overview stats and quick actions.
 
 ### Layout
-```
+```text
 ┌─────────────────────────┐
 │      Current Campaign   │  ← Pressable to change
 │      "Dragon's Lair"    │
