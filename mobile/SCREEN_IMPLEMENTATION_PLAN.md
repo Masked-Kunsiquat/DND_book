@@ -82,7 +82,7 @@ Create specialized cards for each entity type in `src/components/cards/`:
 - Campaign badge (if assigned)
 - Tap → navigate to note detail
 
-### 2.3 NpcCard
+### 2.3 NPCCard
 - Name (title)
 - Race + Role (subtitle)
 - Avatar/image thumbnail (if available)
@@ -146,7 +146,7 @@ export default function EntitiesScreen() {
 - Search by title
 
 ### 3.3 NPCs List
-- FlatList of NpcCards
+- FlatList of NPCCards
 - Filter by current campaign
 - FAB to create new NPC
 - Group by first letter (SectionList) - optional
@@ -299,8 +299,8 @@ Recommended sequence:
 | 7 | NoteCard | - |
 | 8 | Notes list screen | NoteCard |
 | 9 | Note detail screen | Notes list |
-| 10 | NpcCard | - |
-| 11 | NPCs list screen | NpcCard |
+| 10 | NPCCard | - |
+| 11 | NPCs list screen | NPCCard |
 | 12 | NPC detail screen | NPCs list |
 | 13 | LocationCard | - |
 | 14 | Locations list screen | LocationCard |
@@ -336,7 +336,7 @@ Recommended sequence:
 - [x] `src/components/cards/StatCard.tsx`
 - [x] `src/components/cards/CampaignCard.tsx`
 - [ ] `src/components/cards/NoteCard.tsx`
-- [ ] `src/components/cards/NpcCard.tsx`
+- [ ] `src/components/cards/NPCCard.tsx`
 - [ ] `src/components/cards/LocationCard.tsx`
 
 ### Components - Forms

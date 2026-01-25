@@ -55,13 +55,15 @@ export function generateRoomCode(): string {
 /**
  * Syncs TinyBase store data to/from Yjs document.
  */
-function syncStoreToYDoc(store: MergeableStore, doc: Y.Doc): () => void {
+function syncStoreToYDoc(store: MergeableStore, doc: Y.Doc, seedInitial: boolean): () => void {
   const yStore = doc.getMap('store');
   let applyingRemote = false;
 
   // Initial sync: push current store state to Yjs
   const storeJson = store.getJson();
-  yStore.set('data', storeJson);
+  if (seedInitial || !yStore.has('data')) {
+    yStore.set('data', storeJson);
+  }
 
   // Listen for local store changes -> push to Yjs
   const tablesListenerId = store.addTablesListener(() => {
@@ -121,7 +123,7 @@ export async function hostSession(store: MergeableStore): Promise<string> {
   });
 
   // Sync store with Yjs doc
-  const cleanup = syncStoreToYDoc(store, doc);
+  const cleanup = syncStoreToYDoc(store, doc, true);
 
   currentSession = {
     roomId: roomCode,
@@ -151,7 +153,7 @@ export async function joinSession(store: MergeableStore, roomCode: string): Prom
   });
 
   // Sync store with Yjs doc
-  const cleanup = syncStoreToYDoc(store, doc);
+  const cleanup = syncStoreToYDoc(store, doc, false);
 
   currentSession = {
     roomId: normalizedCode,
