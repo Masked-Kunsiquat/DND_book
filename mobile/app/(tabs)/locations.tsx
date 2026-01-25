@@ -9,7 +9,7 @@ import {
   FormTextInput,
   Screen,
   EmptyState,
-  LocationCard,
+  LocationRow,
   Section,
   StatCard,
 } from '../../src/components';
@@ -114,38 +114,71 @@ export default function LocationsScreen() {
     return new Map(tags.map((tag) => [tag.id, tag]));
   }, [tags]);
 
+  const visibleIdSet = useMemo(() => {
+    return new Set(visibleLocations.map((location) => location.id));
+  }, [visibleLocations]);
+
+  const { rootById, pathById } = useMemo(() => {
+    const rootMap = new Map<string, Location>();
+    const pathMap = new Map<string, string>();
+
+    const resolve = (location: Location) => {
+      if (rootMap.has(location.id)) return;
+      const segments: string[] = [];
+      let root = location;
+      let currentId = location.parentId;
+      const visited = new Set<string>([location.id]);
+
+      while (currentId) {
+        if (visited.has(currentId)) break;
+        visited.add(currentId);
+        const parent = locationById.get(currentId);
+        if (!parent) break;
+        root = parent;
+        segments.unshift(parent.name || parent.type || 'Unnamed');
+        currentId = parent.parentId;
+      }
+
+      rootMap.set(location.id, root);
+      pathMap.set(location.id, segments.join(' • '));
+    };
+
+    visibleLocations.forEach((location) => resolve(location));
+
+    return { rootById: rootMap, pathById: pathMap };
+  }, [visibleLocations, locationById]);
+
   const sections = useMemo(() => {
-    const grouped = new Map<LocationType, Location[]>();
+    const grouped = new Map<string, { root: Location; data: Location[] }>();
+
     visibleLocations.forEach((location) => {
-      const list = grouped.get(location.type) ?? [];
-      list.push(location);
-      grouped.set(location.type, list);
+      const root = rootById.get(location.id) ?? location;
+      const entry = grouped.get(root.id) ?? { root, data: [] };
+      if (location.id !== root.id) {
+        entry.data.push(location);
+      }
+      grouped.set(root.id, entry);
     });
 
-    const typeOrder: LocationType[] = [
-      'Plane',
-      'Realm',
-      'Continent',
-      'Territory',
-      'Province',
-      'Locale',
-      'Landmark',
-    ];
+    const sortedSections = [...grouped.values()].sort((a, b) => {
+      const typeIndexA = LOCATION_TYPE_ORDER.indexOf(a.root.type);
+      const typeIndexB = LOCATION_TYPE_ORDER.indexOf(b.root.type);
+      if (typeIndexA !== typeIndexB) return typeIndexA - typeIndexB;
+      return (a.root.name || '').localeCompare(b.root.name || '');
+    });
 
-    return typeOrder
-      .filter((type) => grouped.has(type))
-      .map((type) => {
-        const data = grouped.get(type) ?? [];
-        const sorted = [...data].sort((a, b) => {
-          const depthA = depthById.get(a.id) ?? 0;
-          const depthB = depthById.get(b.id) ?? 0;
-          if (depthA !== depthB) return depthA - depthB;
-          return (a.name || '').localeCompare(b.name || '');
-        });
-
-        return { title: type, data: sorted };
+    return sortedSections.map((section) => {
+      const data = [...section.data].sort((a, b) => {
+        const depthA = depthById.get(a.id) ?? 0;
+        const depthB = depthById.get(b.id) ?? 0;
+        if (depthA !== depthB) return depthA - depthB;
+        return (a.name || '').localeCompare(b.name || '');
       });
-  }, [visibleLocations, depthById]);
+      const count = data.length + (visibleIdSet.has(section.root.id) ? 1 : 0);
+
+      return { title: section.root.name || 'Unnamed location', root: section.root, data, count };
+    });
+  }, [visibleLocations, rootById, depthById, visibleIdSet]);
 
   const allowedParentTypes = useMemo(() => getAllowedParentTypes(draftType), [draftType]);
   const allowedParentIds = useMemo(() => {
@@ -539,23 +572,36 @@ export default function LocationsScreen() {
             </View>
           }
           renderSectionHeader={({ section }) => (
-            <View style={styles.sectionHeader}>
-              <Text variant="titleSmall" style={{ color: theme.colors.onSurface }}>
-                {section.title}
-              </Text>
-              <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                {section.data.length}
-              </Text>
-            </View>
+            <Pressable
+              onPress={() => router.push(`/location/${section.root.id}`)}
+              style={[
+                styles.rootHeader,
+                {
+                  backgroundColor: theme.colors.surfaceVariant,
+                  borderColor: theme.colors.outlineVariant,
+                },
+              ]}
+            >
+              <View style={styles.rootHeaderText}>
+                <Text variant="titleMedium" style={{ color: theme.colors.onSurface }} numberOfLines={1}>
+                  {section.title}
+                </Text>
+                <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  {section.root.type} • {section.count} {pluralize('location', section.count)}
+                </Text>
+              </View>
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={iconSizes.md}
+                color={theme.colors.onSurfaceVariant}
+              />
+            </Pressable>
           )}
           renderItem={({ item }) => {
             const parent = item.parentId ? locationById.get(item.parentId) : undefined;
-            const parentName = parent?.name;
             const resolvedTags = item.tagIds
               .map((tagId) => tagById.get(tagId))
               .filter((tag): tag is Tag => tag !== undefined);
-            const depth = depthById.get(item.id) ?? 0;
-            const indent = depth * spacing[3];
             let statusLabel: string | undefined;
 
             if (item.parentId && !parent) {
@@ -567,11 +613,13 @@ export default function LocationsScreen() {
               }
             }
 
+            const pathLabel = pathById.get(item.id);
+
             return (
-              <View style={[styles.cardWrapper, indent ? { marginLeft: indent } : null]}>
-                <LocationCard
+              <View style={styles.cardWrapper}>
+                <LocationRow
                   location={item}
-                  parentName={parentName}
+                  pathLabel={pathLabel}
                   tags={resolvedTags}
                   statusLabel={statusLabel}
                   onPress={() => router.push(`/location/${item.id}`)}
@@ -653,15 +701,24 @@ const styles = StyleSheet.create({
   typeCard: {
     width: 132,
   },
-  sectionHeader: {
+  rootHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: spacing[4],
     marginBottom: spacing[2],
+    paddingVertical: spacing[2],
+    paddingHorizontal: spacing[3],
+    borderRadius: layout.cardBorderRadius,
+    borderWidth: 1,
+  },
+  rootHeaderText: {
+    flex: 1,
+    gap: spacing[1],
+    marginRight: spacing[2],
   },
   cardWrapper: {
-    marginBottom: spacing[3],
+    marginBottom: spacing[2],
   },
   fab: {
     position: 'absolute',
