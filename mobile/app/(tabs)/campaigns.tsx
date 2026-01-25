@@ -1,8 +1,8 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View, FlatList, Pressable } from 'react-native';
-import { FAB, Text } from 'react-native-paper';
+import { Button, FAB, Modal, Portal, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import {
   useCampaigns,
   useCurrentCampaign,
@@ -13,15 +13,28 @@ import { useNotes } from '../../src/hooks/useNotes';
 import { useNpcs } from '../../src/hooks/useNpcs';
 import { useLocations } from '../../src/hooks/useLocations';
 import { useTheme } from '../../src/theme/ThemeProvider';
-import { Screen, EmptyState, CampaignCard, Section, AppCard } from '../../src/components';
+import {
+  FormTextInput,
+  Screen,
+  EmptyState,
+  CampaignCard,
+  Section,
+  AppCard,
+} from '../../src/components';
 import { layout, spacing } from '../../src/theme';
 
 export default function CampaignsScreen() {
   const { theme } = useTheme();
+  const params = useLocalSearchParams<{ create?: string | string[] }>();
   const campaigns = useCampaigns();
   const currentCampaign = useCurrentCampaign();
   const setCurrentCampaign = useSetCurrentCampaign();
   const createCampaign = useCreateCampaign();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [draftName, setDraftName] = useState('');
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const hasOpenedFromParams = useRef(false);
   const notes = useNotes();
   const npcs = useNpcs();
   const locations = useLocations();
@@ -55,11 +68,45 @@ export default function CampaignsScreen() {
     return counts;
   }, [locations]);
 
+  const openCreateModal = useCallback(() => {
+    setDraftName(`New Campaign ${campaigns.length + 1}`);
+    setCreateError(null);
+    setIsCreateOpen(true);
+  }, [campaigns.length]);
+
+  const closeCreateModal = useCallback(() => {
+    setIsCreateOpen(false);
+    setCreateError(null);
+  }, []);
+
   const handleCreate = useCallback(() => {
-    const name = `New Campaign ${campaigns.length + 1}`;
-    const id = createCampaign({ name });
-    setCurrentCampaign(id);
-  }, [campaigns.length, createCampaign, setCurrentCampaign]);
+    if (isCreating) return;
+    const trimmed = draftName.trim();
+    if (!trimmed) {
+      setCreateError('Campaign name is required.');
+      return;
+    }
+    setIsCreating(true);
+    try {
+      const id = createCampaign({ name: trimmed });
+      setCurrentCampaign(id);
+      setIsCreateOpen(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to create campaign.';
+      setCreateError(message);
+    } finally {
+      setIsCreating(false);
+    }
+  }, [createCampaign, draftName, isCreating, setCurrentCampaign]);
+
+  useEffect(() => {
+    if (hasOpenedFromParams.current) return;
+    const shouldOpen = Array.isArray(params.create) ? params.create[0] : params.create;
+    if (shouldOpen) {
+      hasOpenedFromParams.current = true;
+      openCreateModal();
+    }
+  }, [openCreateModal, params.create]);
 
   const header = (
     <View>
@@ -105,7 +152,7 @@ export default function CampaignsScreen() {
             All Campaigns
           </Text>
         </View>
-        <Pressable onPress={handleCreate} hitSlop={8}>
+        <Pressable onPress={openCreateModal} hitSlop={8}>
           <Text variant="labelMedium" style={{ color: theme.colors.primary }}>
             New
           </Text>
@@ -116,61 +163,139 @@ export default function CampaignsScreen() {
 
   if (campaigns.length === 0) {
     return (
-      <Screen>
-        <EmptyState
-          title="No campaigns yet"
-          description="Create your first campaign to get started."
-          icon="folder-plus"
-          action={{ label: 'Create Campaign', onPress: handleCreate }}
-        />
-      </Screen>
+      <>
+        <Screen>
+          <EmptyState
+            title="No campaigns yet"
+            description="Create your first campaign to get started."
+            icon="folder-plus"
+            action={{ label: 'Create Campaign', onPress: openCreateModal }}
+          />
+        </Screen>
+        <Portal>
+          <Modal
+            visible={isCreateOpen}
+            onDismiss={closeCreateModal}
+            contentContainerStyle={[
+              styles.modal,
+              { backgroundColor: theme.colors.surface },
+            ]}
+          >
+            <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+              New Campaign
+            </Text>
+            <FormTextInput
+              label="Campaign name"
+              value={draftName}
+              onChangeText={setDraftName}
+            />
+            {createError && (
+              <Text variant="bodySmall" style={{ color: theme.colors.error }}>
+                {createError}
+              </Text>
+            )}
+            <View style={styles.modalActions}>
+              <Button mode="text" onPress={closeCreateModal} disabled={isCreating}>
+                Cancel
+              </Button>
+              <Button
+                mode="contained"
+                onPress={handleCreate}
+                loading={isCreating}
+                disabled={isCreating}
+              >
+                Create
+              </Button>
+            </View>
+          </Modal>
+        </Portal>
+      </>
     );
   }
 
   return (
-    <Screen scroll={false}>
-      <FlatList
-        data={campaigns}
-        keyExtractor={(campaign) => campaign.id}
-        contentContainerStyle={styles.listContent}
-        ListHeaderComponent={header}
-        renderItem={({ item }) => {
-          const isCurrent = item.id === currentCampaign?.id;
-          return (
-            <View style={styles.cardWrapper}>
-              <CampaignCard
-                campaign={item}
-                noteCount={noteCounts.get(item.id) || 0}
-                npcCount={npcCounts.get(item.id) || 0}
-                locationCount={locationCounts.get(item.id) || 0}
-                onPress={() => router.push(`/campaign/${item.id}`)}
-                onLongPress={() => setCurrentCampaign(item.id)}
-                right={
-                  isCurrent ? (
-                    <MaterialCommunityIcons
-                      name="check-circle"
-                      size={18}
-                      color={theme.colors.primary}
-                    />
-                  ) : undefined
-                }
-                style={
-                  isCurrent
-                    ? { borderWidth: 1, borderColor: theme.colors.primary }
-                    : undefined
-                }
-              />
-            </View>
-          );
-        }}
-      />
-      <FAB
-        icon="plus"
-        onPress={handleCreate}
-        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
-        color={theme.colors.onPrimary}
-      />
-    </Screen>
+    <>
+      <Screen scroll={false}>
+        <FlatList
+          data={campaigns}
+          keyExtractor={(campaign) => campaign.id}
+          contentContainerStyle={styles.listContent}
+          ListHeaderComponent={header}
+          renderItem={({ item }) => {
+            const isCurrent = item.id === currentCampaign?.id;
+            return (
+              <View style={styles.cardWrapper}>
+                <CampaignCard
+                  campaign={item}
+                  noteCount={noteCounts.get(item.id) || 0}
+                  npcCount={npcCounts.get(item.id) || 0}
+                  locationCount={locationCounts.get(item.id) || 0}
+                  onPress={() => router.push(`/campaign/${item.id}`)}
+                  onLongPress={() => setCurrentCampaign(item.id)}
+                  right={
+                    isCurrent ? (
+                      <MaterialCommunityIcons
+                        name="check-circle"
+                        size={18}
+                        color={theme.colors.primary}
+                      />
+                    ) : undefined
+                  }
+                  style={
+                    isCurrent
+                      ? { borderWidth: 1, borderColor: theme.colors.primary }
+                      : undefined
+                  }
+                />
+              </View>
+            );
+          }}
+        />
+        <FAB
+          icon="plus"
+          onPress={openCreateModal}
+          style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+          color={theme.colors.onPrimary}
+        />
+      </Screen>
+      <Portal>
+        <Modal
+          visible={isCreateOpen}
+          onDismiss={closeCreateModal}
+          contentContainerStyle={[
+            styles.modal,
+            { backgroundColor: theme.colors.surface },
+          ]}
+        >
+          <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+            New Campaign
+          </Text>
+          <FormTextInput
+            label="Campaign name"
+            value={draftName}
+            onChangeText={setDraftName}
+          />
+          {createError && (
+            <Text variant="bodySmall" style={{ color: theme.colors.error }}>
+              {createError}
+            </Text>
+          )}
+          <View style={styles.modalActions}>
+            <Button mode="text" onPress={closeCreateModal} disabled={isCreating}>
+              Cancel
+            </Button>
+            <Button
+              mode="contained"
+              onPress={handleCreate}
+              loading={isCreating}
+              disabled={isCreating}
+            >
+              Create
+            </Button>
+          </View>
+        </Modal>
+      </Portal>
+    </>
   );
 }
 
@@ -198,5 +323,16 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: layout.fabMargin,
     bottom: layout.fabMargin,
+  },
+  modal: {
+    margin: spacing[4],
+    padding: spacing[4],
+    borderRadius: layout.cardBorderRadius,
+    gap: spacing[3],
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: spacing[2],
   },
 });

@@ -1,11 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text, Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { Screen, AppCard, Section, StatCard } from '../../src/components';
-import { useCampaigns, useCreateCampaign, useSetCurrentCampaign } from '../../src/hooks';
 import { useCurrentCampaign } from '../../src/hooks/useCampaigns';
 import { useNotes } from '../../src/hooks/useNotes';
 import { useNpcs } from '../../src/hooks/useNpcs';
@@ -15,16 +14,11 @@ import { spacing, semanticColors } from '../../src/theme';
 
 export default function Home() {
   const { theme } = useTheme();
-  const campaigns = useCampaigns();
-  const createCampaign = useCreateCampaign();
-  const setCurrentCampaign = useSetCurrentCampaign();
   const currentCampaign = useCurrentCampaign();
   const notes = useNotes(currentCampaign?.id);
   const npcs = useNpcs(currentCampaign?.id);
   const locations = useLocations(currentCampaign?.id);
   const tags = useTags();
-  const [isCreatingCampaign, setIsCreatingCampaign] = useState(false);
-  const [createCampaignError, setCreateCampaignError] = useState<string | null>(null);
 
   const recentNotes = useMemo(() => {
     return [...notes]
@@ -32,22 +26,8 @@ export default function Home() {
       .slice(0, 3);
   }, [notes]);
 
-  const handleCreateCampaign = async () => {
-    if (isCreatingCampaign) return;
-    setIsCreatingCampaign(true);
-    setCreateCampaignError(null);
-    try {
-      const name = `New Campaign ${campaigns.length + 1}`;
-      const id = await Promise.resolve(createCampaign({ name }));
-      if (id) {
-        setCurrentCampaign(id);
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to create campaign.';
-      setCreateCampaignError(message);
-    } finally {
-      setIsCreatingCampaign(false);
-    }
+  const handleCreateCampaign = () => {
+    router.push({ pathname: '/campaigns', params: { create: '1' } });
   };
 
   return (
@@ -160,7 +140,6 @@ export default function Home() {
             icon="folder-plus"
             style={styles.actionButton}
             onPress={handleCreateCampaign}
-            disabled={isCreatingCampaign}
           >
             New Campaign
           </Button>
@@ -168,11 +147,6 @@ export default function Home() {
             Sync (soon)
           </Button>
         </View>
-        {createCampaignError && (
-          <Text variant="bodySmall" style={{ color: theme.colors.error }}>
-            {createCampaignError}
-          </Text>
-        )}
       </Section>
     </Screen>
   );

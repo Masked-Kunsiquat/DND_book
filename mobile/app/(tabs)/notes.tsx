@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import { StyleSheet, View, FlatList } from 'react-native';
-import { FAB, Switch, Text, TextInput } from 'react-native-paper';
+import { Button, FAB, Modal, Portal, Switch, Text, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Screen, EmptyState, NoteCard } from '../../src/components';
+import { FormSelect, FormTextInput, Screen, EmptyState, NoteCard } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { layout, spacing } from '../../src/theme';
 import { router } from 'expo-router';
@@ -20,8 +20,12 @@ export default function NotesScreen() {
   const currentCampaign = useCurrentCampaign();
   const [query, setQuery] = useState('');
   const [onlyCurrent, setOnlyCurrent] = useState(true);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [draftTitle, setDraftTitle] = useState('');
+  const [draftContent, setDraftContent] = useState('');
+  const [draftCampaignId, setDraftCampaignId] = useState('');
   const createNote = useCreateNote();
   const tags = useTags();
 
@@ -36,6 +40,13 @@ export default function NotesScreen() {
     return new Map(campaigns.map((campaign) => [campaign.id, campaign]));
   }, [campaigns]);
 
+  const campaignOptions = useMemo(() => {
+    return campaigns.map((campaign) => ({
+      label: campaign.name || 'Untitled campaign',
+      value: campaign.id,
+    }));
+  }, [campaigns]);
+
   const filteredNotes = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return notes;
@@ -46,20 +57,38 @@ export default function NotesScreen() {
     });
   }, [notes, query]);
 
-  const handleCreate = async () => {
-    if (isCreating) return;
+  const openCreateModal = () => {
+    setDraftTitle(`New Note ${notes.length + 1}`);
+    setDraftContent('');
+    setDraftCampaignId(currentCampaign?.id ?? campaigns[0]?.id ?? '');
     setCreateError(null);
-    if (!currentCampaign) {
+    setIsCreateOpen(true);
+  };
+
+  const closeCreateModal = () => {
+    setIsCreateOpen(false);
+    setCreateError(null);
+  };
+
+  const handleCreate = () => {
+    if (isCreating) return;
+    const trimmedTitle = draftTitle.trim();
+    if (!draftCampaignId) {
       setCreateError('Select a campaign before creating a note.');
+      return;
+    }
+    if (!trimmedTitle) {
+      setCreateError('Note title is required.');
       return;
     }
     setIsCreating(true);
     try {
       createNote({
-        title: `New Note ${notes.length + 1}`,
-        content: '',
-        campaignId: currentCampaign.id,
+        title: trimmedTitle,
+        content: draftContent,
+        campaignId: draftCampaignId,
       });
+      setIsCreateOpen(false);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to create note.';
       setCreateError(message);
@@ -70,107 +99,208 @@ export default function NotesScreen() {
 
   if (filteredNotes.length === 0) {
     return (
-      <Screen>
-        <EmptyState
-          title="No notes yet"
-          description={
-            currentCampaign
-              ? 'Create your first note to get started.'
-              : 'Select a campaign to start adding notes.'
-          }
-          icon="note-text-outline"
-          action={
-            currentCampaign && !isCreating ? { label: 'Create Note', onPress: handleCreate } : undefined
-          }
-        />
-        {createError && (
-          <Text variant="bodySmall" style={[styles.errorText, { color: theme.colors.error }]}>
-            {createError}
-          </Text>
-        )}
-      </Screen>
+      <>
+        <Screen>
+          <EmptyState
+            title="No notes yet"
+            description={
+              currentCampaign
+                ? 'Create your first note to get started.'
+                : 'Select a campaign to start adding notes.'
+            }
+            icon="note-text-outline"
+            action={
+              campaigns.length > 0 && !isCreating
+                ? { label: 'Create Note', onPress: openCreateModal }
+                : undefined
+            }
+          />
+        </Screen>
+        <Portal>
+          <Modal
+            visible={isCreateOpen}
+            onDismiss={closeCreateModal}
+            contentContainerStyle={[
+              styles.modal,
+              { backgroundColor: theme.colors.surface },
+            ]}
+          >
+            <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+              New Note
+            </Text>
+            <FormSelect
+              label="Campaign"
+              value={draftCampaignId}
+              options={campaignOptions}
+              onChange={setDraftCampaignId}
+            />
+            <FormTextInput
+              label="Title"
+              value={draftTitle}
+              onChangeText={setDraftTitle}
+            />
+            <FormTextInput
+              label="Content"
+              value={draftContent}
+              onChangeText={setDraftContent}
+              multiline
+              style={styles.modalContentInput}
+            />
+            {createError && (
+              <Text variant="bodySmall" style={{ color: theme.colors.error }}>
+                {createError}
+              </Text>
+            )}
+            <View style={styles.modalActions}>
+              <Button mode="text" onPress={closeCreateModal} disabled={isCreating}>
+                Cancel
+              </Button>
+              <Button
+                mode="contained"
+                onPress={handleCreate}
+                loading={isCreating}
+                disabled={isCreating}
+              >
+                Create
+              </Button>
+            </View>
+          </Modal>
+        </Portal>
+      </>
     );
   }
 
   return (
-    <Screen scroll={false}>
-      <FlatList
-        data={filteredNotes}
-        keyExtractor={(note) => note.id}
-        contentContainerStyle={styles.listContent}
-        ListHeaderComponent={
-          <View style={styles.header}>
-            <View style={styles.filterHeader}>
-              <View style={styles.filterTitle}>
+    <>
+      <Screen scroll={false}>
+        <FlatList
+          data={filteredNotes}
+          keyExtractor={(note) => note.id}
+          contentContainerStyle={styles.listContent}
+          ListHeaderComponent={
+            <View style={styles.header}>
+              <View style={styles.filterHeader}>
+                <View style={styles.filterTitle}>
+                  <MaterialCommunityIcons
+                    name="tune-variant"
+                    size={18}
+                    color={theme.colors.primary}
+                    style={styles.filterIcon}
+                  />
+                  <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+                    Filters
+                  </Text>
+                </View>
+                <View style={styles.filterRow}>
+                  <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Current campaign only
+                  </Text>
+                  <Switch
+                    value={onlyCurrent && !!currentCampaign}
+                    onValueChange={setOnlyCurrent}
+                    disabled={!currentCampaign}
+                  />
+                </View>
+              </View>
+              <TextInput
+                value={query}
+                onChangeText={setQuery}
+                mode="outlined"
+                placeholder="Search notes..."
+                style={styles.searchInput}
+              />
+              <View style={styles.listHeader}>
                 <MaterialCommunityIcons
-                  name="tune-variant"
+                  name="note-text"
                   size={18}
                   color={theme.colors.primary}
-                  style={styles.filterIcon}
+                  style={styles.listHeaderIcon}
                 />
                 <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-                  Filters
+                  Notes
                 </Text>
               </View>
-              <View style={styles.filterRow}>
-                <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                  Current campaign only
-                </Text>
-                <Switch
-                  value={onlyCurrent && !!currentCampaign}
-                  onValueChange={setOnlyCurrent}
-                  disabled={!currentCampaign}
+            </View>
+          }
+          renderItem={({ item }) => {
+            const campaignName = item.campaignId
+              ? campaignById.get(item.campaignId)?.name
+              : undefined;
+            const resolvedTags = item.tagIds
+              .map((tagId) => tagById.get(tagId))
+              .filter(Boolean);
+
+            return (
+              <View style={styles.cardWrapper}>
+                <NoteCard
+                  note={item}
+                  tags={resolvedTags}
+                  campaignName={campaignName}
+                  onPress={() => router.push(`/note/${item.id}`)}
                 />
               </View>
-            </View>
-            <TextInput
-              value={query}
-              onChangeText={setQuery}
-              mode="outlined"
-              placeholder="Search notes..."
-              style={styles.searchInput}
-            />
-            <View style={styles.listHeader}>
-              <MaterialCommunityIcons
-                name="note-text"
-                size={18}
-                color={theme.colors.primary}
-                style={styles.listHeaderIcon}
-              />
-              <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-                Notes
-              </Text>
-            </View>
+            );
+          }}
+        />
+        <FAB
+          icon="plus"
+          onPress={openCreateModal}
+          style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+          color={theme.colors.onPrimary}
+          disabled={campaigns.length === 0 || isCreating}
+        />
+      </Screen>
+      <Portal>
+        <Modal
+          visible={isCreateOpen}
+          onDismiss={closeCreateModal}
+          contentContainerStyle={[
+            styles.modal,
+            { backgroundColor: theme.colors.surface },
+          ]}
+        >
+          <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+            New Note
+          </Text>
+          <FormSelect
+            label="Campaign"
+            value={draftCampaignId}
+            options={campaignOptions}
+            onChange={setDraftCampaignId}
+          />
+          <FormTextInput
+            label="Title"
+            value={draftTitle}
+            onChangeText={setDraftTitle}
+          />
+          <FormTextInput
+            label="Content"
+            value={draftContent}
+            onChangeText={setDraftContent}
+            multiline
+            style={styles.modalContentInput}
+          />
+          {createError && (
+            <Text variant="bodySmall" style={{ color: theme.colors.error }}>
+              {createError}
+            </Text>
+          )}
+          <View style={styles.modalActions}>
+            <Button mode="text" onPress={closeCreateModal} disabled={isCreating}>
+              Cancel
+            </Button>
+            <Button
+              mode="contained"
+              onPress={handleCreate}
+              loading={isCreating}
+              disabled={isCreating}
+            >
+              Create
+            </Button>
           </View>
-        }
-        renderItem={({ item }) => {
-          const campaignName = item.campaignId
-            ? campaignById.get(item.campaignId)?.name
-            : undefined;
-          const resolvedTags = item.tagIds
-            .map((tagId) => tagById.get(tagId))
-            .filter(Boolean);
-
-          return (
-            <View style={styles.cardWrapper}>
-              <NoteCard
-                note={item}
-                tags={resolvedTags}
-                campaignName={campaignName}
-                onPress={() => router.push(`/note/${item.id}`)}
-              />
-            </View>
-          );
-        }}
-      />
-      <FAB
-        icon="plus"
-        onPress={handleCreate}
-        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
-        color={theme.colors.onPrimary}
-        disabled={!currentCampaign || isCreating}
-      />
-    </Screen>
+        </Modal>
+      </Portal>
+    </>
   );
 }
 
@@ -215,8 +345,18 @@ const styles = StyleSheet.create({
     right: layout.fabMargin,
     bottom: layout.fabMargin,
   },
-  errorText: {
-    marginTop: spacing[3],
-    textAlign: 'center',
+  modal: {
+    margin: spacing[4],
+    padding: spacing[4],
+    borderRadius: layout.cardBorderRadius,
+    gap: spacing[3],
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: spacing[2],
+  },
+  modalContentInput: {
+    minHeight: 120,
   },
 });
