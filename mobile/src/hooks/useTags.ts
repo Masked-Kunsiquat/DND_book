@@ -119,37 +119,48 @@ export function useCreateTag(): (data: CreateTagInput) => string {
  */
 export function useGetOrCreateTag(): (name: string) => string {
   const store = useStore();
-  const table = useTable('tags', store);
 
   return useCallback(
     (name: string) => {
       const lowerName = name.toLowerCase();
+      let resolvedId = '';
+      let didCreate = false;
 
-      // Check if tag already exists
-      const existing = Object.values(table).find(
-        (r) => (r as unknown as TagRow).name.toLowerCase() === lowerName
-      ) as unknown as TagRow | undefined;
+      store.transaction(() => {
+        const table = store.getTable('tags');
 
-      if (existing) {
-        log.debug('Using existing tag', existing.id);
-        return existing.id;
-      }
+        const existing = Object.values(table).find(
+          (r) => (r as unknown as TagRow).name.toLowerCase() === lowerName
+        ) as unknown as TagRow | undefined;
 
-      // Create new tag
-      const id = generateId();
-      const timestamp = now();
+        if (existing) {
+          resolvedId = existing.id;
+          return;
+        }
 
-      store.setRow('tags', id, {
-        id,
-        name,
-        created: timestamp,
-        updated: timestamp,
+        const id = generateId();
+        const timestamp = now();
+
+        store.setRow('tags', id, {
+          id,
+          name,
+          created: timestamp,
+          updated: timestamp,
+        });
+
+        resolvedId = id;
+        didCreate = true;
       });
 
-      log.debug('Created tag', id);
-      return id;
+      if (resolvedId) {
+        log.debug(didCreate ? 'Created tag' : 'Using existing tag', resolvedId);
+      } else {
+        log.error('Failed to resolve tag id after transaction', name);
+      }
+
+      return resolvedId;
     },
-    [store, table]
+    [store]
   );
 }
 
