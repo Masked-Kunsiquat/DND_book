@@ -7,9 +7,11 @@ import React, { createContext, useContext, useEffect, useState, useRef, type Rea
 import { createAppStore, type AppStore } from './schema';
 import { createPersister, type Persister } from './persistence';
 import { generateDeviceId } from '../utils/id';
+import { createLogger } from '../utils/logger';
 
 // Context for the store
 const StoreContext = createContext<AppStore | null>(null);
+const log = createLogger('store');
 
 interface StoreProviderProps {
   children: ReactNode;
@@ -27,30 +29,46 @@ export function StoreProvider({ children }: StoreProviderProps) {
   useEffect(() => {
     async function initStore() {
       const appStore = createAppStore();
+      let persister: Persister | null = null;
 
-      // Create persister and load existing data
-      const persister = await createPersister(appStore);
-      persisterRef.current = persister;
+      try {
+        // Create persister and load existing data
+        persister = await createPersister(appStore);
+        persisterRef.current = persister;
 
-      // Load persisted data (if any)
-      const hadData = await persister.load();
+        let hadData = false;
+        try {
+          // Load persisted data (if any)
+          hadData = await persister.load();
+        } catch (error) {
+          log.error('Failed to load persisted data', error);
+        }
 
-      // Set device ID if not already set (first run or no persisted data)
-      const existingDeviceId = appStore.getValue('deviceId');
-      if (!existingDeviceId) {
-        appStore.setValue('deviceId', generateDeviceId());
+        // Set device ID if not already set (first run or no persisted data)
+        const existingDeviceId = appStore.getValue('deviceId');
+        const didSetDeviceId = !existingDeviceId;
+        if (didSetDeviceId) {
+          appStore.setValue('deviceId', generateDeviceId());
+        }
+
+        // Start auto-saving changes
+        persister.startAutoSave();
+
+        // Save immediately if this is first run or device ID was newly set
+        if (!hadData || didSetDeviceId) {
+          await persister.save();
+        }
+      } catch (error) {
+        log.error('Failed to initialize store', error);
+
+        const existingDeviceId = appStore.getValue('deviceId');
+        if (!existingDeviceId) {
+          appStore.setValue('deviceId', generateDeviceId());
+        }
+      } finally {
+        setStore(appStore);
+        setIsReady(true);
       }
-
-      // Start auto-saving changes
-      persister.startAutoSave();
-
-      // Save immediately if this is first run
-      if (!hadData) {
-        await persister.save();
-      }
-
-      setStore(appStore);
-      setIsReady(true);
     }
 
     initStore();

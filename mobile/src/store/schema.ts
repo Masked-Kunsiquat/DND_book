@@ -104,6 +104,9 @@ export const valuesSchema = {
 export function createAppStore() {
   const store = createMergeableStore();
 
+  store.setTablesSchema(tablesSchema);
+  store.setValuesSchema(valuesSchema);
+
   // Set default values
   store.setValues({
     currentCampaignId: '',

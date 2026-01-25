@@ -129,8 +129,7 @@ function formatValue(value: unknown, depth: number, seen: Set<unknown>): string 
 
 function formatArgs(args: unknown[]): string {
   if (args.length === 0) return "";
-  const seen = new Set<unknown>();
-  return args.map((arg) => formatValue(arg, 0, seen)).join(" ");
+  return args.map((arg) => formatValue(arg, 0, new Set<unknown>())).join(" ");
 }
 
 function shouldLog(level: LogLevel, minLevel: LogLevel): boolean {
