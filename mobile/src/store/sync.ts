@@ -175,6 +175,10 @@ export async function joinSession(store: MergeableStore, roomCode: string): Prom
   assertSyncSupported();
 
   const normalizedCode = roomCode.toUpperCase().trim();
+  const validRoomCode = /^[A-Z0-9]{3}-[A-Z0-9]{3}$/.test(normalizedCode);
+  if (!validRoomCode) {
+    throw new Error('Invalid room code. Use the format ABC-123.');
+  }
   const roomId = ROOM_PREFIX + normalizedCode;
 
   const doc = new Y.Doc();

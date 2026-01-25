@@ -145,7 +145,7 @@ export default function CampaignPartyScreen() {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: async () => {
+          onPress: () => {
             try {
               setIsSaving(true);
               deletePlayerCharacter(editingCharacter.id);
