@@ -15,17 +15,38 @@ export interface StatCardProps {
   value: number | string;
   /** Optional icon element */
   icon?: React.ReactNode;
+  /** Layout variant */
+  layout?: 'stacked' | 'compact';
   /** Called when card is pressed */
   onPress?: () => void;
   /** Additional style for the card container */
   style?: object;
 }
 
-export function StatCard({ label, value, icon, onPress, style }: StatCardProps) {
+export function StatCard({
+  label,
+  value,
+  icon,
+  layout = 'stacked',
+  onPress,
+  style,
+}: StatCardProps) {
   const { theme } = useTheme();
 
-  const cardContent = (
-    <Card style={[styles.card, { backgroundColor: theme.colors.surface }, style]} mode="contained">
+  const body =
+    layout === 'compact' ? (
+      <View style={styles.bodyCompact}>
+        {icon && <View style={styles.iconCompact}>{icon}</View>}
+        <View style={styles.valueRow}>
+          <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+            {value}
+          </Text>
+          <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+            {label}
+          </Text>
+        </View>
+      </View>
+    ) : (
       <View style={styles.body}>
         {icon && <View style={styles.icon}>{icon}</View>}
         <Text variant="headlineSmall" style={[styles.value, { color: theme.colors.onSurface }]}>
@@ -35,6 +56,11 @@ export function StatCard({ label, value, icon, onPress, style }: StatCardProps) 
           {label}
         </Text>
       </View>
+    );
+
+  const cardContent = (
+    <Card style={[styles.card, { backgroundColor: theme.colors.surface }, style]} mode="contained">
+      {body}
     </Card>
   );
 
@@ -65,6 +91,20 @@ const styles = StyleSheet.create({
   },
   icon: {
     marginBottom: spacing[1],
+  },
+  bodyCompact: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing[3],
+    gap: spacing[1],
+  },
+  iconCompact: {
+    marginBottom: 0,
+  },
+  valueRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: spacing[1],
   },
   value: {
     lineHeight: 32,

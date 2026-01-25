@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, SectionList, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, SectionList, StyleSheet, View } from 'react-native';
 import { Button, FAB, Switch, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -41,11 +41,23 @@ const getAllowedParentTypes = (type: LocationType): LocationType[] => {
   return LOCATION_TYPE_ORDER.slice(0, index);
 };
 
+const pluralize = (singular: string, count: number, plural?: string) => {
+  if (count === 1) return singular;
+  return plural ?? `${singular}s`;
+};
+
+const pluralizeLocationType = (type: LocationType, count: number) => {
+  if (count === 1) return type;
+  if (type === 'Territory') return 'Territories';
+  return `${type}s`;
+};
+
 export default function LocationsScreen() {
   const { theme } = useTheme();
   const currentCampaign = useCurrentCampaign();
   const [onlyCurrent, setOnlyCurrent] = useState(true);
   const [typeFilter, setTypeFilter] = useState<LocationType | 'all'>('all');
+  const [filtersOpen, setFiltersOpen] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
@@ -169,6 +181,10 @@ export default function LocationsScreen() {
       counts.set(location.type, (counts.get(location.type) || 0) + 1);
     });
     return counts;
+  }, [locations]);
+
+  const rootCount = useMemo(() => {
+    return locations.filter((location) => !location.parentId).length;
   }, [locations]);
 
   const hierarchyIssues = useMemo(() => {
@@ -351,8 +367,9 @@ export default function LocationsScreen() {
               <Section title="Overview" icon="chart-box-outline">
                 <View style={styles.statsRow}>
                   <StatCard
-                    label="Total"
+                    label={pluralize('Location', locations.length)}
                     value={locations.length}
+                    layout="compact"
                     icon={
                       <MaterialCommunityIcons
                         name="map-marker-multiple-outline"
@@ -363,8 +380,9 @@ export default function LocationsScreen() {
                     onPress={() => setTypeFilter('all')}
                   />
                   <StatCard
-                    label="Roots"
-                    value={locations.filter((location) => !location.parentId).length}
+                    label={pluralize('Root', rootCount)}
+                    value={rootCount}
+                    layout="compact"
                     icon={
                       <MaterialCommunityIcons
                         name="map-marker-outline"
@@ -376,8 +394,9 @@ export default function LocationsScreen() {
                 </View>
                 <View style={styles.statsRow}>
                   <StatCard
-                    label="Issues"
+                    label={pluralize('Issue', hierarchyIssues.total)}
                     value={hierarchyIssues.total}
+                    layout="compact"
                     icon={
                       <MaterialCommunityIcons
                         name="alert-circle-outline"
@@ -387,8 +406,9 @@ export default function LocationsScreen() {
                     }
                   />
                   <StatCard
-                    label="Types"
+                    label={pluralize('Type', typeCounts.size)}
                     value={typeCounts.size}
+                    layout="compact"
                     icon={
                       <MaterialCommunityIcons
                         name="shape-outline"
@@ -400,75 +420,105 @@ export default function LocationsScreen() {
                 </View>
               </Section>
 
-              <Section
-                title="Type Focus"
-                icon="map-marker-outline"
-                action={
-                  typeFilter !== 'all'
-                    ? { label: 'Clear', onPress: () => setTypeFilter('all') }
-                    : undefined
-                }
+              <View
+                style={[
+                  styles.filtersContainer,
+                  {
+                    backgroundColor: theme.colors.surfaceVariant,
+                    borderColor: theme.colors.outlineVariant,
+                  },
+                ]}
               >
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.typeScroll}
-                >
-                  <View style={styles.typeCard}>
-                    <StatCard
-                      label="All"
-                      value={locations.length}
-                      onPress={() => setTypeFilter('all')}
-                      icon={
-                        <MaterialCommunityIcons
-                          name="earth"
-                          size={iconSizes.md}
-                          color={theme.colors.primary}
-                        />
-                      }
+                <View style={styles.filterHeader}>
+                  <Pressable
+                    onPress={() => setFiltersOpen((prev) => !prev)}
+                    style={styles.filterTitle}
+                  >
+                    <MaterialCommunityIcons
+                      name="tune-variant"
+                      size={18}
+                      color={theme.colors.primary}
+                      style={styles.filterIcon}
                     />
-                  </View>
-                  {LOCATION_TYPE_ORDER.map((type) => (
-                    <View key={type} style={styles.typeCard}>
-                      <StatCard
-                        label={type}
-                        value={typeCounts.get(type) || 0}
-                        onPress={() => setTypeFilter(type)}
-                        icon={
-                          <MaterialCommunityIcons
-                            name="compass-rose"
-                            size={iconSizes.md}
-                            color={theme.colors.primary}
-                          />
-                        }
+                    <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+                      Filters
+                    </Text>
+                  </Pressable>
+                  <Pressable onPress={() => setFiltersOpen((prev) => !prev)} hitSlop={6}>
+                    <MaterialCommunityIcons
+                      name={filtersOpen ? 'chevron-up' : 'chevron-down'}
+                      size={iconSizes.md}
+                      color={theme.colors.onSurfaceVariant}
+                    />
+                  </Pressable>
+                </View>
+                {filtersOpen && (
+                  <>
+                    <View style={styles.filterRow}>
+                      <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                        Current campaign only
+                      </Text>
+                      <Switch
+                        value={onlyCurrent && !!currentCampaign}
+                        onValueChange={setOnlyCurrent}
+                        disabled={!currentCampaign}
                       />
                     </View>
-                  ))}
-                </ScrollView>
-              </Section>
-
-              <View style={styles.filterHeader}>
-                <View style={styles.filterTitle}>
-                  <MaterialCommunityIcons
-                    name="tune-variant"
-                    size={18}
-                    color={theme.colors.primary}
-                    style={styles.filterIcon}
-                  />
-                  <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-                    Filters
-                  </Text>
-                </View>
-                <View style={styles.filterRow}>
-                  <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                    Current campaign only
-                  </Text>
-                  <Switch
-                    value={onlyCurrent && !!currentCampaign}
-                    onValueChange={setOnlyCurrent}
-                    disabled={!currentCampaign}
-                  />
-                </View>
+                    <View style={styles.typeHeader}>
+                      <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                        Type focus
+                      </Text>
+                      {typeFilter !== 'all' && (
+                        <Pressable onPress={() => setTypeFilter('all')} hitSlop={6}>
+                          <Text variant="labelSmall" style={{ color: theme.colors.primary }}>
+                            Clear
+                          </Text>
+                        </Pressable>
+                      )}
+                    </View>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.typeScroll}
+                    >
+                      <View style={styles.typeCard}>
+                        <StatCard
+                          label={pluralize('Location', locations.length)}
+                          value={locations.length}
+                          layout="compact"
+                          onPress={() => setTypeFilter('all')}
+                          icon={
+                            <MaterialCommunityIcons
+                              name="earth"
+                              size={iconSizes.md}
+                              color={theme.colors.primary}
+                            />
+                          }
+                        />
+                      </View>
+                      {LOCATION_TYPE_ORDER.map((type) => {
+                        const count = typeCounts.get(type) || 0;
+                        return (
+                          <View key={type} style={styles.typeCard}>
+                            <StatCard
+                              label={pluralizeLocationType(type, count)}
+                              value={count}
+                              layout="compact"
+                              onPress={() => setTypeFilter(type)}
+                              icon={
+                                <MaterialCommunityIcons
+                                  name="compass-rose"
+                                  size={iconSizes.md}
+                                  color={theme.colors.primary}
+                                />
+                              }
+                            />
+                          </View>
+                        );
+                      })}
+                    </ScrollView>
+                  </>
+                )}
               </View>
               <View style={styles.listHeader}>
                 <View style={styles.listHeaderRow}>
@@ -550,12 +600,21 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: spacing[3],
   },
+  filtersContainer: {
+    marginBottom: spacing[3],
+    borderWidth: 1,
+    borderRadius: layout.cardBorderRadius,
+    padding: spacing[3],
+    gap: spacing[3],
+  },
   statsRow: {
     flexDirection: 'row',
     gap: spacing[3],
   },
   filterHeader: {
-    marginBottom: spacing[3],
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   filterTitle: {
     flexDirection: 'row',
@@ -566,6 +625,11 @@ const styles = StyleSheet.create({
     marginRight: spacing[2],
   },
   filterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  typeHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
