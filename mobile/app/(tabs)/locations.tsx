@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { SectionList, StyleSheet, View } from 'react-native';
+import { ScrollView, SectionList, StyleSheet, View } from 'react-native';
 import { Button, FAB, Switch, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -10,9 +10,11 @@ import {
   Screen,
   EmptyState,
   LocationCard,
+  Section,
+  StatCard,
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
-import { layout, spacing } from '../../src/theme';
+import { iconSizes, layout, semanticColors, spacing } from '../../src/theme';
 import {
   useCreateLocation,
   useCurrentCampaign,
@@ -43,6 +45,7 @@ export default function LocationsScreen() {
   const { theme } = useTheme();
   const currentCampaign = useCurrentCampaign();
   const [onlyCurrent, setOnlyCurrent] = useState(true);
+  const [typeFilter, setTypeFilter] = useState<LocationType | 'all'>('all');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
@@ -56,6 +59,11 @@ export default function LocationsScreen() {
   const { refreshing, onRefresh } = usePullToRefresh();
   const effectiveCampaignId = onlyCurrent && currentCampaign ? currentCampaign.id : undefined;
   const locations = useLocations(effectiveCampaignId);
+
+  const visibleLocations = useMemo(() => {
+    if (typeFilter === 'all') return locations;
+    return locations.filter((location) => location.type === typeFilter);
+  }, [locations, typeFilter]);
 
   const { locationById, depthById } = useMemo(() => {
     const locationMap = new Map<string, Location>();
@@ -96,7 +104,7 @@ export default function LocationsScreen() {
 
   const sections = useMemo(() => {
     const grouped = new Map<LocationType, Location[]>();
-    locations.forEach((location) => {
+    visibleLocations.forEach((location) => {
       const list = grouped.get(location.type) ?? [];
       list.push(location);
       grouped.set(location.type, list);
@@ -125,7 +133,7 @@ export default function LocationsScreen() {
 
         return { title: type, data: sorted };
       });
-  }, [locations, depthById]);
+  }, [visibleLocations, depthById]);
 
   const allowedParentTypes = useMemo(() => getAllowedParentTypes(draftType), [draftType]);
   const allowedParentIds = useMemo(() => {
@@ -154,6 +162,32 @@ export default function LocationsScreen() {
     }
     return `Parent must be higher in the hierarchy (${allowedParentTypes.join(' • ')}).`;
   }, [allowedParentTypes]);
+
+  const typeCounts = useMemo(() => {
+    const counts = new Map<LocationType, number>();
+    locations.forEach((location) => {
+      counts.set(location.type, (counts.get(location.type) || 0) + 1);
+    });
+    return counts;
+  }, [locations]);
+
+  const hierarchyIssues = useMemo(() => {
+    let missingParent = 0;
+    let mismatch = 0;
+    locations.forEach((location) => {
+      if (!location.parentId) return;
+      const parent = locationById.get(location.parentId);
+      if (!parent) {
+        missingParent += 1;
+        return;
+      }
+      const allowedParents = new Set(getAllowedParentTypes(location.type));
+      if (!allowedParents.has(parent.type)) {
+        mismatch += 1;
+      }
+    });
+    return { missingParent, mismatch, total: missingParent + mismatch };
+  }, [locationById, locations]);
 
   const openCreateModal = () => {
     setDraftName(`New Location ${allLocations.length + 1}`);
@@ -211,6 +245,10 @@ export default function LocationsScreen() {
       setIsCreating(false);
     }
   };
+
+  const listTitle =
+    typeFilter === 'all' ? 'Locations' : `${typeFilter} Locations`;
+  const listCountLabel = `${visibleLocations.length} location${visibleLocations.length === 1 ? '' : 's'}`;
 
   const createModal = (
     <FormModal
@@ -282,6 +320,22 @@ export default function LocationsScreen() {
     );
   }
 
+  if (visibleLocations.length === 0) {
+    return (
+      <>
+        <Screen onRefresh={onRefresh} refreshing={refreshing}>
+          <EmptyState
+            title="No locations found"
+            description="Try clearing the type filter."
+            icon="map-marker-outline"
+            action={{ label: 'Clear Filter', onPress: () => setTypeFilter('all') }}
+          />
+        </Screen>
+        {createModal}
+      </>
+    );
+  }
+
   return (
     <>
       <Screen scroll={false}>
@@ -294,6 +348,105 @@ export default function LocationsScreen() {
           onRefresh={onRefresh}
           ListHeaderComponent={
             <View style={styles.header}>
+              <Section title="Overview" icon="chart-box-outline">
+                <View style={styles.statsRow}>
+                  <StatCard
+                    label="Total"
+                    value={locations.length}
+                    icon={
+                      <MaterialCommunityIcons
+                        name="map-marker-multiple-outline"
+                        size={iconSizes.md}
+                        color={theme.colors.primary}
+                      />
+                    }
+                    onPress={() => setTypeFilter('all')}
+                  />
+                  <StatCard
+                    label="Roots"
+                    value={locations.filter((location) => !location.parentId).length}
+                    icon={
+                      <MaterialCommunityIcons
+                        name="map-marker-outline"
+                        size={iconSizes.md}
+                        color={theme.colors.primary}
+                      />
+                    }
+                  />
+                </View>
+                <View style={styles.statsRow}>
+                  <StatCard
+                    label="Issues"
+                    value={hierarchyIssues.total}
+                    icon={
+                      <MaterialCommunityIcons
+                        name="alert-circle-outline"
+                        size={iconSizes.md}
+                        color={semanticColors.warning.main}
+                      />
+                    }
+                  />
+                  <StatCard
+                    label="Types"
+                    value={typeCounts.size}
+                    icon={
+                      <MaterialCommunityIcons
+                        name="shape-outline"
+                        size={iconSizes.md}
+                        color={theme.colors.primary}
+                      />
+                    }
+                  />
+                </View>
+              </Section>
+
+              <Section
+                title="Type Focus"
+                icon="map-marker-outline"
+                action={
+                  typeFilter !== 'all'
+                    ? { label: 'Clear', onPress: () => setTypeFilter('all') }
+                    : undefined
+                }
+              >
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.typeScroll}
+                >
+                  <View style={styles.typeCard}>
+                    <StatCard
+                      label="All"
+                      value={locations.length}
+                      onPress={() => setTypeFilter('all')}
+                      icon={
+                        <MaterialCommunityIcons
+                          name="earth"
+                          size={iconSizes.md}
+                          color={theme.colors.primary}
+                        />
+                      }
+                    />
+                  </View>
+                  {LOCATION_TYPE_ORDER.map((type) => (
+                    <View key={type} style={styles.typeCard}>
+                      <StatCard
+                        label={type}
+                        value={typeCounts.get(type) || 0}
+                        onPress={() => setTypeFilter(type)}
+                        icon={
+                          <MaterialCommunityIcons
+                            name="compass-rose"
+                            size={iconSizes.md}
+                            color={theme.colors.primary}
+                          />
+                        }
+                      />
+                    </View>
+                  ))}
+                </ScrollView>
+              </Section>
+
               <View style={styles.filterHeader}>
                 <View style={styles.filterTitle}>
                   <MaterialCommunityIcons
@@ -318,14 +471,19 @@ export default function LocationsScreen() {
                 </View>
               </View>
               <View style={styles.listHeader}>
-                <MaterialCommunityIcons
-                  name="map-marker"
-                  size={18}
-                  color={theme.colors.primary}
-                  style={styles.listHeaderIcon}
-                />
-                <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-                  Locations
+                <View style={styles.listHeaderRow}>
+                  <MaterialCommunityIcons
+                    name="map-marker"
+                    size={18}
+                    color={theme.colors.primary}
+                    style={styles.listHeaderIcon}
+                  />
+                  <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+                    {listTitle}
+                  </Text>
+                </View>
+                <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  {listCountLabel}
                 </Text>
               </View>
             </View>
@@ -392,6 +550,10 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: spacing[3],
   },
+  statsRow: {
+    flexDirection: 'row',
+    gap: spacing[3],
+  },
   filterHeader: {
     marginBottom: spacing[3],
   },
@@ -411,9 +573,21 @@ const styles = StyleSheet.create({
   listHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  listHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   listHeaderIcon: {
     marginRight: spacing[2],
+  },
+  typeScroll: {
+    paddingRight: spacing[2],
+    gap: spacing[2],
+  },
+  typeCard: {
+    width: 132,
   },
   sectionHeader: {
     flexDirection: 'row',
