@@ -1,4 +1,5 @@
 frontend/src/output.css 
+*/settings.local.json
 
 # Pocketbase files
 backend/pocketbase
