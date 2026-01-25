@@ -10,8 +10,8 @@ export default function Home() {
       <Text style={styles.title}>DND Book</Text>
       <Text style={styles.subtitle}>Campaign Management</Text>
       <View style={styles.status}>
-        <Text style={styles.statusText}>Phase 2.1 Complete</Text>
-        <Text style={styles.statusDetail}>TinyBase store initialized</Text>
+        <Text style={styles.statusText}>Phase 2 Complete</Text>
+        <Text style={styles.statusDetail}>Store + Persistence + P2P Sync</Text>
         <Text style={styles.deviceId}>Device: {deviceId?.slice(0, 8)}...</Text>
       </View>
     </View>
