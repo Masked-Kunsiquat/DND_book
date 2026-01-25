@@ -340,11 +340,11 @@ Recommended sequence:
 - [x] `src/components/cards/LocationCard.tsx`
 
 ### Components - Forms
-- [ ] `src/components/forms/FormTextInput.tsx`
-- [ ] `src/components/forms/FormSelect.tsx`
-- [ ] `src/components/forms/FormMultiSelect.tsx`
-- [ ] `src/components/forms/FormImagePicker.tsx`
-- [ ] `src/components/forms/TagInput.tsx`
+- [x] `src/components/forms/FormTextInput.tsx`
+- [x] `src/components/forms/FormSelect.tsx`
+- [x] `src/components/forms/FormMultiSelect.tsx`
+- [x] `src/components/forms/FormImagePicker.tsx`
+- [x] `src/components/forms/TagInput.tsx`
 
 ### Components - Sync
 - [ ] `src/components/sync/SyncStatus.tsx`
