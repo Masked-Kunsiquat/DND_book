@@ -5,6 +5,9 @@
 
 import * as SQLite from 'expo-sqlite';
 import type { MergeableStore } from 'tinybase';
+import { createLogger } from '../utils/logger';
+
+const log = createLogger('store');
 
 const DB_NAME = 'dndbook.db';
 const STORE_TABLE = 'tinybase_store';
@@ -53,7 +56,7 @@ async function loadStore(db: SQLite.SQLiteDatabase, store: MergeableStore): Prom
       store.setJson(result.value);
       return true;
     } catch (error) {
-      console.error('Failed to parse stored data:', error);
+      log.error('Failed to parse stored data', error);
       return false;
     }
   }
@@ -104,7 +107,7 @@ export async function createPersister(store: MergeableStore): Promise<Persister>
       listenerId = store.addTablesListener(() => {
         if (saveTimeout) clearTimeout(saveTimeout);
         saveTimeout = setTimeout(() => {
-          persister.save().catch(console.error);
+          persister.save().catch((error) => log.error('Failed to auto-save store', error));
         }, intervalMs);
       });
 
@@ -112,7 +115,7 @@ export async function createPersister(store: MergeableStore): Promise<Persister>
       store.addValuesListener(() => {
         if (saveTimeout) clearTimeout(saveTimeout);
         saveTimeout = setTimeout(() => {
-          persister.save().catch(console.error);
+          persister.save().catch((error) => log.error('Failed to auto-save store', error));
         }, intervalMs);
       });
     },

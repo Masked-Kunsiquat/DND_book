@@ -6,6 +6,9 @@
 import * as Y from 'yjs';
 import { WebrtcProvider } from 'y-webrtc';
 import type { MergeableStore } from 'tinybase';
+import { createLogger } from '../utils/logger';
+
+const log = createLogger('sync');
 
 // Signaling servers for WebRTC connection establishment
 const SIGNALING_SERVERS = ['wss://signaling.yjs.dev'];
@@ -79,7 +82,7 @@ function syncStoreToYDoc(store: MergeableStore, doc: Y.Doc): void {
             store.setJson(remoteData);
           }
         } catch (error) {
-          console.error('Failed to apply remote sync data:', error);
+          log.error('Failed to apply remote sync data', error);
         }
       }
     }
