@@ -22,7 +22,9 @@ function AppStack() {
             backgroundColor: theme.colors.background,
           },
         }}
-      />
+      >
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      </Stack>
     </>
   );
 }
