@@ -47,7 +47,7 @@ function rowToPlayerCharacter(row: PlayerCharacterRow): PlayerCharacter {
  */
 export function usePlayerCharacters(campaignId?: string): PlayerCharacter[] {
   const store = useStore();
-  const table = useTable(store, 'playerCharacters');
+  const table = useTable('playerCharacters', store);
 
   return useMemo(() => {
     const pcs = Object.values(table).map((row) => rowToPlayerCharacter(row as unknown as PlayerCharacterRow));
@@ -65,7 +65,7 @@ export function usePlayerCharacters(campaignId?: string): PlayerCharacter[] {
  */
 export function usePlayerCharactersByPlayer(playerName: string): PlayerCharacter[] {
   const store = useStore();
-  const table = useTable(store, 'playerCharacters');
+  const table = useTable('playerCharacters', store);
 
   return useMemo(() => {
     const lowerName = playerName.toLowerCase();
@@ -80,7 +80,7 @@ export function usePlayerCharactersByPlayer(playerName: string): PlayerCharacter
  */
 export function usePlayerCharacter(id: string): PlayerCharacter | null {
   const store = useStore();
-  const row = useRow(store, 'playerCharacters', id);
+  const row = useRow('playerCharacters', id, store);
 
   return useMemo(() => {
     if (!row || Object.keys(row).length === 0) return null;

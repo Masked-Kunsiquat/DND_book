@@ -49,7 +49,7 @@ function rowToNpc(row: NpcRow): Npc {
  */
 export function useNpcs(campaignId?: string): Npc[] {
   const store = useStore();
-  const table = useTable(store, 'npcs');
+  const table = useTable('npcs', store);
 
   return useMemo(() => {
     const npcs = Object.values(table).map((row) => rowToNpc(row as unknown as NpcRow));
@@ -67,7 +67,7 @@ export function useNpcs(campaignId?: string): Npc[] {
  */
 export function useNpcsByLocation(locationId: string): Npc[] {
   const store = useStore();
-  const table = useTable(store, 'npcs');
+  const table = useTable('npcs', store);
 
   return useMemo(() => {
     return Object.values(table)
@@ -81,7 +81,7 @@ export function useNpcsByLocation(locationId: string): Npc[] {
  */
 export function useNpcsByTag(tagId: string): Npc[] {
   const store = useStore();
-  const table = useTable(store, 'npcs');
+  const table = useTable('npcs', store);
 
   return useMemo(() => {
     return Object.values(table)
@@ -95,7 +95,7 @@ export function useNpcsByTag(tagId: string): Npc[] {
  */
 export function useNpc(id: string): Npc | null {
   const store = useStore();
-  const table = useTable(store, 'npcs');
+  const table = useTable('npcs', store);
   const row = table[id] as unknown as NpcRow | undefined;
 
   return useMemo(() => {

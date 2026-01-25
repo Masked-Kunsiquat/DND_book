@@ -51,7 +51,7 @@ function rowToSessionLog(row: SessionLogRow): SessionLog {
  */
 export function useSessionLogs(campaignId?: string): SessionLog[] {
   const store = useStore();
-  const table = useTable(store, 'sessionLogs');
+  const table = useTable('sessionLogs', store);
 
   return useMemo(() => {
     const logs = Object.values(table).map((row) => rowToSessionLog(row as unknown as SessionLogRow));
@@ -71,7 +71,13 @@ export function useSessionLogsByDate(campaignId?: string): SessionLog[] {
   const logs = useSessionLogs(campaignId);
 
   return useMemo(() => {
-    return [...logs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return [...logs].sort((a, b) => {
+      const bTime = Date.parse(b.date);
+      const aTime = Date.parse(a.date);
+      const safeB = Number.isNaN(bTime) ? 0 : bTime;
+      const safeA = Number.isNaN(aTime) ? 0 : aTime;
+      return safeB - safeA;
+    });
   }, [logs]);
 }
 
@@ -80,7 +86,7 @@ export function useSessionLogsByDate(campaignId?: string): SessionLog[] {
  */
 export function useSessionLog(id: string): SessionLog | null {
   const store = useStore();
-  const row = useRow(store, 'sessionLogs', id);
+  const row = useRow('sessionLogs', id, store);
 
   return useMemo(() => {
     if (!row || Object.keys(row).length === 0) return null;

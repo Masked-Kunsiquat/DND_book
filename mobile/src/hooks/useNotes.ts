@@ -45,7 +45,7 @@ function rowToNote(row: NoteRow): Note {
  */
 export function useNotes(campaignId?: string): Note[] {
   const store = useStore();
-  const table = useTable(store, 'notes');
+  const table = useTable('notes', store);
 
   return useMemo(() => {
     const notes = Object.values(table).map((row) => rowToNote(row as unknown as NoteRow));
@@ -63,7 +63,7 @@ export function useNotes(campaignId?: string): Note[] {
  */
 export function useNotesByLocation(locationId: string): Note[] {
   const store = useStore();
-  const table = useTable(store, 'notes');
+  const table = useTable('notes', store);
 
   return useMemo(() => {
     return Object.values(table)
@@ -77,7 +77,7 @@ export function useNotesByLocation(locationId: string): Note[] {
  */
 export function useNotesByTag(tagId: string): Note[] {
   const store = useStore();
-  const table = useTable(store, 'notes');
+  const table = useTable('notes', store);
 
   return useMemo(() => {
     return Object.values(table)
@@ -91,7 +91,7 @@ export function useNotesByTag(tagId: string): Note[] {
  */
 export function useNote(id: string): Note | null {
   const store = useStore();
-  const row = useRow(store, 'notes', id);
+  const row = useRow('notes', id, store);
 
   return useMemo(() => {
     if (!row || Object.keys(row).length === 0) return null;

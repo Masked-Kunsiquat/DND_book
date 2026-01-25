@@ -48,7 +48,7 @@ function rowToLocation(row: LocationRow): Location {
  */
 export function useLocations(campaignId?: string): Location[] {
   const store = useStore();
-  const table = useTable(store, 'locations');
+  const table = useTable('locations', store);
 
   return useMemo(() => {
     const locations = Object.values(table).map((row) => rowToLocation(row as unknown as LocationRow));
@@ -66,7 +66,7 @@ export function useLocations(campaignId?: string): Location[] {
  */
 export function useChildLocations(parentId: string): Location[] {
   const store = useStore();
-  const table = useTable(store, 'locations');
+  const table = useTable('locations', store);
 
   return useMemo(() => {
     return Object.values(table)
@@ -80,7 +80,7 @@ export function useChildLocations(parentId: string): Location[] {
  */
 export function useRootLocations(campaignId?: string): Location[] {
   const store = useStore();
-  const table = useTable(store, 'locations');
+  const table = useTable('locations', store);
 
   return useMemo(() => {
     const locations = Object.values(table)
@@ -100,7 +100,7 @@ export function useRootLocations(campaignId?: string): Location[] {
  */
 export function useLocationsByTag(tagId: string): Location[] {
   const store = useStore();
-  const table = useTable(store, 'locations');
+  const table = useTable('locations', store);
 
   return useMemo(() => {
     return Object.values(table)
@@ -114,7 +114,7 @@ export function useLocationsByTag(tagId: string): Location[] {
  */
 export function useLocation(id: string): Location | null {
   const store = useStore();
-  const row = useRow(store, 'locations', id);
+  const row = useRow('locations', id, store);
 
   return useMemo(() => {
     if (!row || Object.keys(row).length === 0) return null;
@@ -127,7 +127,7 @@ export function useLocation(id: string): Location | null {
  */
 export function useLocationPath(id: string): Location[] {
   const store = useStore();
-  const table = useTable(store, 'locations');
+  const table = useTable('locations', store);
 
   return useMemo(() => {
     const path: Location[] = [];

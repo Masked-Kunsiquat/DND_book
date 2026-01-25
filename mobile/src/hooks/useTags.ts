@@ -28,7 +28,7 @@ function rowToTag(row: TagRow): Tag {
  */
 export function useTags(): Tag[] {
   const store = useStore();
-  const table = useTable(store, 'tags');
+  const table = useTable('tags', store);
 
   return useMemo(() => {
     return Object.values(table).map((row) => rowToTag(row as unknown as TagRow));
@@ -40,7 +40,7 @@ export function useTags(): Tag[] {
  */
 export function useTag(id: string): Tag | null {
   const store = useStore();
-  const table = useTable(store, 'tags');
+  const table = useTable('tags', store);
   const row = table[id] as unknown as TagRow | undefined;
 
   return useMemo(() => {
@@ -54,7 +54,7 @@ export function useTag(id: string): Tag | null {
  */
 export function useTagsByIds(ids: string[]): Tag[] {
   const store = useStore();
-  const table = useTable(store, 'tags');
+  const table = useTable('tags', store);
 
   return useMemo(() => {
     return ids
@@ -71,7 +71,7 @@ export function useTagsByIds(ids: string[]): Tag[] {
  */
 export function useTagByName(name: string): Tag | null {
   const store = useStore();
-  const table = useTable(store, 'tags');
+  const table = useTable('tags', store);
 
   return useMemo(() => {
     const lowerName = name.toLowerCase();
@@ -119,7 +119,7 @@ export function useCreateTag(): (data: CreateTagInput) => string {
  */
 export function useGetOrCreateTag(): (name: string) => string {
   const store = useStore();
-  const table = useTable(store, 'tags');
+  const table = useTable('tags', store);
 
   return useCallback(
     (name: string) => {

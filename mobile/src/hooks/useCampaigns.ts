@@ -28,7 +28,7 @@ function rowToCampaign(row: CampaignRow): Campaign {
  */
 export function useCampaigns(): Campaign[] {
   const store = useStore();
-  const table = useTable(store, 'campaigns');
+  const table = useTable('campaigns', store);
 
   return useMemo(() => {
     return Object.values(table).map((row) => rowToCampaign(row as unknown as CampaignRow));
@@ -40,7 +40,7 @@ export function useCampaigns(): Campaign[] {
  */
 export function useCampaign(id: string): Campaign | null {
   const store = useStore();
-  const row = useRow(store, 'campaigns', id);
+  const row = useRow('campaigns', id, store);
 
   return useMemo(() => {
     if (!id || !row || Object.keys(row).length === 0) return null;
@@ -53,7 +53,7 @@ export function useCampaign(id: string): Campaign | null {
  */
 export function useCurrentCampaign(): Campaign | null {
   const store = useStore();
-  const currentCampaignId = useValue(store, 'currentCampaignId') as string;
+  const currentCampaignId = useValue('currentCampaignId', store) as string;
 
   return useCampaign(currentCampaignId || '');
 }
