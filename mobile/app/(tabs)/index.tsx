@@ -143,8 +143,13 @@ export default function Home() {
           >
             New Campaign
           </Button>
-          <Button mode="outlined" icon="sync" style={styles.actionButton} disabled>
-            Sync (soon)
+          <Button
+            mode="outlined"
+            icon="sync"
+            style={styles.actionButton}
+            onPress={() => router.push('/sync')}
+          >
+            Sync
           </Button>
         </View>
       </Section>

@@ -6,10 +6,12 @@ import { PeerList, RoomCodeDisplay, Screen, Section } from '../../src/components
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { spacing } from '../../src/theme';
 import { useSync } from '../../src/hooks';
+import { isSyncSupported } from '../../src/store/sync';
 
 export default function SyncHubScreen() {
   const { theme } = useTheme();
   const { state, inSession, leave, isLoading, error } = useSync();
+  const syncSupported = isSyncSupported();
 
   const handleLeave = useCallback(async () => {
     if (isLoading) return;
@@ -48,7 +50,7 @@ export default function SyncHubScreen() {
               mode="contained"
               icon="wifi"
               onPress={() => router.push('/sync/host')}
-              disabled={isLoading || inSession}
+              disabled={!syncSupported || isLoading || inSession}
             >
               Host Session
             </Button>
@@ -56,7 +58,7 @@ export default function SyncHubScreen() {
               mode="outlined"
               icon="account-multiple-plus"
               onPress={() => router.push('/sync/join')}
-              disabled={isLoading || inSession}
+              disabled={!syncSupported || isLoading || inSession}
             >
               Join Session
             </Button>
@@ -65,16 +67,25 @@ export default function SyncHubScreen() {
                 mode="text"
                 icon="exit-to-app"
                 onPress={handleLeave}
-                disabled={isLoading}
+                disabled={!syncSupported || isLoading}
               >
                 Leave Session
               </Button>
             )}
           </View>
-          {error && (
+          {!syncSupported ? (
             <Text variant="bodySmall" style={[styles.errorText, { color: theme.colors.error }]}>
-              {error}
+              P2P sync is not supported on native yet.
             </Text>
+          ) : (
+            error && (
+              <Text
+                variant="bodySmall"
+                style={[styles.errorText, { color: theme.colors.error }]}
+              >
+                {error}
+              </Text>
+            )
           )}
         </Section>
       </Screen>

@@ -6,10 +6,12 @@ import { PeerList, RoomCodeDisplay, Screen, Section } from '../../src/components
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { spacing } from '../../src/theme';
 import { useSync } from '../../src/hooks';
+import { isSyncSupported } from '../../src/store/sync';
 
 export default function SyncHostScreen() {
   const { theme } = useTheme();
   const { state, inSession, host, leave, isLoading, error } = useSync();
+  const syncSupported = isSyncSupported();
 
   const handleHost = useCallback(async () => {
     if (isLoading) return;
@@ -58,8 +60,8 @@ export default function SyncHostScreen() {
               mode="contained"
               icon="wifi"
               onPress={handleHost}
-              disabled={isLoading || inSession}
-              loading={isLoading && !inSession}
+              disabled={!syncSupported || isLoading || inSession}
+              loading={syncSupported && isLoading && !inSession}
             >
               Start Hosting
             </Button>
@@ -67,15 +69,24 @@ export default function SyncHostScreen() {
               mode="outlined"
               icon="stop"
               onPress={handleLeave}
-              disabled={!inSession || isLoading}
+              disabled={!syncSupported || !inSession || isLoading}
             >
               Stop Hosting
             </Button>
           </View>
-          {error && (
+          {!syncSupported ? (
             <Text variant="bodySmall" style={[styles.errorText, { color: theme.colors.error }]}>
-              {error}
+              P2P sync is not supported on native yet.
             </Text>
+          ) : (
+            error && (
+              <Text
+                variant="bodySmall"
+                style={[styles.errorText, { color: theme.colors.error }]}
+              >
+                {error}
+              </Text>
+            )
           )}
         </Section>
       </Screen>

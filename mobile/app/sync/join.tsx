@@ -6,10 +6,12 @@ import { FormTextInput, Screen, Section } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { spacing } from '../../src/theme';
 import { useSync } from '../../src/hooks';
+import { isSyncSupported } from '../../src/store/sync';
 
 export default function SyncJoinScreen() {
   const { theme } = useTheme();
   const { state, inSession, join, leave, isLoading, error } = useSync();
+  const syncSupported = isSyncSupported();
   const [roomCode, setRoomCode] = useState('');
   const [joinError, setJoinError] = useState<string | null>(null);
 
@@ -66,8 +68,8 @@ export default function SyncJoinScreen() {
               mode="contained"
               icon="login"
               onPress={handleJoin}
-              disabled={isLoading || inSession}
-              loading={isLoading && !inSession}
+              disabled={!syncSupported || isLoading || inSession}
+              loading={syncSupported && isLoading && !inSession}
             >
               Join Session
             </Button>
@@ -75,15 +77,24 @@ export default function SyncJoinScreen() {
               mode="outlined"
               icon="exit-to-app"
               onPress={handleLeave}
-              disabled={!inSession || isLoading}
+              disabled={!syncSupported || !inSession || isLoading}
             >
               Leave Session
             </Button>
           </View>
-          {message && (
+          {!syncSupported ? (
             <Text variant="bodySmall" style={[styles.errorText, { color: theme.colors.error }]}>
-              {message}
+              P2P sync is not supported on native yet.
             </Text>
+          ) : (
+            message && (
+              <Text
+                variant="bodySmall"
+                style={[styles.errorText, { color: theme.colors.error }]}
+              >
+                {message}
+              </Text>
+            )
           )}
         </Section>
       </Screen>

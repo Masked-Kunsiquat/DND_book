@@ -4,6 +4,7 @@
  */
 
 import * as Y from 'yjs';
+import { Platform } from 'react-native';
 import { WebrtcProvider } from 'y-webrtc';
 import type { MergeableStore } from 'tinybase';
 import { createLogger } from '../utils/logger';
@@ -31,6 +32,16 @@ export interface SyncState {
 }
 
 let currentSession: SyncSession | null = null;
+
+export function isSyncSupported(): boolean {
+  return Platform.OS === 'web';
+}
+
+function assertSyncSupported(): void {
+  if (!isSyncSupported()) {
+    throw new Error('P2P sync is not supported on native yet.');
+  }
+}
 
 /**
  * Generates a human-readable room code.
@@ -112,6 +123,7 @@ function syncStoreToYDoc(store: MergeableStore, doc: Y.Doc, seedInitial: boolean
 export async function hostSession(store: MergeableStore): Promise<string> {
   // Leave any existing session
   await leaveSession();
+  assertSyncSupported();
 
   const roomCode = generateRoomCode();
   const roomId = ROOM_PREFIX + roomCode;
@@ -142,6 +154,7 @@ export async function hostSession(store: MergeableStore): Promise<string> {
 export async function joinSession(store: MergeableStore, roomCode: string): Promise<void> {
   // Leave any existing session
   await leaveSession();
+  assertSyncSupported();
 
   const normalizedCode = roomCode.toUpperCase().trim();
   const roomId = ROOM_PREFIX + normalizedCode;
