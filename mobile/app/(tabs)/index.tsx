@@ -1,10 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text, Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { Screen, AppCard, Section, StatCard } from '../../src/components';
+import { useCampaigns, useCreateCampaign, useSetCurrentCampaign } from '../../src/hooks';
 import { useCurrentCampaign } from '../../src/hooks/useCampaigns';
 import { useNotes } from '../../src/hooks/useNotes';
 import { useNpcs } from '../../src/hooks/useNpcs';
@@ -14,17 +15,40 @@ import { spacing, semanticColors } from '../../src/theme';
 
 export default function Home() {
   const { theme } = useTheme();
+  const campaigns = useCampaigns();
+  const createCampaign = useCreateCampaign();
+  const setCurrentCampaign = useSetCurrentCampaign();
   const currentCampaign = useCurrentCampaign();
   const notes = useNotes(currentCampaign?.id);
   const npcs = useNpcs(currentCampaign?.id);
   const locations = useLocations(currentCampaign?.id);
   const tags = useTags();
+  const [isCreatingCampaign, setIsCreatingCampaign] = useState(false);
+  const [createCampaignError, setCreateCampaignError] = useState<string | null>(null);
 
   const recentNotes = useMemo(() => {
     return [...notes]
       .sort((a, b) => (b.updated || b.created).localeCompare(a.updated || a.created))
       .slice(0, 3);
   }, [notes]);
+
+  const handleCreateCampaign = async () => {
+    if (isCreatingCampaign) return;
+    setIsCreatingCampaign(true);
+    setCreateCampaignError(null);
+    try {
+      const name = `New Campaign ${campaigns.length + 1}`;
+      const id = await Promise.resolve(createCampaign({ name }));
+      if (id) {
+        setCurrentCampaign(id);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to create campaign.';
+      setCreateCampaignError(message);
+    } finally {
+      setIsCreatingCampaign(false);
+    }
+  };
 
   return (
     <Screen>
@@ -131,13 +155,24 @@ export default function Home() {
 
       <Section title="Quick Actions" icon="lightning-bolt">
         <View style={styles.actions}>
-          <Button mode="contained" icon="folder-plus" style={styles.actionButton}>
+          <Button
+            mode="contained"
+            icon="folder-plus"
+            style={styles.actionButton}
+            onPress={handleCreateCampaign}
+            disabled={isCreatingCampaign}
+          >
             New Campaign
           </Button>
           <Button mode="outlined" icon="sync" style={styles.actionButton} disabled>
             Sync (soon)
           </Button>
         </View>
+        {createCampaignError && (
+          <Text variant="bodySmall" style={{ color: theme.colors.error }}>
+            {createCampaignError}
+          </Text>
+        )}
       </Section>
     </Screen>
   );

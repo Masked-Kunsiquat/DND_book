@@ -6,6 +6,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { Chip } from 'react-native-paper';
 import { getTagColor } from '../../theme';
+import { useTheme } from '../../theme/ThemeProvider';
 
 export interface TagChipProps {
   /** Tag ID (used to determine color) */
@@ -24,6 +25,7 @@ export interface TagChipProps {
 
 export function TagChip({ id, name, onPress, onClose, selected, size = 'medium' }: TagChipProps) {
   const colors = getTagColor(id);
+  const { theme } = useTheme();
 
   return (
     <Chip
@@ -33,7 +35,8 @@ export function TagChip({ id, name, onPress, onClose, selected, size = 'medium' 
       style={[
         styles.chip,
         size === 'small' && styles.chipSmall,
-        { backgroundColor: colors.bg, borderColor: colors.bg },
+        selected && { backgroundColor: colors.bg },
+        { borderColor: selected ? colors.bg : theme.colors.outlineVariant },
       ]}
       textStyle={[styles.text, size === 'small' && styles.textSmall, { color: colors.text }]}
       closeIconAccessibilityLabel="Remove tag"
