@@ -145,6 +145,19 @@ export default function Home() {
           </Button>
           <Button
             mode="outlined"
+            icon="account-group-outline"
+            style={styles.actionButton}
+            onPress={() =>
+              currentCampaign
+                ? router.push(`/campaign/${currentCampaign.id}/party`)
+                : undefined
+            }
+            disabled={!currentCampaign}
+          >
+            Party
+          </Button>
+          <Button
+            mode="outlined"
             icon="sync"
             style={styles.actionButton}
             onPress={() => router.push('/sync')}
@@ -164,6 +177,7 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing[3],
   },
   actionButton: {

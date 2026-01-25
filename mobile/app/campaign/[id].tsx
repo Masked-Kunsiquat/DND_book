@@ -3,6 +3,7 @@ import { Alert, StyleSheet, View } from 'react-native';
 import { Button, IconButton, Text } from 'react-native-paper';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import {
+  AppCard,
   FormTextInput,
   Screen,
   EmptyState,
@@ -21,6 +22,7 @@ import {
   useLocations,
   useNotes,
   useNpcs,
+  usePlayerCharacters,
   useSetCurrentCampaign,
   useSessionLogs,
   useUpdateCampaign,
@@ -52,6 +54,7 @@ export default function CampaignDetailScreen() {
   const npcs = useNpcs(scopedCampaignId);
   const locations = useLocations(scopedCampaignId);
   const sessionLogs = useSessionLogs(scopedCampaignId);
+  const party = usePlayerCharacters(scopedCampaignId);
 
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState('');
@@ -74,6 +77,10 @@ export default function CampaignDetailScreen() {
       .slice(0, 3);
   }, [locations]);
 
+  const topParty = useMemo(() => {
+    return [...party].sort((a, b) => (a.name || '').localeCompare(b.name || '')).slice(0, 3);
+  }, [party]);
+
   const handleSeeNotes = () => {
     if (!campaign) return;
     setCurrentCampaign(campaign.id);
@@ -90,6 +97,26 @@ export default function CampaignDetailScreen() {
     if (!campaign) return;
     setCurrentCampaign(campaign.id);
     router.push('/locations');
+  };
+
+  const handleSeeParty = () => {
+    if (!campaign) return;
+    router.push(`/campaign/${campaign.id}/party`);
+  };
+
+  const renderPartySubtitle = (
+    playerName?: string,
+    race?: string,
+    className?: string
+  ) => {
+    const parts = [
+      playerName ? `Player: ${playerName}` : null,
+      race || null,
+      className || null,
+    ].filter(
+      Boolean
+    );
+    return parts.length > 0 ? parts.join(' • ') : 'No details yet.';
   };
 
   useEffect(() => {
@@ -280,6 +307,36 @@ export default function CampaignDetailScreen() {
           )}
         </Section>
 
+        <Section
+          title="Party"
+          icon="account-group-outline"
+          action={{ label: party.length > 0 ? 'See all' : 'Add', onPress: handleSeeParty }}
+        >
+          {topParty.length === 0 ? (
+            <View style={styles.partyEmpty}>
+              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                No party members yet.
+              </Text>
+              <Button mode="outlined" icon="plus" onPress={handleSeeParty}>
+                Add character
+              </Button>
+            </View>
+          ) : (
+            topParty.map((character) => (
+              <AppCard
+                key={character.id}
+                title={character.name || 'Unnamed character'}
+                subtitle={renderPartySubtitle(
+                  character.player,
+                  character.race,
+                  character.class
+                )}
+                onPress={handleSeeParty}
+              />
+            ))
+          )}
+        </Section>
+
         {error && (
           <Text variant="bodySmall" style={[styles.errorText, { color: theme.colors.error }]}>
             {error}
@@ -348,5 +405,8 @@ const styles = StyleSheet.create({
   },
   errorText: {
     marginTop: spacing[3],
+  },
+  partyEmpty: {
+    gap: spacing[2],
   },
 });

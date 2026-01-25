@@ -325,6 +325,7 @@ Recommended sequence:
 
 ### Detail Screens
 - [x] `app/campaign/[id].tsx`
+- [x] `app/campaign/[id]/party.tsx`
 - [x] `app/note/[id].tsx`
 - [x] `app/npc/[id].tsx`
 - [x] `app/location/[id].tsx`
