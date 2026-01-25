@@ -13,6 +13,7 @@ import {
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { layout, spacing } from '../../src/theme';
 import { router } from 'expo-router';
+import type { Tag } from '../../src/types/schema';
 import {
   useCampaigns,
   useCreateNote,
@@ -229,7 +230,7 @@ export default function NotesScreen() {
               : undefined;
             const resolvedTags = item.tagIds
               .map((tagId) => tagById.get(tagId))
-              .filter(Boolean);
+              .filter((tag): tag is Tag => tag !== undefined);
 
             return (
               <View style={styles.cardWrapper}>

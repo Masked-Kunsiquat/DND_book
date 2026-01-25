@@ -14,7 +14,7 @@ import {
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { layout, spacing } from '../../src/theme';
 import { useCreateLocation, useCurrentCampaign, useLocations, useTags } from '../../src/hooks';
-import type { Location, LocationType } from '../../src/types/schema';
+import type { Location, LocationType, Tag } from '../../src/types/schema';
 
 const LOCATION_TYPE_OPTIONS: { label: string; value: LocationType }[] = [
   { label: 'Plane', value: 'Plane' },
@@ -137,7 +137,7 @@ export default function LocationsScreen() {
     setCreateError(null);
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (isCreating) return;
     const trimmed = draftName.trim();
     if (!trimmed) {
@@ -147,13 +147,15 @@ export default function LocationsScreen() {
     setIsCreating(true);
     setCreateError(null);
     try {
-      createLocation({
-        name: trimmed,
-        type: draftType,
-        description: draftDescription,
-        parentId: draftParentId || '',
-        campaignIds: currentCampaign ? [currentCampaign.id] : [],
-      });
+      await Promise.resolve(
+        createLocation({
+          name: trimmed,
+          type: draftType,
+          description: draftDescription,
+          parentId: draftParentId || '',
+          campaignIds: currentCampaign ? [currentCampaign.id] : [],
+        })
+      );
       setIsCreateOpen(false);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to create location.';
@@ -292,7 +294,7 @@ export default function LocationsScreen() {
             const parentName = item.parentId ? locationById.get(item.parentId)?.name : undefined;
             const resolvedTags = item.tagIds
               .map((tagId) => tagById.get(tagId))
-              .filter(Boolean);
+              .filter((tag): tag is Tag => tag !== undefined);
             const depth = depthById.get(item.id) ?? 0;
             const indent = depth * spacing[3];
 
