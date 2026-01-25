@@ -3,7 +3,7 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import { useTable } from 'tinybase/ui-react';
+import { useRow, useTable } from 'tinybase/ui-react';
 import { useStore } from '../store';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
@@ -80,7 +80,7 @@ export function usePlayerCharactersByPlayer(playerName: string): PlayerCharacter
  */
 export function usePlayerCharacter(id: string): PlayerCharacter | null {
   const store = useStore();
-  const row = store.getRow('playerCharacters', id);
+  const row = useRow(store, 'playerCharacters', id);
 
   return useMemo(() => {
     if (!row || Object.keys(row).length === 0) return null;

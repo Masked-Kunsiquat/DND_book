@@ -40,7 +40,8 @@ export function useTags(): Tag[] {
  */
 export function useTag(id: string): Tag | null {
   const store = useStore();
-  const row = store.getRow('tags', id);
+  const table = useTable(store, 'tags');
+  const row = table[id] as unknown as TagRow | undefined;
 
   return useMemo(() => {
     if (!row || Object.keys(row).length === 0) return null;
@@ -170,10 +171,12 @@ export function useUpdateTag(): (id: string, data: UpdateTagInput) => void {
         throw new Error(`Tag ${id} not found`);
       }
 
+      const updates: Record<string, string> = { updated: now() };
+      if (data.name !== undefined) updates.name = data.name;
+
       store.setRow('tags', id, {
         ...existing,
-        ...data,
-        updated: now(),
+        ...updates,
       });
 
       log.debug('Updated tag', id);
