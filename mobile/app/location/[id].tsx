@@ -49,6 +49,13 @@ const LOCATION_TYPE_OPTIONS: { label: string; value: LocationType }[] = [
   { label: 'Locale', value: 'Locale' },
   { label: 'Landmark', value: 'Landmark' },
 ];
+const LOCATION_TYPE_ORDER = LOCATION_TYPE_OPTIONS.map((option) => option.value);
+
+const getAllowedParentTypes = (type: LocationType): LocationType[] => {
+  const index = LOCATION_TYPE_ORDER.indexOf(type);
+  if (index <= 0) return [];
+  return LOCATION_TYPE_ORDER.slice(0, index);
+};
 
 const ALLOWED_LOCATION_TYPES = new Set<LocationType>(
   LOCATION_TYPE_OPTIONS.map((option) => option.value)
@@ -94,14 +101,27 @@ export default function LocationDetailScreen() {
   }, [campaigns, location]);
 
   const parentOptions = useMemo(() => {
+    const effectiveType =
+      (isEditing ? (type as LocationType) : location?.type) ?? 'Locale';
+    const allowed = new Set(getAllowedParentTypes(effectiveType));
     const options = [
       { label: 'No parent', value: '' },
       ...allLocations
-        .filter((item) => item.id !== locationId)
+        .filter((item) => item.id !== locationId && allowed.has(item.type))
         .map((item) => ({ label: item.name || 'Untitled location', value: item.id })),
     ];
     return options;
-  }, [allLocations, locationId]);
+  }, [allLocations, isEditing, location?.type, locationId, type]);
+
+  const parentHelper = useMemo(() => {
+    const effectiveType =
+      (isEditing ? (type as LocationType) : location?.type) ?? 'Locale';
+    const allowed = getAllowedParentTypes(effectiveType);
+    if (allowed.length === 0) {
+      return 'This level cannot have a parent.';
+    }
+    return `Parent must be higher in the hierarchy (${allowed.join(' • ')}).`;
+  }, [isEditing, location?.type, type]);
 
   const campaignOptions = useMemo(() => {
     return campaigns.map((campaign) => ({
@@ -162,6 +182,17 @@ export default function LocationDetailScreen() {
   const handleCreateTag = (tagName: string) => {
     const id = getOrCreateTag(tagName);
     return id || undefined;
+  };
+
+  const handleTypeChange = (value: string) => {
+    const nextType = value as LocationType;
+    setType(nextType);
+    if (!parentId) return;
+    const parent = allLocations.find((item) => item.id === parentId);
+    const allowed = new Set(getAllowedParentTypes(nextType));
+    if (!parent || !allowed.has(parent.type)) {
+      setParentId('');
+    }
   };
 
   useEffect(() => {
@@ -225,6 +256,12 @@ export default function LocationDetailScreen() {
       const hasParent = allLocations.some((item) => item.id === parentId);
       if (!hasParent) {
         setError('Select a valid parent location.');
+        return;
+      }
+      const parent = allLocations.find((item) => item.id === parentId);
+      const allowed = new Set(getAllowedParentTypes(type as LocationType));
+      if (!parent || !allowed.has(parent.type)) {
+        setError('Parent must be higher in the location hierarchy.');
         return;
       }
     }
@@ -388,7 +425,7 @@ export default function LocationDetailScreen() {
                 label="Type"
                 value={type}
                 options={LOCATION_TYPE_OPTIONS}
-                onChange={setType}
+                onChange={handleTypeChange}
                 containerStyle={styles.fieldInput}
               />
               <FormSelect
@@ -396,6 +433,7 @@ export default function LocationDetailScreen() {
                 value={parentId}
                 options={parentOptions}
                 onChange={setParentId}
+                helperText={parentHelper}
                 containerStyle={styles.fieldInput}
               />
               <FormTextInput

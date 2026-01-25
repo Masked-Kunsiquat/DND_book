@@ -31,6 +31,13 @@ const LOCATION_TYPE_OPTIONS: { label: string; value: LocationType }[] = [
   { label: 'Locale', value: 'Locale' },
   { label: 'Landmark', value: 'Landmark' },
 ];
+const LOCATION_TYPE_ORDER = LOCATION_TYPE_OPTIONS.map((option) => option.value);
+
+const getAllowedParentTypes = (type: LocationType): LocationType[] => {
+  const index = LOCATION_TYPE_ORDER.indexOf(type);
+  if (index <= 0) return [];
+  return LOCATION_TYPE_ORDER.slice(0, index);
+};
 
 export default function LocationsScreen() {
   const { theme } = useTheme();
@@ -120,15 +127,33 @@ export default function LocationsScreen() {
       });
   }, [locations, depthById]);
 
+  const allowedParentTypes = useMemo(() => getAllowedParentTypes(draftType), [draftType]);
+  const allowedParentIds = useMemo(() => {
+    const allowed = new Set(allowedParentTypes);
+    return new Set(
+      allLocations.filter((location) => allowed.has(location.type)).map((location) => location.id)
+    );
+  }, [allLocations, allowedParentTypes]);
+
   const parentOptions = useMemo(() => {
+    const allowed = new Set(allowedParentTypes);
     return [
       { label: 'No parent', value: '' },
-      ...allLocations.map((location) => ({
-        label: location.name || 'Untitled location',
-        value: location.id,
-      })),
+      ...allLocations
+        .filter((location) => allowed.has(location.type))
+        .map((location) => ({
+          label: location.name || 'Untitled location',
+          value: location.id,
+        })),
     ];
-  }, [allLocations]);
+  }, [allLocations, allowedParentTypes]);
+
+  const parentHelper = useMemo(() => {
+    if (allowedParentTypes.length === 0) {
+      return 'This level cannot have a parent.';
+    }
+    return `Parent must be higher in the hierarchy (${allowedParentTypes.join(' • ')}).`;
+  }, [allowedParentTypes]);
 
   const openCreateModal = () => {
     setDraftName(`New Location ${allLocations.length + 1}`);
@@ -144,11 +169,26 @@ export default function LocationsScreen() {
     setCreateError(null);
   };
 
+  const handleDraftTypeChange = (value: string) => {
+    const nextType = value as LocationType;
+    setDraftType(nextType);
+    if (!draftParentId) return;
+    const parent = allLocations.find((location) => location.id === draftParentId);
+    const allowed = new Set(getAllowedParentTypes(nextType));
+    if (!parent || !allowed.has(parent.type)) {
+      setDraftParentId('');
+    }
+  };
+
   const handleCreate = async () => {
     if (isCreating) return;
     const trimmed = draftName.trim();
     if (!trimmed) {
       setCreateError('Location name is required.');
+      return;
+    }
+    if (draftParentId && !allowedParentIds.has(draftParentId)) {
+      setCreateError('Parent must be higher in the location hierarchy.');
       return;
     }
     setIsCreating(true);
@@ -198,13 +238,14 @@ export default function LocationsScreen() {
         label="Type"
         value={draftType}
         options={LOCATION_TYPE_OPTIONS}
-        onChange={(value) => setDraftType(value as LocationType)}
+        onChange={handleDraftTypeChange}
       />
       <FormSelect
         label="Parent location"
         value={draftParentId}
         options={parentOptions}
         onChange={setDraftParentId}
+        helperText={parentHelper}
       />
       <FormTextInput
         label="Description"
