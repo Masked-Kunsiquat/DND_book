@@ -1,8 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
-import { Button, IconButton, Text, TextInput } from 'react-native-paper';
+import { Button, IconButton, Text } from 'react-native-paper';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { AppCard, EmptyState, LocationCard, Screen, Section, TagChip } from '../../src/components';
+import {
+  AppCard,
+  EmptyState,
+  FormSelect,
+  FormTextInput,
+  LocationCard,
+  Screen,
+  Section,
+  TagChip,
+} from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { spacing } from '../../src/theme';
 import {
@@ -11,6 +20,7 @@ import {
   useDeleteLocation,
   useLocation,
   useLocationPath,
+  useLocations,
   useTagsByIds,
   useUpdateLocation,
 } from '../../src/hooks';
@@ -23,6 +33,16 @@ function formatDate(value?: string): string {
   return parsed.toLocaleString();
 }
 
+const LOCATION_TYPE_OPTIONS: { label: string; value: LocationType }[] = [
+  { label: 'Plane', value: 'Plane' },
+  { label: 'Realm', value: 'Realm' },
+  { label: 'Continent', value: 'Continent' },
+  { label: 'Territory', value: 'Territory' },
+  { label: 'Province', value: 'Province' },
+  { label: 'Locale', value: 'Locale' },
+  { label: 'Landmark', value: 'Landmark' },
+];
+
 export default function LocationDetailScreen() {
   const { theme } = useTheme();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
@@ -34,6 +54,7 @@ export default function LocationDetailScreen() {
   const location = useLocation(locationId);
   const updateLocation = useUpdateLocation();
   const deleteLocation = useDeleteLocation();
+  const allLocations = useLocations();
   const childLocations = useChildLocations(locationId);
   const path = useLocationPath(locationId);
   const tags = useTagsByIds(location?.tagIds ?? []);
@@ -52,6 +73,16 @@ export default function LocationDetailScreen() {
     const ids = new Set(location.campaignIds);
     return campaigns.filter((campaign) => ids.has(campaign.id));
   }, [campaigns, location]);
+
+  const parentOptions = useMemo(() => {
+    const options = [
+      { label: 'No parent', value: '' },
+      ...allLocations
+        .filter((item) => item.id !== locationId)
+        .map((item) => ({ label: item.name || 'Untitled location', value: item.id })),
+    ];
+    return options;
+  }, [allLocations, locationId]);
 
   const parentName = useMemo(() => {
     if (!location?.parentId) return undefined;
@@ -154,8 +185,7 @@ export default function LocationDetailScreen() {
         <View style={styles.headerRow}>
           <View style={styles.headerText}>
             {isEditing ? (
-              <TextInput
-                mode="outlined"
+              <FormTextInput
                 label="Location name"
                 value={name}
                 onChangeText={setName}
@@ -187,22 +217,21 @@ export default function LocationDetailScreen() {
         <Section title="Details" icon="map-marker-outline">
           {isEditing ? (
             <>
-              <TextInput
-                mode="outlined"
+              <FormSelect
                 label="Type"
                 value={type}
-                onChangeText={setType}
-                style={styles.fieldInput}
+                options={LOCATION_TYPE_OPTIONS}
+                onChange={setType}
+                containerStyle={styles.fieldInput}
               />
-              <TextInput
-                mode="outlined"
-                label="Parent ID"
+              <FormSelect
+                label="Parent location"
                 value={parentId}
-                onChangeText={setParentId}
-                style={styles.fieldInput}
+                options={parentOptions}
+                onChange={setParentId}
+                containerStyle={styles.fieldInput}
               />
-              <TextInput
-                mode="outlined"
+              <FormTextInput
                 label="Description"
                 value={description}
                 onChangeText={setDescription}

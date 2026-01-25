@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
-import { Button, IconButton, Text, TextInput } from 'react-native-paper';
+import { Button, IconButton, Text } from 'react-native-paper';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { Screen, EmptyState, TagChip } from '../../src/components';
+import { FormTextInput, Screen, EmptyState, TagChip } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { spacing } from '../../src/theme';
 import { useCampaign, useDeleteNote, useNote, useTagsByIds, useUpdateNote } from '../../src/hooks';
@@ -118,8 +118,7 @@ export default function NoteDetailScreen() {
         <View style={styles.headerRow}>
           <View style={styles.headerText}>
             {isEditing ? (
-              <TextInput
-                mode="outlined"
+              <FormTextInput
                 label="Title"
                 value={title}
                 onChangeText={setTitle}
@@ -144,8 +143,7 @@ export default function NoteDetailScreen() {
         </View>
 
         {isEditing ? (
-          <TextInput
-            mode="outlined"
+          <FormTextInput
             label="Content"
             value={content}
             onChangeText={setContent}

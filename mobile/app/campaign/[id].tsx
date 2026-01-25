@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
-import { Button, IconButton, Text, TextInput } from 'react-native-paper';
+import { Button, IconButton, Text } from 'react-native-paper';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { Screen, EmptyState, Section, StatCard } from '../../src/components';
+import { FormTextInput, Screen, EmptyState, Section, StatCard } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { spacing } from '../../src/theme';
 import {
@@ -126,8 +126,7 @@ export default function CampaignDetailScreen() {
         <View style={styles.headerRow}>
           <View style={styles.headerText}>
             {isEditing ? (
-              <TextInput
-                mode="outlined"
+              <FormTextInput
                 label="Campaign name"
                 value={name}
                 onChangeText={setName}
