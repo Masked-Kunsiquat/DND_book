@@ -4,6 +4,7 @@
 
 // Cards
 export { AppCard, type AppCardProps } from './cards/AppCard';
+export { StatCard, type StatCardProps } from './cards/StatCard';
 
 // Chips/Tags
 export { TagChip, type TagChipProps } from './chips/TagChip';
