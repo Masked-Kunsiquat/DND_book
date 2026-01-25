@@ -16,6 +16,7 @@ export { TagChip, type TagChipProps } from './chips/TagChip';
 // Layout
 export { Screen, type ScreenProps } from './layout/Screen';
 export { Section, type SectionProps } from './layout/Section';
+export { Breadcrumb, type BreadcrumbProps, type BreadcrumbItem } from './layout/Breadcrumb';
 
 // Forms
 export { FormTextInput, type FormTextInputProps } from './forms/FormTextInput';

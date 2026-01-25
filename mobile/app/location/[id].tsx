@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Image, StyleSheet, View } from 'react-native';
+import { Alert, Image, Pressable, StyleSheet, View } from 'react-native';
 import { Button, IconButton, Text } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import {
   AppCard,
+  Breadcrumb,
   EmptyState,
   FormImageGallery,
   FormImagePicker,
@@ -17,7 +19,7 @@ import {
   TagInput,
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
-import { layout, spacing } from '../../src/theme';
+import { iconSizes, layout, spacing } from '../../src/theme';
 import {
   useCampaigns,
   useChildLocations,
@@ -81,6 +83,7 @@ export default function LocationDetailScreen() {
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [mapImage, setMapImage] = useState<string | null>(null);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [showFullPath, setShowFullPath] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -124,10 +127,46 @@ export default function LocationDetailScreen() {
     return path.find((item) => item.id === location.parentId)?.name;
   }, [location?.parentId, path]);
 
+  const showBreadcrumb = path.length > 1;
+  const canCollapsePath = path.length > 4;
+
+  const breadcrumbItems = useMemo(() => {
+    if (!showFullPath && canCollapsePath) {
+      const first = path[0];
+      const tail = path.slice(-2);
+      return [
+        {
+          label: first?.name || 'Untitled',
+          icon: 'map-marker-outline',
+          onPress: () => router.push(`/location/${first.id}`),
+        },
+        {
+          label: '...',
+          onPress: () => setShowFullPath(true),
+        },
+        ...tail.map((item, index) => ({
+          label: item.name || 'Untitled',
+          onPress:
+            index < tail.length - 1 ? () => router.push(`/location/${item.id}`) : undefined,
+        })),
+      ];
+    }
+
+    return path.map((item, index) => ({
+      label: item.name || 'Untitled',
+      icon: index === 0 ? 'map-marker-outline' : undefined,
+      onPress: index < path.length - 1 ? () => router.push(`/location/${item.id}`) : undefined,
+    }));
+  }, [canCollapsePath, path, router, showFullPath]);
+
   const handleCreateTag = (tagName: string) => {
     const id = getOrCreateTag(tagName);
     return id || undefined;
   };
+
+  useEffect(() => {
+    setShowFullPath(false);
+  }, [locationId]);
 
   useEffect(() => {
     if (location && !isEditing) {
@@ -265,38 +304,82 @@ export default function LocationDetailScreen() {
   return (
     <>
       <Stack.Screen options={{ title: location.name || 'Location' }} />
-      <Screen>
-        <View style={styles.headerRow}>
-          <View style={styles.headerText}>
-            {isEditing ? (
-              <FormTextInput
-                label="Location name"
-                value={name}
-                onChangeText={setName}
-                style={styles.titleInput}
-              />
-            ) : (
-              <Text variant="headlineSmall" style={{ color: theme.colors.onSurface }}>
-                {location.name || 'Untitled location'}
-              </Text>
-            )}
-            <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-              Type: {isEditing ? type : location.type}
-            </Text>
-            {!isEditing && parentName && (
+      <Screen stickyHeaderIndices={showBreadcrumb ? [0] : undefined}>
+        {showBreadcrumb && (
+          <View
+            style={[
+              styles.breadcrumbHeader,
+              { backgroundColor: theme.colors.background, borderColor: theme.colors.outlineVariant },
+            ]}
+          >
+            <View style={styles.breadcrumbRow}>
+              <Breadcrumb items={breadcrumbItems} variant="solid" />
+              {canCollapsePath && showFullPath && (
+                <Pressable
+                  onPress={() => setShowFullPath(false)}
+                  hitSlop={6}
+                  style={({ pressed }) => [
+                    styles.breadcrumbToggle,
+                    { opacity: pressed ? 0.7 : 1 },
+                  ]}
+                >
+                  <Text variant="labelSmall" style={{ color: theme.colors.primary }}>
+                    Collapse
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+          </View>
+        )}
+        <View style={styles.content}>
+          <View style={styles.headerRow}>
+            <View style={styles.headerText}>
+              {isEditing ? (
+                <FormTextInput
+                  label="Location name"
+                  value={name}
+                  onChangeText={setName}
+                  style={styles.titleInput}
+                />
+              ) : (
+                <Text variant="headlineSmall" style={{ color: theme.colors.onSurface }}>
+                  {location.name || 'Untitled location'}
+                </Text>
+              )}
               <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                Parent: {parentName}
+                Type: {isEditing ? type : location.type}
               </Text>
+              {!isEditing && parentName && location.parentId && (
+                <Pressable
+                  onPress={() => router.push(`/location/${location.parentId}`)}
+                  style={({ pressed }) => [
+                    styles.parentChip,
+                    {
+                      backgroundColor: theme.colors.surfaceVariant,
+                      borderColor: theme.colors.outlineVariant,
+                      opacity: pressed ? 0.7 : 1,
+                    },
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name="arrow-up"
+                    size={iconSizes.sm}
+                    color={theme.colors.onSurfaceVariant}
+                  />
+                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Parent: {parentName}
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+            {!isEditing && (
+              <IconButton
+                icon="pencil"
+                onPress={handleEdit}
+                accessibilityLabel="Edit location"
+              />
             )}
           </View>
-          {!isEditing && (
-            <IconButton
-              icon="pencil"
-              onPress={handleEdit}
-              accessibilityLabel="Edit location"
-            />
-          )}
-        </View>
 
         <Section title="Details" icon="map-marker-outline">
           {isEditing ? (
@@ -339,14 +422,6 @@ export default function LocationDetailScreen() {
             </>
           )}
         </Section>
-
-        {path.length > 1 && (
-          <Section title="Hierarchy" icon="map-marker-path">
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-              {path.map((item) => item.name || 'Untitled').join(' / ')}
-            </Text>
-          </Section>
-        )}
 
         <Section title="Campaigns" icon="folder-outline">
           {isEditing ? (
@@ -413,9 +488,13 @@ export default function LocationDetailScreen() {
               )}
               {location.images.length > 0 ? (
                 <View style={styles.galleryRow}>
-              {location.images.map((uri, index) => (
-                <Image key={`${uri}-${index}`} source={{ uri }} style={styles.galleryImage} />
-              ))}
+                  {location.images.map((uri, index) => (
+                    <Image
+                      key={`${uri}-${index}`}
+                      source={{ uri }}
+                      style={styles.galleryImage}
+                    />
+                  ))}
                 </View>
               ) : (
                 <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
@@ -477,6 +556,7 @@ export default function LocationDetailScreen() {
             </>
           )}
         </View>
+        </View>
       </Screen>
     </>
   );
@@ -494,8 +574,33 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing[1],
   },
+  parentChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing[2],
+    paddingVertical: spacing[1],
+    borderRadius: layout.cardBorderRadius,
+    borderWidth: 1,
+    gap: spacing[1],
+  },
   titleInput: {
     marginBottom: spacing[1],
+  },
+  breadcrumbHeader: {
+    paddingBottom: spacing[3],
+    marginBottom: spacing[4],
+    borderBottomWidth: 1,
+  },
+  breadcrumbRow: {
+    gap: spacing[2],
+    alignItems: 'flex-start',
+  },
+  breadcrumbToggle: {
+    alignSelf: 'flex-start',
+  },
+  content: {
+    flex: 1,
   },
   fieldInput: {
     marginBottom: spacing[2],
