@@ -13,7 +13,13 @@ import {
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { layout, spacing } from '../../src/theme';
-import { useCreateLocation, useCurrentCampaign, useLocations, useTags } from '../../src/hooks';
+import {
+  useCreateLocation,
+  useCurrentCampaign,
+  useLocations,
+  usePullToRefresh,
+  useTags,
+} from '../../src/hooks';
 import type { Location, LocationType, Tag } from '../../src/types/schema';
 
 const LOCATION_TYPE_OPTIONS: { label: string; value: LocationType }[] = [
@@ -40,6 +46,7 @@ export default function LocationsScreen() {
   const createLocation = useCreateLocation();
   const allLocations = useLocations();
   const tags = useTags();
+  const { refreshing, onRefresh } = usePullToRefresh();
   const effectiveCampaignId = onlyCurrent && currentCampaign ? currentCampaign.id : undefined;
   const locations = useLocations(effectiveCampaignId);
 
@@ -217,7 +224,7 @@ export default function LocationsScreen() {
   if (locations.length === 0) {
     return (
       <>
-        <Screen>
+        <Screen onRefresh={onRefresh} refreshing={refreshing}>
           <EmptyState
             title="No locations yet"
             description={
@@ -242,6 +249,8 @@ export default function LocationsScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           stickySectionHeadersEnabled={false}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
           ListHeaderComponent={
             <View style={styles.header}>
               <View style={styles.filterHeader}>

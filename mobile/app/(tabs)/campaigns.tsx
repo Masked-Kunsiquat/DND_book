@@ -8,6 +8,7 @@ import {
   useCurrentCampaign,
   useSetCurrentCampaign,
   useCreateCampaign,
+  usePullToRefresh,
 } from '../../src/hooks';
 import { useNotes } from '../../src/hooks/useNotes';
 import { useNpcs } from '../../src/hooks/useNpcs';
@@ -39,6 +40,7 @@ export default function CampaignsScreen() {
   const notes = useNotes();
   const npcs = useNpcs();
   const locations = useLocations();
+  const { refreshing, onRefresh } = usePullToRefresh();
 
   const noteCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -199,7 +201,7 @@ export default function CampaignsScreen() {
   if (campaigns.length === 0) {
     return (
       <>
-        <Screen>
+        <Screen onRefresh={onRefresh} refreshing={refreshing}>
           <EmptyState
             title="No campaigns yet"
             description="Create your first campaign to get started."
@@ -220,6 +222,8 @@ export default function CampaignsScreen() {
           keyExtractor={(campaign) => campaign.id}
           contentContainerStyle={styles.listContent}
           ListHeaderComponent={header}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
           renderItem={({ item }) => {
             const isCurrent = item.id === currentCampaign?.id;
             return (

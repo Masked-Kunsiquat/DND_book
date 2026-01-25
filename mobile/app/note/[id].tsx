@@ -2,10 +2,29 @@ import { useEffect, useMemo, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import { Button, IconButton, Text } from 'react-native-paper';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { FormTextInput, Screen, EmptyState, TagChip } from '../../src/components';
+import {
+  AppCard,
+  EmptyState,
+  FormMultiSelect,
+  FormSelect,
+  FormTextInput,
+  Screen,
+  Section,
+  TagChip,
+  TagInput,
+} from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { spacing } from '../../src/theme';
-import { useCampaign, useDeleteNote, useNote, useTagsByIds, useUpdateNote } from '../../src/hooks';
+import {
+  useCampaign,
+  useCampaigns,
+  useDeleteNote,
+  useGetOrCreateTag,
+  useLocations,
+  useNote,
+  useTags,
+  useUpdateNote,
+} from '../../src/hooks';
 
 function formatDate(value?: string): string {
   if (!value) return 'Unknown';
@@ -24,13 +43,19 @@ export default function NoteDetailScreen() {
 
   const note = useNote(noteId);
   const campaign = useCampaign(note?.campaignId ?? '');
-  const tags = useTagsByIds(note?.tagIds ?? []);
+  const campaigns = useCampaigns();
+  const locations = useLocations();
+  const tags = useTags();
   const updateNote = useUpdateNote();
   const deleteNote = useDeleteNote();
+  const getOrCreateTag = useGetOrCreateTag();
 
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [campaignId, setCampaignId] = useState('');
+  const [locationIds, setLocationIds] = useState<string[]>([]);
+  const [tagIds, setTagIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -38,13 +63,77 @@ export default function NoteDetailScreen() {
     if (note && !isEditing) {
       setTitle(note.title);
       setContent(note.content);
+      setCampaignId(note.campaignId);
+      setLocationIds(note.locationIds);
+      setTagIds(note.tagIds);
     }
   }, [note, isEditing]);
+
+  const campaignOptions = useMemo(() => {
+    return campaigns.map((item) => ({
+      label: item.name || 'Untitled campaign',
+      value: item.id,
+    }));
+  }, [campaigns]);
+
+  const locationOptions = useMemo(() => {
+    const filtered = campaignId
+      ? locations.filter((location) => location.campaignIds.includes(campaignId))
+      : locations;
+    return filtered.map((location) => ({
+      label: location.name || 'Unnamed location',
+      value: location.id,
+    }));
+  }, [campaignId, locations]);
+
+  const displayLocationIds = useMemo(() => {
+    if (isEditing) return locationIds;
+    return note?.locationIds ?? [];
+  }, [isEditing, locationIds, note?.locationIds]);
+
+  const displayTagIds = useMemo(() => {
+    if (isEditing) return tagIds;
+    return note?.tagIds ?? [];
+  }, [isEditing, note?.tagIds, tagIds]);
+
+  const linkedLocations = useMemo(() => {
+    const ids = new Set(displayLocationIds);
+    return locations.filter((location) => ids.has(location.id));
+  }, [displayLocationIds, locations]);
+
+  const resolvedTags = useMemo(() => {
+    const tagById = new Map(tags.map((tag) => [tag.id, tag]));
+    return displayTagIds
+      .map((id) => tagById.get(id))
+      .filter((tag): tag is (typeof tags)[number] => tag !== undefined);
+  }, [displayTagIds, tags]);
+
+  const handleCampaignChange = (value: string) => {
+    setCampaignId(value);
+    if (!value) {
+      setLocationIds([]);
+      return;
+    }
+    const allowed = new Set(
+      locations
+        .filter((location) => location.campaignIds.includes(value))
+        .map((location) => location.id)
+    );
+    setLocationIds((prev) => prev.filter((id) => allowed.has(id)));
+  };
+
+  const handleCreateTag = (tagName: string) => {
+    const id = getOrCreateTag(tagName);
+    return id || undefined;
+  };
 
   const handleEdit = () => {
     if (!note) return;
     setTitle(note.title);
     setContent(note.content);
+    setCampaignId(note.campaignId);
+    setLocationIds(note.locationIds);
+    setTagIds(note.tagIds);
     setError(null);
     setIsEditing(true);
   };
@@ -53,6 +142,9 @@ export default function NoteDetailScreen() {
     if (note) {
       setTitle(note.title);
       setContent(note.content);
+      setCampaignId(note.campaignId);
+      setLocationIds(note.locationIds);
+      setTagIds(note.tagIds);
     }
     setError(null);
     setIsEditing(false);
@@ -60,9 +152,19 @@ export default function NoteDetailScreen() {
 
   const handleSave = () => {
     if (!note) return;
+    if (!campaignId) {
+      setError('Select a campaign before saving.');
+      return;
+    }
     setError(null);
     try {
-      updateNote(note.id, { title, content });
+      updateNote(note.id, {
+        title,
+        content,
+        campaignId,
+        locationIds,
+        tagIds,
+      });
       setIsEditing(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update note.';
@@ -142,27 +244,71 @@ export default function NoteDetailScreen() {
           )}
         </View>
 
-        {isEditing ? (
-          <FormTextInput
-            label="Content"
-            value={content}
-            onChangeText={setContent}
-            multiline
-            style={styles.contentInput}
-          />
-        ) : (
-          <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant }}>
-            {note.content?.trim() ? note.content : 'No content yet.'}
-          </Text>
-        )}
+        <Section title="Content" icon="note-text-outline">
+          {isEditing ? (
+            <FormTextInput
+              label="Content"
+              value={content}
+              onChangeText={setContent}
+              multiline
+              style={styles.contentInput}
+            />
+          ) : (
+            <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant }}>
+              {note.content?.trim() ? note.content : 'No content yet.'}
+            </Text>
+          )}
+        </Section>
 
-        {tags.length > 0 && (
-          <View style={styles.tagsRow}>
-            {tags.map((tag) => (
-              <TagChip key={tag.id} id={tag.id} name={tag.name} size="small" />
-            ))}
-          </View>
-        )}
+        <Section title="Links" icon="link-variant">
+          {isEditing ? (
+            <>
+              <FormSelect
+                label="Campaign"
+                value={campaignId}
+                options={campaignOptions}
+                onChange={handleCampaignChange}
+              />
+              <FormMultiSelect
+                label="Locations"
+                value={locationIds}
+                options={locationOptions}
+                onChange={setLocationIds}
+                helperText="Optional: link this note to locations."
+              />
+              <TagInput
+                tags={tags.map((tag) => ({ id: tag.id, name: tag.name }))}
+                selectedIds={tagIds}
+                onChange={setTagIds}
+                onCreateTag={handleCreateTag}
+              />
+            </>
+          ) : (
+            <>
+              {linkedLocations.length === 0 ? (
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  No locations linked.
+                </Text>
+              ) : (
+                linkedLocations.map((location) => (
+                  <AppCard
+                    key={location.id}
+                    title={location.name || 'Unnamed location'}
+                    onPress={() => router.push(`/location/${location.id}`)}
+                    style={styles.inlineCard}
+                  />
+                ))
+              )}
+              {resolvedTags.length > 0 && (
+                <View style={styles.tagsRow}>
+                  {resolvedTags.map((tag) => (
+                    <TagChip key={tag.id} id={tag.id} name={tag.name} size="small" />
+                  ))}
+                </View>
+              )}
+            </>
+          )}
+        </Section>
 
         <View style={styles.metaRow}>
           <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
@@ -229,13 +375,15 @@ const styles = StyleSheet.create({
   },
   contentInput: {
     minHeight: 180,
-    marginBottom: spacing[4],
   },
   tagsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing[2],
-    marginTop: spacing[4],
+    marginTop: spacing[2],
+  },
+  inlineCard: {
+    marginBottom: spacing[2],
   },
   metaRow: {
     marginTop: spacing[4],

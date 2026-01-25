@@ -24,6 +24,7 @@ import {
   useLocations,
   useNotes,
   useNpcs,
+  usePullToRefresh,
   useTags,
 } from '../../src/hooks';
 
@@ -50,6 +51,7 @@ export default function NpcsScreen() {
   const locations = useLocations();
   const notes = useNotes();
   const tags = useTags();
+  const { refreshing, onRefresh } = usePullToRefresh();
   const effectiveCampaignId = onlyCurrent && currentCampaign ? currentCampaign.id : undefined;
   const npcs = useNpcs(effectiveCampaignId);
 
@@ -216,7 +218,7 @@ export default function NpcsScreen() {
   if (filteredNpcs.length === 0) {
     return (
       <>
-        <Screen>
+        <Screen onRefresh={onRefresh} refreshing={refreshing}>
           <EmptyState
             title="No NPCs yet"
             description={
@@ -240,6 +242,8 @@ export default function NpcsScreen() {
           data={filteredNpcs}
           keyExtractor={(npc) => npc.id}
           contentContainerStyle={styles.listContent}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
           ListHeaderComponent={
             <View style={styles.header}>
               <View style={styles.filterHeader}>

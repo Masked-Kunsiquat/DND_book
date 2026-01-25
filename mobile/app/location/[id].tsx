@@ -1,27 +1,32 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { Alert, Image, StyleSheet, View } from 'react-native';
 import { Button, IconButton, Text } from 'react-native-paper';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import {
   AppCard,
   EmptyState,
+  FormImageGallery,
+  FormImagePicker,
+  FormMultiSelect,
   FormSelect,
   FormTextInput,
   LocationCard,
   Screen,
   Section,
   TagChip,
+  TagInput,
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
-import { spacing } from '../../src/theme';
+import { layout, spacing } from '../../src/theme';
 import {
   useCampaigns,
   useChildLocations,
   useDeleteLocation,
+  useGetOrCreateTag,
   useLocation,
   useLocationPath,
   useLocations,
-  useTagsByIds,
+  useTags,
   useUpdateLocation,
 } from '../../src/hooks';
 import type { LocationType } from '../../src/types/schema';
@@ -63,7 +68,8 @@ export default function LocationDetailScreen() {
   const allLocations = useLocations();
   const childLocations = useChildLocations(scopedLocationId);
   const path = useLocationPath(scopedLocationId);
-  const tags = useTagsByIds(location?.tagIds ?? []);
+  const tags = useTags();
+  const getOrCreateTag = useGetOrCreateTag();
   const campaigns = useCampaigns();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -71,6 +77,10 @@ export default function LocationDetailScreen() {
   const [type, setType] = useState<LocationType | string>('Locale');
   const [description, setDescription] = useState('');
   const [parentId, setParentId] = useState('');
+  const [campaignIds, setCampaignIds] = useState<string[]>([]);
+  const [tagIds, setTagIds] = useState<string[]>([]);
+  const [mapImage, setMapImage] = useState<string | null>(null);
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -90,10 +100,34 @@ export default function LocationDetailScreen() {
     return options;
   }, [allLocations, locationId]);
 
+  const campaignOptions = useMemo(() => {
+    return campaigns.map((campaign) => ({
+      label: campaign.name || 'Untitled campaign',
+      value: campaign.id,
+    }));
+  }, [campaigns]);
+
+  const displayTagIds = useMemo(() => {
+    if (isEditing) return tagIds;
+    return location?.tagIds ?? [];
+  }, [isEditing, location?.tagIds, tagIds]);
+
+  const resolvedTags = useMemo(() => {
+    const tagById = new Map(tags.map((tag) => [tag.id, tag]));
+    return displayTagIds
+      .map((id) => tagById.get(id))
+      .filter((tag): tag is (typeof tags)[number] => tag !== undefined);
+  }, [displayTagIds, tags]);
+
   const parentName = useMemo(() => {
     if (!location?.parentId) return undefined;
     return path.find((item) => item.id === location.parentId)?.name;
   }, [location?.parentId, path]);
+
+  const handleCreateTag = (tagName: string) => {
+    const id = getOrCreateTag(tagName);
+    return id || undefined;
+  };
 
   useEffect(() => {
     if (location && !isEditing) {
@@ -101,6 +135,10 @@ export default function LocationDetailScreen() {
       setType(location.type);
       setDescription(location.description);
       setParentId(location.parentId || '');
+      setCampaignIds(location.campaignIds);
+      setTagIds(location.tagIds);
+      setMapImage(location.map || null);
+      setGalleryImages(location.images);
     }
   }, [location, isEditing]);
 
@@ -110,6 +148,10 @@ export default function LocationDetailScreen() {
     setType(location.type);
     setDescription(location.description);
     setParentId(location.parentId || '');
+    setCampaignIds(location.campaignIds);
+    setTagIds(location.tagIds);
+    setMapImage(location.map || null);
+    setGalleryImages(location.images);
     setError(null);
     setIsEditing(true);
   };
@@ -120,6 +162,10 @@ export default function LocationDetailScreen() {
       setType(location.type);
       setDescription(location.description);
       setParentId(location.parentId || '');
+      setCampaignIds(location.campaignIds);
+      setTagIds(location.tagIds);
+      setMapImage(location.map || null);
+      setGalleryImages(location.images);
     }
     setError(null);
     setIsEditing(false);
@@ -149,6 +195,10 @@ export default function LocationDetailScreen() {
         type: type as LocationType,
         description,
         parentId: parentId || '',
+        campaignIds,
+        tagIds,
+        map: mapImage ?? '',
+        images: galleryImages,
       });
       setIsEditing(false);
     } catch (err) {
@@ -299,7 +349,14 @@ export default function LocationDetailScreen() {
         )}
 
         <Section title="Campaigns" icon="folder-outline">
-          {linkedCampaigns.length === 0 ? (
+          {isEditing ? (
+            <FormMultiSelect
+              label="Campaigns"
+              value={campaignIds}
+              options={campaignOptions}
+              onChange={setCampaignIds}
+            />
+          ) : linkedCampaigns.length === 0 ? (
             <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
               No campaigns linked yet.
             </Text>
@@ -310,23 +367,63 @@ export default function LocationDetailScreen() {
           )}
         </Section>
 
-        {tags.length > 0 && (
+        {isEditing ? (
           <Section title="Tags" icon="tag-outline">
-            <View style={styles.tagsRow}>
-              {tags.map((tag) => (
-                <TagChip key={tag.id} id={tag.id} name={tag.name} size="small" />
-              ))}
-            </View>
+            <TagInput
+              tags={tags.map((tag) => ({ id: tag.id, name: tag.name }))}
+              selectedIds={tagIds}
+              onChange={setTagIds}
+              onCreateTag={handleCreateTag}
+            />
+          </Section>
+        ) : (
+          <Section title="Tags" icon="tag-outline">
+            {resolvedTags.length === 0 ? (
+              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                No tags yet.
+              </Text>
+            ) : (
+              <View style={styles.tagsRow}>
+                {resolvedTags.map((tag) => (
+                  <TagChip key={tag.id} id={tag.id} name={tag.name} size="small" />
+                ))}
+              </View>
+            )}
           </Section>
         )}
 
         <Section title="Media" icon="image-multiple-outline">
-          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-            Map: {location.map ? location.map : 'No map uploaded.'}
-          </Text>
-          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-            Gallery: {location.images.length} images
-          </Text>
+          {isEditing ? (
+            <>
+              <FormImagePicker label="Map image" value={mapImage} onChange={setMapImage} />
+              <FormImageGallery
+                label="Gallery images"
+                values={galleryImages}
+                onChange={setGalleryImages}
+              />
+            </>
+          ) : (
+            <>
+              {location.map ? (
+                <Image source={{ uri: location.map }} style={styles.mapPreview} />
+              ) : (
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  No map uploaded.
+                </Text>
+              )}
+              {location.images.length > 0 ? (
+                <View style={styles.galleryRow}>
+                  {location.images.map((uri) => (
+                    <Image key={uri} source={{ uri }} style={styles.galleryImage} />
+                  ))}
+                </View>
+              ) : (
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  No gallery images.
+                </Text>
+              )}
+            </>
+          )}
         </Section>
 
         <Section title="Child Locations" icon="map-marker-radius-outline">
@@ -414,6 +511,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing[2],
+  },
+  mapPreview: {
+    width: '100%',
+    height: spacing[48],
+    borderRadius: layout.cardBorderRadius,
+  },
+  galleryRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[2],
+  },
+  galleryImage: {
+    width: spacing[16],
+    height: spacing[16],
+    borderRadius: layout.cardBorderRadius,
   },
   inlineCard: {
     marginBottom: spacing[2],

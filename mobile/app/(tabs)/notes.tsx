@@ -4,11 +4,13 @@ import { Button, FAB, Switch, Text, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   FormModal,
+  FormMultiSelect,
   FormSelect,
   FormTextInput,
   Screen,
   EmptyState,
   NoteCard,
+  TagInput,
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { layout, spacing } from '../../src/theme';
@@ -18,7 +20,10 @@ import {
   useCampaigns,
   useCreateNote,
   useCurrentCampaign,
+  useGetOrCreateTag,
+  useLocations,
   useNotes,
+  usePullToRefresh,
   useTags,
 } from '../../src/hooks';
 
@@ -26,6 +31,7 @@ export default function NotesScreen() {
   const { theme } = useTheme();
   const campaigns = useCampaigns();
   const currentCampaign = useCurrentCampaign();
+  const locations = useLocations();
   const [query, setQuery] = useState('');
   const [onlyCurrent, setOnlyCurrent] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -34,8 +40,12 @@ export default function NotesScreen() {
   const [draftTitle, setDraftTitle] = useState('');
   const [draftContent, setDraftContent] = useState('');
   const [draftCampaignId, setDraftCampaignId] = useState('');
+  const [draftLocationIds, setDraftLocationIds] = useState<string[]>([]);
+  const [draftTagIds, setDraftTagIds] = useState<string[]>([]);
   const createNote = useCreateNote();
   const tags = useTags();
+  const getOrCreateTag = useGetOrCreateTag();
+  const { refreshing, onRefresh } = usePullToRefresh();
 
   const effectiveCampaignId = onlyCurrent && currentCampaign ? currentCampaign.id : undefined;
   const notes = useNotes(effectiveCampaignId);
@@ -55,6 +65,16 @@ export default function NotesScreen() {
     }));
   }, [campaigns]);
 
+  const locationOptions = useMemo(() => {
+    const filtered = draftCampaignId
+      ? locations.filter((location) => location.campaignIds.includes(draftCampaignId))
+      : locations;
+    return filtered.map((location) => ({
+      label: location.name || 'Unnamed location',
+      value: location.id,
+    }));
+  }, [draftCampaignId, locations]);
+
   const filteredNotes = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return notes;
@@ -69,6 +89,8 @@ export default function NotesScreen() {
     setDraftTitle(`New Note ${notes.length + 1}`);
     setDraftContent('');
     setDraftCampaignId(currentCampaign?.id ?? campaigns[0]?.id ?? '');
+    setDraftLocationIds([]);
+    setDraftTagIds([]);
     setCreateError(null);
     setIsCreateOpen(true);
   };
@@ -76,6 +98,25 @@ export default function NotesScreen() {
   const closeCreateModal = () => {
     setIsCreateOpen(false);
     setCreateError(null);
+  };
+
+  const handleCampaignChange = (value: string) => {
+    setDraftCampaignId(value);
+    if (!value) {
+      setDraftLocationIds([]);
+      return;
+    }
+    const allowed = new Set(
+      locations
+        .filter((location) => location.campaignIds.includes(value))
+        .map((location) => location.id)
+    );
+    setDraftLocationIds((prev) => prev.filter((id) => allowed.has(id)));
+  };
+
+  const handleCreateTag = (tagName: string) => {
+    const id = getOrCreateTag(tagName);
+    return id || undefined;
   };
 
   const handleCreate = () => {
@@ -95,6 +136,8 @@ export default function NotesScreen() {
         title: trimmedTitle,
         content: draftContent,
         campaignId: draftCampaignId,
+        locationIds: draftLocationIds,
+        tagIds: draftTagIds,
       });
       setIsCreateOpen(false);
     } catch (error) {
@@ -130,7 +173,7 @@ export default function NotesScreen() {
         label="Campaign"
         value={draftCampaignId}
         options={campaignOptions}
-        onChange={setDraftCampaignId}
+        onChange={handleCampaignChange}
       />
       <FormTextInput label="Title" value={draftTitle} onChangeText={setDraftTitle} />
       <FormTextInput
@@ -139,6 +182,19 @@ export default function NotesScreen() {
         onChangeText={setDraftContent}
         multiline
         style={styles.modalContentInput}
+      />
+      <FormMultiSelect
+        label="Locations"
+        value={draftLocationIds}
+        options={locationOptions}
+        onChange={setDraftLocationIds}
+        helperText="Optional: link this note to locations."
+      />
+      <TagInput
+        tags={tags.map((tag) => ({ id: tag.id, name: tag.name }))}
+        selectedIds={draftTagIds}
+        onChange={setDraftTagIds}
+        onCreateTag={handleCreateTag}
       />
       {createError && (
         <Text variant="bodySmall" style={{ color: theme.colors.error }}>
@@ -151,7 +207,7 @@ export default function NotesScreen() {
   if (filteredNotes.length === 0) {
     return (
       <>
-        <Screen>
+        <Screen onRefresh={onRefresh} refreshing={refreshing}>
           <EmptyState
             title="No notes yet"
             description={
@@ -179,6 +235,8 @@ export default function NotesScreen() {
           data={filteredNotes}
           keyExtractor={(note) => note.id}
           contentContainerStyle={styles.listContent}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
           ListHeaderComponent={
             <View style={styles.header}>
               <View style={styles.filterHeader}>

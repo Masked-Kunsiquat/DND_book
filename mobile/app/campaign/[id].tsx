@@ -9,6 +9,9 @@ import {
   LoadingScreen,
   Section,
   StatCard,
+  NoteCard,
+  NPCCard,
+  LocationCard,
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { spacing } from '../../src/theme';
@@ -18,6 +21,7 @@ import {
   useLocations,
   useNotes,
   useNpcs,
+  useSetCurrentCampaign,
   useSessionLogs,
   useUpdateCampaign,
 } from '../../src/hooks';
@@ -42,6 +46,7 @@ export default function CampaignDetailScreen() {
   const campaign = useCampaign(scopedCampaignId);
   const updateCampaign = useUpdateCampaign();
   const deleteCampaign = useDeleteCampaign();
+  const setCurrentCampaign = useSetCurrentCampaign();
 
   const notes = useNotes(scopedCampaignId);
   const npcs = useNpcs(scopedCampaignId);
@@ -52,6 +57,40 @@ export default function CampaignDetailScreen() {
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const topNotes = useMemo(() => {
+    return [...notes]
+      .sort((a, b) => (b.updated || b.created).localeCompare(a.updated || a.created))
+      .slice(0, 3);
+  }, [notes]);
+
+  const topNpcs = useMemo(() => {
+    return [...npcs].sort((a, b) => (a.name || '').localeCompare(b.name || '')).slice(0, 3);
+  }, [npcs]);
+
+  const topLocations = useMemo(() => {
+    return [...locations]
+      .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+      .slice(0, 3);
+  }, [locations]);
+
+  const handleSeeNotes = () => {
+    if (!campaign) return;
+    setCurrentCampaign(campaign.id);
+    router.push('/notes');
+  };
+
+  const handleSeeNpcs = () => {
+    if (!campaign) return;
+    setCurrentCampaign(campaign.id);
+    router.push('/npcs');
+  };
+
+  const handleSeeLocations = () => {
+    if (!campaign) return;
+    setCurrentCampaign(campaign.id);
+    router.push('/locations');
+  };
 
   useEffect(() => {
     if (campaign && !isEditing) {
@@ -175,6 +214,70 @@ export default function CampaignDetailScreen() {
             <StatCard label="Locations" value={locations.length} />
             <StatCard label="Sessions" value={sessionLogs.length} />
           </View>
+        </Section>
+
+        <Section
+          title="Notes"
+          icon="note-text-outline"
+          action={notes.length > 0 ? { label: 'See all', onPress: handleSeeNotes } : undefined}
+        >
+          {topNotes.length === 0 ? (
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+              No notes yet.
+            </Text>
+          ) : (
+            topNotes.map((note) => (
+              <NoteCard
+                key={note.id}
+                note={note}
+                onPress={() => router.push(`/note/${note.id}`)}
+              />
+            ))
+          )}
+        </Section>
+
+        <Section
+          title="NPCs"
+          icon="account-group-outline"
+          action={npcs.length > 0 ? { label: 'See all', onPress: handleSeeNpcs } : undefined}
+        >
+          {topNpcs.length === 0 ? (
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+              No NPCs yet.
+            </Text>
+          ) : (
+            topNpcs.map((npc) => (
+              <NPCCard
+                key={npc.id}
+                npc={npc}
+                onPress={() => router.push(`/npc/${npc.id}`)}
+              />
+            ))
+          )}
+        </Section>
+
+        <Section
+          title="Locations"
+          icon="map-marker-outline"
+          action={
+            locations.length > 0
+              ? { label: 'See all', onPress: handleSeeLocations }
+              : undefined
+          }
+        >
+          {topLocations.length === 0 ? (
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+              No locations yet.
+            </Text>
+          ) : (
+            topLocations.map((location) => (
+              <LocationCard
+                key={location.id}
+                location={location}
+                onPress={() => router.push(`/location/${location.id}`)}
+              />
+            ))
+          )}
         </Section>
 
         {error && (

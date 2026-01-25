@@ -346,6 +346,7 @@ Recommended sequence:
 - [x] `src/components/forms/FormSelect.tsx`
 - [x] `src/components/forms/FormMultiSelect.tsx`
 - [x] `src/components/forms/FormImagePicker.tsx`
+- [x] `src/components/forms/FormImageGallery.tsx`
 - [x] `src/components/forms/TagInput.tsx`
 
 ### Components - Sync
