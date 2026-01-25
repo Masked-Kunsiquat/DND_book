@@ -43,6 +43,10 @@ const LOCATION_TYPE_OPTIONS: { label: string; value: LocationType }[] = [
   { label: 'Landmark', value: 'Landmark' },
 ];
 
+const ALLOWED_LOCATION_TYPES = new Set<LocationType>(
+  LOCATION_TYPE_OPTIONS.map((option) => option.value)
+);
+
 export default function LocationDetailScreen() {
   const { theme } = useTheme();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
@@ -122,6 +126,21 @@ export default function LocationDetailScreen() {
   const handleSave = () => {
     if (!location) return;
     setError(null);
+    if (!ALLOWED_LOCATION_TYPES.has(type as LocationType)) {
+      setError('Select a valid location type.');
+      return;
+    }
+    if (parentId) {
+      if (parentId === location.id) {
+        setError('Location cannot be its own parent.');
+        return;
+      }
+      const hasParent = allLocations.some((item) => item.id === parentId);
+      if (!hasParent) {
+        setError('Select a valid parent location.');
+        return;
+      }
+    }
     try {
       updateLocation(location.id, {
         name,

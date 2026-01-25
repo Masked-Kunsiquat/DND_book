@@ -80,10 +80,10 @@ export default function NoteDetailScreen() {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
+          onPress: async () => {
             try {
               setIsDeleting(true);
-              deleteNote(note.id);
+              await Promise.resolve(deleteNote(note.id));
               router.back();
             } catch (err) {
               const message = err instanceof Error ? err.message : 'Failed to delete note.';
