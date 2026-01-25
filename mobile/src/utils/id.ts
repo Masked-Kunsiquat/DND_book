@@ -1,23 +1,37 @@
 /**
  * ID generation utilities.
+ * Uses expo-crypto for React Native compatibility.
  */
 
-import { nanoid } from 'nanoid';
+import * as Crypto from 'expo-crypto';
+
+const ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+
+/**
+ * Generates a random ID using expo-crypto.
+ * URL-safe, similar to nanoid output.
+ */
+function randomId(length: number): string {
+  const bytes = Crypto.getRandomBytes(length);
+  let id = '';
+  for (let i = 0; i < length; i++) {
+    id += ALPHABET[bytes[i] % ALPHABET.length];
+  }
+  return id;
+}
 
 /**
  * Generates a unique ID for records.
- * Uses nanoid for URL-safe, unique identifiers.
  */
 export function generateId(): string {
-  return nanoid();
+  return randomId(21);
 }
 
 /**
  * Generates a device ID for P2P identification.
- * Longer than record IDs for better uniqueness across devices.
  */
 export function generateDeviceId(): string {
-  return nanoid(21);
+  return randomId(21);
 }
 
 /**
