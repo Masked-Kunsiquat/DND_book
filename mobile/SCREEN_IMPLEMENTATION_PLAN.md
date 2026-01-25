@@ -324,7 +324,7 @@ Recommended sequence:
 ### Detail Screens
 - [x] `app/campaign/[id].tsx`
 - [x] `app/note/[id].tsx`
-- [ ] `app/npc/[id].tsx`
+- [x] `app/npc/[id].tsx`
 - [x] `app/location/[id].tsx`
 
 ### Sync Screens
@@ -336,7 +336,7 @@ Recommended sequence:
 - [x] `src/components/cards/StatCard.tsx`
 - [x] `src/components/cards/CampaignCard.tsx`
 - [x] `src/components/cards/NoteCard.tsx`
-- [ ] `src/components/cards/NPCCard.tsx`
+- [x] `src/components/cards/NPCCard.tsx`
 - [x] `src/components/cards/LocationCard.tsx`
 
 ### Components - Forms

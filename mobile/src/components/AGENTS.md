@@ -151,4 +151,4 @@ export function MyComponent({
 Future additions from MIGRATION_PLAN.md Phase 4:
 - `forms/` - TextInput, Select, DatePicker wrappers
 - `sync/` - SyncStatus, RoomCodeDisplay, PeerList
-- `cards/` - CampaignCard, NoteCard, NpcCard, LocationCard
+- `cards/` - CampaignCard, NoteCard, NPCCard, LocationCard
