@@ -25,6 +25,11 @@ export { FormImagePicker, type FormImagePickerProps } from './forms/FormImagePic
 export { TagInput, type TagInputProps } from './forms/TagInput';
 export { FormModal, type FormModalProps } from './forms/FormModal';
 
+// Sync
+export { SyncStatus, type SyncStatusProps } from './sync/SyncStatus';
+export { RoomCodeDisplay, type RoomCodeDisplayProps } from './sync/RoomCodeDisplay';
+export { PeerList, type PeerListProps } from './sync/PeerList';
+
 // Shared
 export { EmptyState, type EmptyStateProps } from './shared/EmptyState';
 export { LoadingScreen } from './shared/LoadingScreen';

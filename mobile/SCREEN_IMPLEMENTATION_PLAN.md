@@ -349,9 +349,9 @@ Recommended sequence:
 - [x] `src/components/forms/TagInput.tsx`
 
 ### Components - Sync
-- [ ] `src/components/sync/SyncStatus.tsx`
-- [ ] `src/components/sync/RoomCodeDisplay.tsx`
-- [ ] `src/components/sync/PeerList.tsx`
+- [x] `src/components/sync/SyncStatus.tsx`
+- [x] `src/components/sync/RoomCodeDisplay.tsx`
+- [x] `src/components/sync/PeerList.tsx`
 
 ---
 

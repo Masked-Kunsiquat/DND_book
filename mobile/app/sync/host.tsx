@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
 import { Stack } from 'expo-router';
-import { AppCard, Screen, Section } from '../../src/components';
+import { PeerList, RoomCodeDisplay, Screen, Section } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { spacing } from '../../src/theme';
 import { useSync } from '../../src/hooks';
@@ -43,16 +43,13 @@ export default function SyncHostScreen() {
       <Stack.Screen options={{ title: 'Host Session' }} />
       <Screen>
         <Section title="Room Code" icon="wifi">
-          <AppCard title={roomCode || 'Not hosting'} subtitle={helperText}>
-            <View style={styles.roomMeta}>
-              <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                Status: {statusLabel}
-              </Text>
-              <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                Peers: {state.peerCount}
-              </Text>
-            </View>
-          </AppCard>
+          <RoomCodeDisplay code={roomCode} helperText={helperText} />
+          <View style={styles.roomMeta}>
+            <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+              Status: {statusLabel}
+            </Text>
+          </View>
+          <PeerList peerCount={state.peerCount} />
         </Section>
 
         <Section title="Controls" icon="toggle-switch">

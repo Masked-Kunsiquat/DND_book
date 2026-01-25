@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
 import { Stack, router } from 'expo-router';
-import { AppCard, Screen, Section } from '../../src/components';
+import { PeerList, RoomCodeDisplay, Screen, Section } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { spacing } from '../../src/theme';
 import { useSync } from '../../src/hooks';
@@ -28,19 +28,18 @@ export default function SyncHubScreen() {
       <Stack.Screen options={{ title: 'Sync' }} />
       <Screen>
         <Section title="Status" icon="sync">
-          <AppCard
-            title={inSession ? 'Active session' : 'No active session'}
-            subtitle={inSession ? `Room ${roomLabel}` : 'Start a session to sync your data.'}
-          >
-            <View style={styles.statusRow}>
-              <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                Connection: {statusLabel}
-              </Text>
-              <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                Peers: {state.peerCount}
-              </Text>
-            </View>
-          </AppCard>
+          <RoomCodeDisplay
+            code={state.roomId}
+            helperText={
+              inSession ? `Room ${roomLabel}` : 'Start a session to sync your data.'
+            }
+          />
+          <View style={styles.statusRow}>
+            <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+              Connection: {statusLabel}
+            </Text>
+          </View>
+          <PeerList peerCount={state.peerCount} />
         </Section>
 
         <Section title="Actions" icon="lightning-bolt">
