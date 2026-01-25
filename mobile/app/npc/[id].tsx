@@ -196,7 +196,7 @@ export default function NpcDetailScreen() {
           onPress: async () => {
             try {
               setIsDeleting(true);
-              await Promise.resolve(deleteNpc(npc.id));
+              deleteNpc(npc.id);
               router.back();
             } catch (err) {
               const message = err instanceof Error ? err.message : 'Failed to delete NPC.';
