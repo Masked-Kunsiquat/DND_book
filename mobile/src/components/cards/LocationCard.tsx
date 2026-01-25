@@ -5,10 +5,11 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppCard } from './AppCard';
 import { TagChip } from '../chips/TagChip';
 import { useTheme } from '../../theme/ThemeProvider';
-import { layout, spacing } from '../../theme';
+import { iconSizes, layout, semanticColors, spacing } from '../../theme';
 import type { Location, Tag } from '../../types/schema';
 
 export interface LocationCardProps {
@@ -18,6 +19,10 @@ export interface LocationCardProps {
   parentName?: string;
   /** Optional resolved tag objects */
   tags?: Tag[];
+  /** Optional status message */
+  statusLabel?: string;
+  /** Optional status tone */
+  statusTone?: 'warning' | 'error';
   /** Called when card is pressed */
   onPress?: () => void;
   /** Additional style for the card container */
@@ -52,10 +57,14 @@ export function LocationCard({
   location,
   parentName,
   tags = [],
+  statusLabel,
+  statusTone = 'warning',
   onPress,
   style,
 }: LocationCardProps) {
   const subtitle = parentName ? `Parent: ${parentName}` : undefined;
+  const statusColor =
+    statusTone === 'error' ? semanticColors.error.main : semanticColors.warning.main;
 
   return (
     <AppCard
@@ -65,6 +74,18 @@ export function LocationCard({
       onPress={onPress}
       style={style}
     >
+      {statusLabel && (
+        <View style={styles.statusRow}>
+          <MaterialCommunityIcons
+            name="alert-circle-outline"
+            size={iconSizes.sm}
+            color={statusColor}
+          />
+          <Text variant="labelSmall" style={{ color: statusColor }}>
+            {statusLabel}
+          </Text>
+        </View>
+      )}
       {tags.length > 0 && (
         <View style={styles.tagsRow}>
           {tags.map((tag) => (
@@ -81,6 +102,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing[2],
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[1],
+    marginBottom: spacing[2],
   },
   typeBadge: {
     paddingHorizontal: spacing[2],

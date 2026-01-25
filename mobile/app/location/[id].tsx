@@ -7,6 +7,7 @@ import {
   AppCard,
   Breadcrumb,
   EmptyState,
+  FormModal,
   FormImageGallery,
   FormImagePicker,
   FormMultiSelect,
@@ -57,6 +58,12 @@ const getAllowedParentTypes = (type: LocationType): LocationType[] => {
   return LOCATION_TYPE_ORDER.slice(0, index);
 };
 
+const getAllowedChildTypes = (type: LocationType): LocationType[] => {
+  const index = LOCATION_TYPE_ORDER.indexOf(type);
+  if (index < 0) return [];
+  return LOCATION_TYPE_ORDER.slice(index + 1);
+};
+
 const ALLOWED_LOCATION_TYPES = new Set<LocationType>(
   LOCATION_TYPE_OPTIONS.map((option) => option.value)
 );
@@ -91,6 +98,10 @@ export default function LocationDetailScreen() {
   const [mapImage, setMapImage] = useState<string | null>(null);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [showFullPath, setShowFullPath] = useState(false);
+  const [isMoveOpen, setIsMoveOpen] = useState(false);
+  const [isMoving, setIsMoving] = useState(false);
+  const [moveParentId, setMoveParentId] = useState('');
+  const [moveError, setMoveError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -241,6 +252,49 @@ export default function LocationDetailScreen() {
     setIsEditing(false);
   };
 
+  const openMoveModal = () => {
+    if (!location) return;
+    setMoveParentId(location.parentId || '');
+    setMoveError(null);
+    setIsMoveOpen(true);
+  };
+
+  const closeMoveModal = () => {
+    setIsMoveOpen(false);
+    setMoveError(null);
+  };
+
+  const handleMove = () => {
+    if (!location || isMoving) return;
+    setMoveError(null);
+    if (moveParentId && moveParentId === location.id) {
+      setMoveError('Location cannot be its own parent.');
+      return;
+    }
+    if (moveParentId) {
+      const parent = allLocations.find((item) => item.id === moveParentId);
+      const allowed = new Set(getAllowedParentTypes(location.type));
+      if (!parent || !allowed.has(parent.type)) {
+        setMoveError('Parent must be higher in the location hierarchy.');
+        return;
+      }
+    }
+
+    setIsMoving(true);
+    try {
+      updateLocation(location.id, {
+        parentId: moveParentId || '',
+      });
+      setIsMoveOpen(false);
+    } catch (moveErr) {
+      const message =
+        moveErr instanceof Error ? moveErr.message : 'Failed to move location.';
+      setMoveError(message);
+    } finally {
+      setIsMoving(false);
+    }
+  };
+
   const handleSave = () => {
     if (!location) return;
     setError(null);
@@ -262,6 +316,14 @@ export default function LocationDetailScreen() {
       const allowed = new Set(getAllowedParentTypes(type as LocationType));
       if (!parent || !allowed.has(parent.type)) {
         setError('Parent must be higher in the location hierarchy.');
+        return;
+      }
+    }
+    if (type !== location.type && childLocations.length > 0) {
+      const allowedChildren = new Set(getAllowedChildTypes(type as LocationType));
+      const invalidChild = childLocations.find((child) => !allowedChildren.has(child.type));
+      if (invalidChild) {
+        setError('Update or move child locations before changing this level.');
         return;
       }
     }
@@ -311,6 +373,37 @@ export default function LocationDetailScreen() {
       { cancelable: true }
     );
   };
+
+  const moveModal = (
+    <FormModal
+      title="Move Location"
+      visible={isMoveOpen}
+      onDismiss={closeMoveModal}
+      actions={
+        <>
+          <Button mode="text" onPress={closeMoveModal} disabled={isMoving}>
+            Cancel
+          </Button>
+          <Button mode="contained" onPress={handleMove} loading={isMoving} disabled={isMoving}>
+            Move
+          </Button>
+        </>
+      }
+    >
+      <FormSelect
+        label="Parent location"
+        value={moveParentId}
+        options={parentOptions}
+        onChange={setMoveParentId}
+        helperText={parentHelper}
+      />
+      {moveError && (
+        <Text variant="bodySmall" style={{ color: theme.colors.error }}>
+          {moveError}
+        </Text>
+      )}
+    </FormModal>
+  );
 
   if (!hasLocationId) {
     return (
@@ -457,6 +550,11 @@ export default function LocationDetailScreen() {
                   Updated: {formatDate(location.updated)}
                 </Text>
               </View>
+              <View style={styles.moveRow}>
+                <Button mode="outlined" icon="swap-vertical" onPress={openMoveModal}>
+                  Move
+                </Button>
+              </View>
             </>
           )}
         </Section>
@@ -596,6 +694,7 @@ export default function LocationDetailScreen() {
         </View>
         </View>
       </Screen>
+      {moveModal}
     </>
   );
 }
@@ -649,6 +748,10 @@ const styles = StyleSheet.create({
   metaRow: {
     marginTop: spacing[3],
     gap: spacing[1],
+  },
+  moveRow: {
+    marginTop: spacing[3],
+    alignSelf: 'flex-start',
   },
   tagsRow: {
     flexDirection: 'row',

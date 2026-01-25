@@ -341,12 +341,23 @@ export default function LocationsScreen() {
             </View>
           )}
           renderItem={({ item }) => {
-            const parentName = item.parentId ? locationById.get(item.parentId)?.name : undefined;
+            const parent = item.parentId ? locationById.get(item.parentId) : undefined;
+            const parentName = parent?.name;
             const resolvedTags = item.tagIds
               .map((tagId) => tagById.get(tagId))
               .filter((tag): tag is Tag => tag !== undefined);
             const depth = depthById.get(item.id) ?? 0;
             const indent = depth * spacing[3];
+            let statusLabel: string | undefined;
+
+            if (item.parentId && !parent) {
+              statusLabel = 'Parent missing';
+            } else if (parent) {
+              const allowedParents = new Set(getAllowedParentTypes(item.type));
+              if (!allowedParents.has(parent.type)) {
+                statusLabel = 'Hierarchy mismatch';
+              }
+            }
 
             return (
               <View style={[styles.cardWrapper, indent ? { marginLeft: indent } : null]}>
@@ -354,6 +365,7 @@ export default function LocationsScreen() {
                   location={item}
                   parentName={parentName}
                   tags={resolvedTags}
+                  statusLabel={statusLabel}
                   onPress={() => router.push(`/location/${item.id}`)}
                 />
               </View>
