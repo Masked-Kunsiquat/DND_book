@@ -413,9 +413,9 @@ export default function LocationDetailScreen() {
               )}
               {location.images.length > 0 ? (
                 <View style={styles.galleryRow}>
-                  {location.images.map((uri) => (
-                    <Image key={uri} source={{ uri }} style={styles.galleryImage} />
-                  ))}
+              {location.images.map((uri, index) => (
+                <Image key={`${uri}-${index}`} source={{ uri }} style={styles.galleryImage} />
+              ))}
                 </View>
               ) : (
                 <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>

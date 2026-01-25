@@ -97,8 +97,11 @@ function syncStoreToYDoc(store: MergeableStore, doc: Y.Doc, seedInitial: boolean
           const currentData = store.getJson();
           if (remoteData !== currentData) {
             applyingRemote = true;
-            store.setJson(remoteData);
-            applyingRemote = false;
+            try {
+              store.setJson(remoteData);
+            } finally {
+              applyingRemote = false;
+            }
           }
         } catch (error) {
           log.error('Failed to apply remote sync data', error);

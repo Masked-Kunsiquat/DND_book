@@ -2,7 +2,7 @@
  * Multi-image picker with preview grid.
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import { Button, IconButton, Text } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
@@ -37,8 +37,13 @@ export function FormImageGallery({
 }: FormImageGalleryProps) {
   const { theme } = useTheme();
   const [pickerError, setPickerError] = useState<string | null>(null);
+  const valuesRef = useRef(values);
   const message = error ?? pickerError ?? helperText;
   const hasError = Boolean(error || pickerError);
+
+  useEffect(() => {
+    valuesRef.current = values;
+  }, [values]);
 
   const handlePick = async () => {
     if (disabled) return;
@@ -58,8 +63,9 @@ export function FormImageGallery({
 
       if (!result.canceled && Array.isArray(result.assets) && result.assets.length > 0) {
         const uri = result.assets[0].uri;
-        if (!values.includes(uri)) {
-          onChange([...values, uri]);
+        const currentValues = valuesRef.current;
+        if (!currentValues.includes(uri)) {
+          onChange([...currentValues, uri]);
         }
       }
     } catch (pickerErr) {

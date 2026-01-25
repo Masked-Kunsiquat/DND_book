@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { Alert, FlatList, StyleSheet, View } from 'react-native';
 import { Button, FAB, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
@@ -137,17 +137,33 @@ export default function CampaignPartyScreen() {
 
   const handleDelete = () => {
     if (!editingCharacter || isSaving) return;
-    setIsSaving(true);
-    try {
-      deletePlayerCharacter(editingCharacter.id);
-      setIsModalOpen(false);
-    } catch (deleteError) {
-      const message =
-        deleteError instanceof Error ? deleteError.message : 'Failed to delete character.';
-      setError(message);
-    } finally {
-      setIsSaving(false);
-    }
+    Alert.alert(
+      'Delete character?',
+      'This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setIsSaving(true);
+              deletePlayerCharacter(editingCharacter.id);
+              setIsModalOpen(false);
+            } catch (deleteError) {
+              const message =
+                deleteError instanceof Error
+                  ? deleteError.message
+                  : 'Failed to delete character.';
+              setError(message);
+            } finally {
+              setIsSaving(false);
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   const renderSubtitle = (character: PlayerCharacter) => {
