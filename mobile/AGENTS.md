@@ -13,21 +13,35 @@ This is the Expo React Native mobile app for DND Book, an offline-first campaign
 
 ## Directory Structure
 
-```
+```text
 mobile/
 ├── app/                    # Expo Router pages (file-based routing)
 │   ├── _layout.tsx         # Root layout (providers wrap here)
-│   ├── index.tsx           # Home screen
-│   ├── (tabs)/             # Tab navigator screens (future)
-│   └── [entity]/[id].tsx   # Dynamic routes (future)
+│   ├── index.tsx           # Redirect to tabs
+│   └── (tabs)/             # Tab navigator screens
+│       ├── _layout.tsx     # Tab navigator config
+│       ├── index.tsx       # Dashboard
+│       ├── campaigns.tsx   # Campaigns list
+│       ├── notes.tsx       # Notes list (placeholder)
+│       ├── npcs.tsx        # NPCs list (placeholder)
+│       └── locations.tsx   # Locations list (placeholder)
 ├── src/
 │   ├── components/         # Reusable UI components
+│   │   ├── cards/          # AppCard, StatCard, CampaignCard
+│   │   ├── chips/          # TagChip
+│   │   ├── layout/         # Screen, Section
+│   │   └── shared/         # EmptyState, LoadingScreen
 │   ├── hooks/              # Data access hooks (TinyBase CRUD)
+│   ├── shims/              # Polyfills (isomorphic-webcrypto)
 │   ├── store/              # TinyBase store, persistence, sync
 │   ├── theme/              # Colors, spacing, typography, Paper themes
 │   ├── types/              # TypeScript type definitions
-│   └── utils/              # Utility functions
-└── assets/                 # App icons, splash screen
+│   └── utils/              # Utility functions (logger, id)
+├── assets/                 # App icons, splash screen
+├── app.json
+├── metro.config.js
+├── package.json
+└── tsconfig.json
 ```
 
 ## Key Patterns

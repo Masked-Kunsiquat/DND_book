@@ -13,7 +13,7 @@ This module manages all app state using TinyBase with SQLite persistence and Yjs
 
 ## Architecture
 
-```
+```text
 ┌─────────────────┐
 │   Components    │  (use hooks from src/hooks/)
 └────────┬────────┘
