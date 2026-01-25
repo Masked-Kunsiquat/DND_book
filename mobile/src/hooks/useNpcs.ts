@@ -95,7 +95,8 @@ export function useNpcsByTag(tagId: string): Npc[] {
  */
 export function useNpc(id: string): Npc | null {
   const store = useStore();
-  const row = store.getRow('npcs', id);
+  const table = useTable(store, 'npcs');
+  const row = table[id] as unknown as NpcRow | undefined;
 
   return useMemo(() => {
     if (!row || Object.keys(row).length === 0) return null;

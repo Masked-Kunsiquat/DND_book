@@ -3,7 +3,7 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import { useTable } from 'tinybase/ui-react';
+import { useRow, useTable, useValue } from 'tinybase/ui-react';
 import { useStore } from '../store';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
@@ -40,12 +40,12 @@ export function useCampaigns(): Campaign[] {
  */
 export function useCampaign(id: string): Campaign | null {
   const store = useStore();
-  const row = store.getRow('campaigns', id);
+  const row = useRow(store, 'campaigns', id);
 
   return useMemo(() => {
-    if (!row || Object.keys(row).length === 0) return null;
+    if (!id || !row || Object.keys(row).length === 0) return null;
     return rowToCampaign(row as unknown as CampaignRow);
-  }, [row]);
+  }, [row, id]);
 }
 
 /**
@@ -53,7 +53,7 @@ export function useCampaign(id: string): Campaign | null {
  */
 export function useCurrentCampaign(): Campaign | null {
   const store = useStore();
-  const currentCampaignId = store.getValue('currentCampaignId') as string;
+  const currentCampaignId = useValue(store, 'currentCampaignId') as string;
 
   return useCampaign(currentCampaignId || '');
 }
@@ -121,9 +121,16 @@ export function useUpdateCampaign(): (id: string, data: UpdateCampaignInput) => 
         throw new Error(`Campaign ${id} not found`);
       }
 
+      const sanitizedData = Object.entries(data).reduce<Record<string, string>>((acc, [key, value]) => {
+        if (value !== undefined) {
+          acc[key] = value as string;
+        }
+        return acc;
+      }, {});
+
       store.setRow('campaigns', id, {
         ...existing,
-        ...data,
+        ...sanitizedData,
         updated: now(),
       });
 

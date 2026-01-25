@@ -3,7 +3,7 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import { useTable } from 'tinybase/ui-react';
+import { useRow, useTable } from 'tinybase/ui-react';
 import { useStore } from '../store';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
@@ -91,7 +91,7 @@ export function useNotesByTag(tagId: string): Note[] {
  */
 export function useNote(id: string): Note | null {
   const store = useStore();
-  const row = store.getRow('notes', id);
+  const row = useRow(store, 'notes', id);
 
   return useMemo(() => {
     if (!row || Object.keys(row).length === 0) return null;
