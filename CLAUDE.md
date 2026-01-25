@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-DND Book is a campaign management application for Dungeon Masters and tabletop RPG players. It organizes notes, NPCs, locations, and other campaign data. Built with a React/Vite frontend and PocketBase backend.
+DND Book is a campaign management application for Dungeon Masters and tabletop RPG players. It organizes notes, NPCs, locations, and other campaign data.
+
+**Migration in progress**: Converting from React/Vite web app to offline-first Expo mobile app with P2P sync. See [MIGRATION_PLAN.md](MIGRATION_PLAN.md) for details.
 
 ## Development Commands
 
@@ -70,3 +72,23 @@ Docker images are built and pushed to GitHub Container Registry on release:
 - `ghcr.io/{repo}-frontend`
 
 Both images use semantic versioning tags.
+
+## Mobile App (Planned)
+
+Target stack for Expo migration:
+- **Framework**: Expo with expo-router
+- **Data**: TinyBase (offline-first local store)
+- **Sync**: Yjs + y-webrtc (P2P sync at the table)
+- **Persistence**: expo-sqlite
+- **UI**: NativeWind (TailwindCSS for React Native) + React Native Paper
+
+Key expo modules: `expo-sqlite`, `expo-file-system`, `expo-secure-store`, `expo-network`, `expo-image-picker`
+
+### Mobile Commands (once set up)
+```bash
+cd mobile
+npx expo start              # Start dev server
+npx expo start --go         # Start with Expo Go
+npx expo run:ios            # Run on iOS simulator
+npx expo run:android        # Run on Android emulator
+```
