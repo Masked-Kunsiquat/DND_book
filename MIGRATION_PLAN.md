@@ -434,36 +434,26 @@ export const useDeleteNote = () => {
 | `<Navbar>` | Stack header via expo-router |
 | `<Modal>` | `<Portal><Modal>` from react-native-paper |
 | `<Badge>` | `<Chip>` from react-native-paper |
-| TailwindCSS | NativeWind (Tailwind for RN) |
+| TailwindCSS | Custom theme system (src/theme/) |
 
-### 4.2 Styling Options
+### 4.2 Styling Approach
 
-**Option A: NativeWind (Tailwind for React Native)**
-```bash
-npm install nativewind
-npm install --save-dev tailwindcss
-```
+**Decision: React Native Paper + Custom Theme System**
 
-Lets you reuse Tailwind knowledge:
+We chose Paper over NativeWind because:
+- Paper provides pre-built accessible components
+- Custom theme in `src/theme/` gives same benefits as Tailwind (spacing scale, color palette)
+- Less build complexity (no Tailwind/PostCSS config)
+- MD3 theming with dark/light mode built-in
+
+Theme usage:
 ```tsx
-<View className="flex-1 bg-gray-900 p-4">
-  <Text className="text-white text-xl font-bold">Campaign</Text>
-</View>
-```
+import { useTheme } from '../src/theme/ThemeProvider';
+import { spacing, layout } from '../src/theme';
 
-**Option B: React Native Paper**
-```bash
-npm install react-native-paper react-native-safe-area-context
-```
-
-Material Design components, good theming:
-```tsx
-<Card>
-  <Card.Title title="Campaign Name" />
-  <Card.Content>
-    <Paragraph>Description here</Paragraph>
-  </Card.Content>
-</Card>
+const { theme } = useTheme();
+// theme.colors.surface, theme.colors.onSurface, etc.
+// spacing[4] = 16px, layout.cardBorderRadius = 12px
 ```
 
 ## Phase 5: P2P Sync UI
