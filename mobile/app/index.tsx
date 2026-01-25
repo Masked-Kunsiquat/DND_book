@@ -1,14 +1,18 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { Link } from 'expo-router';
+import { useStore } from '../src/store';
 
 export default function Home() {
+  const store = useStore();
+  const deviceId = store.getValue('deviceId') as string;
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>DND Book</Text>
       <Text style={styles.subtitle}>Campaign Management</Text>
       <View style={styles.status}>
-        <Text style={styles.statusText}>Phase 1 Complete</Text>
-        <Text style={styles.statusDetail}>Expo Router configured</Text>
+        <Text style={styles.statusText}>Phase 2.1 Complete</Text>
+        <Text style={styles.statusDetail}>TinyBase store initialized</Text>
+        <Text style={styles.deviceId}>Device: {deviceId?.slice(0, 8)}...</Text>
       </View>
     </View>
   );
@@ -48,5 +52,11 @@ const styles = StyleSheet.create({
   statusDetail: {
     fontSize: 14,
     color: '#9ca3af',
+  },
+  deviceId: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 8,
+    fontFamily: 'monospace',
   },
 });
