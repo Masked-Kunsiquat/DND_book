@@ -11,7 +11,7 @@ import { spacing } from '../../theme';
 type PaperTextInputProps = ComponentProps<typeof TextInput>;
 
 export interface FormTextInputProps
-  extends Omit<PaperTextInputProps, 'value' | 'onChangeText' | 'mode'> {
+  extends Omit<PaperTextInputProps, 'value' | 'onChangeText' | 'mode' | 'error'> {
   /** Field label */
   label: string;
   /** Current value */

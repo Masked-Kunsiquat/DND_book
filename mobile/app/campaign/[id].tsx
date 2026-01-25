@@ -2,7 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import { Button, IconButton, Text } from 'react-native-paper';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { FormTextInput, Screen, EmptyState, Section, StatCard } from '../../src/components';
+import {
+  FormTextInput,
+  Screen,
+  EmptyState,
+  LoadingScreen,
+  Section,
+  StatCard,
+} from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { spacing } from '../../src/theme';
 import {
@@ -29,15 +36,17 @@ export default function CampaignDetailScreen() {
     const raw = params.id;
     return Array.isArray(raw) ? raw[0] : raw ?? '';
   }, [params.id]);
+  const hasCampaignId = campaignId.trim().length > 0;
+  const scopedCampaignId = hasCampaignId ? campaignId : '__missing__';
 
-  const campaign = useCampaign(campaignId);
+  const campaign = useCampaign(scopedCampaignId);
   const updateCampaign = useUpdateCampaign();
   const deleteCampaign = useDeleteCampaign();
 
-  const notes = useNotes(campaignId);
-  const npcs = useNpcs(campaignId);
-  const locations = useLocations(campaignId);
-  const sessionLogs = useSessionLogs(campaignId);
+  const notes = useNotes(scopedCampaignId);
+  const npcs = useNpcs(scopedCampaignId);
+  const locations = useLocations(scopedCampaignId);
+  const sessionLogs = useSessionLogs(scopedCampaignId);
 
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState('');
@@ -105,6 +114,10 @@ export default function CampaignDetailScreen() {
       { cancelable: true }
     );
   };
+
+  if (!hasCampaignId) {
+    return <LoadingScreen message="Loading campaign..." />;
+  }
 
   if (!campaign) {
     return (

@@ -88,7 +88,7 @@ export function TagInput({
     const trimmed = query.trim();
     if (!trimmed) return;
     const createdId = onCreateTag(trimmed);
-    if (createdId) {
+    if (createdId && !selectedIds.includes(createdId)) {
       onChange([...selectedIds, createdId]);
       setQuery('');
     }

@@ -43,20 +43,25 @@ export function FormImagePicker({
   const handlePick = async () => {
     if (disabled) return;
     setPickerError(null);
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (permission.status !== 'granted') {
-      setPickerError('Media library permission is required.');
-      return;
-    }
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (permission.status !== 'granted') {
+        setPickerError('Media library permission is required.');
+        return;
+      }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 0.8,
-    });
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.8,
+      });
 
-    if (!result.canceled && result.assets.length > 0) {
-      onChange(result.assets[0].uri);
+      if (!result.canceled && Array.isArray(result.assets) && result.assets.length > 0) {
+        onChange(result.assets[0].uri);
+      }
+    } catch (pickerErr) {
+      setPickerError('Unable to open the image library. Please try again.');
+      console.error('Image picker failed', pickerErr);
     }
   };
 
