@@ -16,6 +16,7 @@ import {
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { iconSizes, spacing } from '../../src/theme';
+import type { Tag } from '../../src/types/schema';
 import {
   useCampaigns,
   useDeleteNpc,
@@ -116,7 +117,7 @@ export default function NpcDetailScreen() {
 
   const resolvedTags = useMemo(() => {
     const tagById = new Map(tags.map((tag) => [tag.id, tag]));
-    return tagIds.map((id) => tagById.get(id)).filter(Boolean);
+    return tagIds.map((id) => tagById.get(id)).filter((tag): tag is Tag => tag !== undefined);
   }, [tagIds, tags]);
 
   const handleCreateTag = (tagName: string) => {
@@ -192,10 +193,10 @@ export default function NpcDetailScreen() {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
+          onPress: async () => {
             try {
               setIsDeleting(true);
-              deleteNpc(npc.id);
+              await Promise.resolve(deleteNpc(npc.id));
               router.back();
             } catch (err) {
               const message = err instanceof Error ? err.message : 'Failed to delete NPC.';

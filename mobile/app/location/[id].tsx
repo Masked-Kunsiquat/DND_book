@@ -54,13 +54,15 @@ export default function LocationDetailScreen() {
     const raw = params.id;
     return Array.isArray(raw) ? raw[0] : raw ?? '';
   }, [params.id]);
+  const hasLocationId = locationId.trim().length > 0;
+  const scopedLocationId = hasLocationId ? locationId : '__missing__';
 
-  const location = useLocation(locationId);
+  const location = useLocation(scopedLocationId);
   const updateLocation = useUpdateLocation();
   const deleteLocation = useDeleteLocation();
   const allLocations = useLocations();
-  const childLocations = useChildLocations(locationId);
-  const path = useLocationPath(locationId);
+  const childLocations = useChildLocations(scopedLocationId);
+  const path = useLocationPath(scopedLocationId);
   const tags = useTagsByIds(location?.tagIds ?? []);
   const campaigns = useCampaigns();
 
@@ -183,6 +185,19 @@ export default function LocationDetailScreen() {
       { cancelable: true }
     );
   };
+
+  if (!hasLocationId) {
+    return (
+      <Screen>
+        <EmptyState
+          title="No location selected"
+          description="Select a location to view its details."
+          icon="map-marker-outline"
+          action={{ label: 'Go Back', onPress: () => router.back() }}
+        />
+      </Screen>
+    );
+  }
 
   if (!location) {
     return (

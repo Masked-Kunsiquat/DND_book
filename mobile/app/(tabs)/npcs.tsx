@@ -15,6 +15,7 @@ import {
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { layout, spacing } from '../../src/theme';
+import type { Tag } from '../../src/types/schema';
 import {
   useCampaigns,
   useCreateNpc,
@@ -287,7 +288,7 @@ export default function NpcsScreen() {
           renderItem={({ item }) => {
             const resolvedTags = item.tagIds
               .map((tagId) => tagById.get(tagId))
-              .filter(Boolean);
+              .filter((tag): tag is Tag => tag !== undefined);
 
             return (
               <View style={styles.cardWrapper}>
