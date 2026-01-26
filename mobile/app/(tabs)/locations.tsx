@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { SectionList, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, SectionList, StyleSheet, View } from 'react-native';
 import { Button, FAB, Switch, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -9,10 +9,12 @@ import {
   FormTextInput,
   Screen,
   EmptyState,
-  LocationCard,
+  LocationRow,
+  Section,
+  StatCard,
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
-import { layout, spacing } from '../../src/theme';
+import { iconSizes, layout, semanticColors, spacing } from '../../src/theme';
 import {
   useCreateLocation,
   useCurrentCampaign,
@@ -31,11 +33,31 @@ const LOCATION_TYPE_OPTIONS: { label: string; value: LocationType }[] = [
   { label: 'Locale', value: 'Locale' },
   { label: 'Landmark', value: 'Landmark' },
 ];
+const LOCATION_TYPE_ORDER = LOCATION_TYPE_OPTIONS.map((option) => option.value);
+
+const getAllowedParentTypes = (type: LocationType): LocationType[] => {
+  const index = LOCATION_TYPE_ORDER.indexOf(type);
+  if (index <= 0) return [];
+  return LOCATION_TYPE_ORDER.slice(0, index);
+};
+
+const pluralize = (singular: string, count: number, plural?: string) => {
+  if (count === 1) return singular;
+  return plural ?? `${singular}s`;
+};
+
+const pluralizeLocationType = (type: LocationType, count: number) => {
+  if (count === 1) return type;
+  if (type === 'Territory') return 'Territories';
+  return `${type}s`;
+};
 
 export default function LocationsScreen() {
   const { theme } = useTheme();
   const currentCampaign = useCurrentCampaign();
   const [onlyCurrent, setOnlyCurrent] = useState(true);
+  const [typeFilter, setTypeFilter] = useState<LocationType | 'all'>('all');
+  const [filtersOpen, setFiltersOpen] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
@@ -49,6 +71,11 @@ export default function LocationsScreen() {
   const { refreshing, onRefresh } = usePullToRefresh();
   const effectiveCampaignId = onlyCurrent && currentCampaign ? currentCampaign.id : undefined;
   const locations = useLocations(effectiveCampaignId);
+
+  const visibleLocations = useMemo(() => {
+    if (typeFilter === 'all') return locations;
+    return locations.filter((location) => location.type === typeFilter);
+  }, [locations, typeFilter]);
 
   const { locationById, depthById } = useMemo(() => {
     const locationMap = new Map<string, Location>();
@@ -87,48 +114,145 @@ export default function LocationsScreen() {
     return new Map(tags.map((tag) => [tag.id, tag]));
   }, [tags]);
 
+  const visibleIdSet = useMemo(() => {
+    return new Set(visibleLocations.map((location) => location.id));
+  }, [visibleLocations]);
+
+  const { rootById, pathById } = useMemo(() => {
+    const rootMap = new Map<string, Location>();
+    const pathMap = new Map<string, string>();
+
+    const resolve = (location: Location) => {
+      if (rootMap.has(location.id)) return;
+      const segments: string[] = [];
+      let root = location;
+      let currentId = location.parentId;
+      const visited = new Set<string>([location.id]);
+
+      while (currentId) {
+        if (visited.has(currentId)) break;
+        visited.add(currentId);
+        const parent = locationById.get(currentId);
+        if (!parent) break;
+        root = parent;
+        segments.unshift(parent.name || parent.type || 'Unnamed');
+        currentId = parent.parentId;
+      }
+
+      rootMap.set(location.id, root);
+      pathMap.set(location.id, segments.join(' • '));
+    };
+
+    visibleLocations.forEach((location) => resolve(location));
+
+    return { rootById: rootMap, pathById: pathMap };
+  }, [visibleLocations, locationById]);
+
   const sections = useMemo(() => {
-    const grouped = new Map<LocationType, Location[]>();
-    locations.forEach((location) => {
-      const list = grouped.get(location.type) ?? [];
-      list.push(location);
-      grouped.set(location.type, list);
+    const grouped = new Map<string, { root: Location; data: Location[] }>();
+
+    visibleLocations.forEach((location) => {
+      const root = rootById.get(location.id) ?? location;
+      const entry = grouped.get(root.id) ?? { root, data: [] };
+      if (location.id !== root.id) {
+        entry.data.push(location);
+      }
+      grouped.set(root.id, entry);
     });
 
-    const typeOrder: LocationType[] = [
-      'Plane',
-      'Realm',
-      'Continent',
-      'Territory',
-      'Province',
-      'Locale',
-      'Landmark',
-    ];
+    const sortedSections = [...grouped.values()].sort((a, b) => {
+      const typeIndexA = LOCATION_TYPE_ORDER.indexOf(a.root.type);
+      const typeIndexB = LOCATION_TYPE_ORDER.indexOf(b.root.type);
+      if (typeIndexA !== typeIndexB) return typeIndexA - typeIndexB;
+      return (a.root.name || '').localeCompare(b.root.name || '');
+    });
 
-    return typeOrder
-      .filter((type) => grouped.has(type))
-      .map((type) => {
-        const data = grouped.get(type) ?? [];
-        const sorted = [...data].sort((a, b) => {
-          const depthA = depthById.get(a.id) ?? 0;
-          const depthB = depthById.get(b.id) ?? 0;
-          if (depthA !== depthB) return depthA - depthB;
-          return (a.name || '').localeCompare(b.name || '');
-        });
-
-        return { title: type, data: sorted };
+    return sortedSections.map((section) => {
+      const data = [...section.data].sort((a, b) => {
+        const depthA = depthById.get(a.id) ?? 0;
+        const depthB = depthById.get(b.id) ?? 0;
+        if (depthA !== depthB) return depthA - depthB;
+        return (a.name || '').localeCompare(b.name || '');
       });
-  }, [locations, depthById]);
+      const count = data.length + (visibleIdSet.has(section.root.id) ? 1 : 0);
+      const isRootVisible = visibleIdSet.has(section.root.id);
+
+      return {
+        title: section.root.name || 'Unnamed location',
+        root: section.root,
+        data,
+        count,
+        isRootVisible,
+      };
+    });
+  }, [visibleLocations, rootById, depthById, visibleIdSet]);
+
+  const allowedParentTypes = useMemo(() => getAllowedParentTypes(draftType), [draftType]);
+  const allowedParentIds = useMemo(() => {
+    const allowed = new Set(allowedParentTypes);
+    return new Set(
+      allLocations.filter((location) => allowed.has(location.type)).map((location) => location.id)
+    );
+  }, [allLocations, allowedParentTypes]);
 
   const parentOptions = useMemo(() => {
+    const allowed = new Set(allowedParentTypes);
     return [
       { label: 'No parent', value: '' },
-      ...allLocations.map((location) => ({
-        label: location.name || 'Untitled location',
-        value: location.id,
-      })),
+      ...allLocations
+        .filter((location) => allowed.has(location.type))
+        .map((location) => ({
+          label: location.name || 'Untitled location',
+          value: location.id,
+        })),
     ];
-  }, [allLocations]);
+  }, [allLocations, allowedParentTypes]);
+
+  const parentHelper = useMemo(() => {
+    if (allowedParentTypes.length === 0) {
+      return 'This level cannot have a parent.';
+    }
+    return `Parent must be higher in the hierarchy (${allowedParentTypes.join(' • ')}).`;
+  }, [allowedParentTypes]);
+
+  const typeCounts = useMemo(() => {
+    const counts = new Map<LocationType, number>();
+    locations.forEach((location) => {
+      counts.set(location.type, (counts.get(location.type) || 0) + 1);
+    });
+    return counts;
+  }, [locations]);
+
+  const rootCount = useMemo(() => {
+    return locations.filter((location) => !location.parentId).length;
+  }, [locations]);
+
+  const hierarchyIssues = useMemo(() => {
+    let missingParent = 0;
+    let mismatch = 0;
+    locations.forEach((location) => {
+      if (!location.parentId) return;
+      const parent = locationById.get(location.parentId);
+      if (!parent) {
+        missingParent += 1;
+        return;
+      }
+      const allowedParents = new Set(getAllowedParentTypes(location.type));
+      if (!allowedParents.has(parent.type)) {
+        mismatch += 1;
+      }
+    });
+    return { missingParent, mismatch, total: missingParent + mismatch };
+  }, [locationById, locations]);
+
+  const getTypeFocusStyle = (isActive: boolean) => ({
+    borderWidth: 1,
+    borderColor: isActive ? theme.colors.primary : theme.colors.outlineVariant,
+    backgroundColor: isActive ? theme.colors.primaryContainer : theme.colors.surface,
+  });
+
+  const getTypeFocusIconColor = (isActive: boolean) =>
+    isActive ? theme.colors.onPrimaryContainer : theme.colors.primary;
 
   const openCreateModal = () => {
     setDraftName(`New Location ${allLocations.length + 1}`);
@@ -144,11 +268,26 @@ export default function LocationsScreen() {
     setCreateError(null);
   };
 
+  const handleDraftTypeChange = (value: string) => {
+    const nextType = value as LocationType;
+    setDraftType(nextType);
+    if (!draftParentId) return;
+    const parent = allLocations.find((location) => location.id === draftParentId);
+    const allowed = new Set(getAllowedParentTypes(nextType));
+    if (!parent || !allowed.has(parent.type)) {
+      setDraftParentId('');
+    }
+  };
+
   const handleCreate = async () => {
     if (isCreating) return;
     const trimmed = draftName.trim();
     if (!trimmed) {
       setCreateError('Location name is required.');
+      return;
+    }
+    if (draftParentId && !allowedParentIds.has(draftParentId)) {
+      setCreateError('Parent must be higher in the location hierarchy.');
       return;
     }
     setIsCreating(true);
@@ -171,6 +310,10 @@ export default function LocationsScreen() {
       setIsCreating(false);
     }
   };
+
+  const listTitle =
+    typeFilter === 'all' ? 'Locations' : `${typeFilter} Locations`;
+  const listCountLabel = `${visibleLocations.length} location${visibleLocations.length === 1 ? '' : 's'}`;
 
   const createModal = (
     <FormModal
@@ -198,13 +341,14 @@ export default function LocationsScreen() {
         label="Type"
         value={draftType}
         options={LOCATION_TYPE_OPTIONS}
-        onChange={(value) => setDraftType(value as LocationType)}
+        onChange={handleDraftTypeChange}
       />
       <FormSelect
         label="Parent location"
         value={draftParentId}
         options={parentOptions}
         onChange={setDraftParentId}
+        helperText={parentHelper}
       />
       <FormTextInput
         label="Description"
@@ -241,6 +385,22 @@ export default function LocationsScreen() {
     );
   }
 
+  if (visibleLocations.length === 0) {
+    return (
+      <>
+        <Screen onRefresh={onRefresh} refreshing={refreshing}>
+          <EmptyState
+            title="No locations found"
+            description="Try clearing the type filter."
+            icon="map-marker-outline"
+            action={{ label: 'Clear Filter', onPress: () => setTypeFilter('all') }}
+          />
+        </Screen>
+        {createModal}
+      </>
+    );
+  }
+
   return (
     <>
       <Screen scroll={false}>
@@ -253,66 +413,262 @@ export default function LocationsScreen() {
           onRefresh={onRefresh}
           ListHeaderComponent={
             <View style={styles.header}>
-              <View style={styles.filterHeader}>
-                <View style={styles.filterTitle}>
-                  <MaterialCommunityIcons
-                    name="tune-variant"
-                    size={18}
-                    color={theme.colors.primary}
-                    style={styles.filterIcon}
+              <Section title="Overview" icon="chart-box-outline">
+                <View style={styles.statsRow}>
+                  <StatCard
+                    label={pluralize('Location', locations.length)}
+                    value={locations.length}
+                    layout="compact"
+                    icon={
+                      <MaterialCommunityIcons
+                        name="map-marker-multiple-outline"
+                        size={iconSizes.md}
+                        color={theme.colors.primary}
+                      />
+                    }
+                    onPress={() => setTypeFilter('all')}
                   />
-                  <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-                    Filters
-                  </Text>
-                </View>
-                <View style={styles.filterRow}>
-                  <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                    Current campaign only
-                  </Text>
-                  <Switch
-                    value={onlyCurrent && !!currentCampaign}
-                    onValueChange={setOnlyCurrent}
-                    disabled={!currentCampaign}
+                  <StatCard
+                    label={pluralize('Root', rootCount)}
+                    value={rootCount}
+                    layout="compact"
+                    icon={
+                      <MaterialCommunityIcons
+                        name="map-marker-outline"
+                        size={iconSizes.md}
+                        color={theme.colors.primary}
+                      />
+                    }
                   />
                 </View>
+                <View style={styles.statsRow}>
+                  <StatCard
+                    label={pluralize('Issue', hierarchyIssues.total)}
+                    value={hierarchyIssues.total}
+                    layout="compact"
+                    icon={
+                      <MaterialCommunityIcons
+                        name="alert-circle-outline"
+                        size={iconSizes.md}
+                        color={semanticColors.warning.main}
+                      />
+                    }
+                  />
+                  <StatCard
+                    label={pluralize('Type', typeCounts.size)}
+                    value={typeCounts.size}
+                    layout="compact"
+                    icon={
+                      <MaterialCommunityIcons
+                        name="shape-outline"
+                        size={iconSizes.md}
+                        color={theme.colors.primary}
+                      />
+                    }
+                  />
+                </View>
+              </Section>
+
+              <View
+                style={[
+                  styles.filtersContainer,
+                  {
+                    backgroundColor: theme.colors.surfaceVariant,
+                    borderColor: theme.colors.outlineVariant,
+                  },
+                ]}
+              >
+                <View style={styles.filterHeader}>
+                  <Pressable
+                    onPress={() => setFiltersOpen((prev) => !prev)}
+                    style={styles.filterTitle}
+                  >
+                    <MaterialCommunityIcons
+                      name="tune-variant"
+                      size={18}
+                      color={theme.colors.primary}
+                      style={styles.filterIcon}
+                    />
+                    <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+                      Filters
+                    </Text>
+                  </Pressable>
+                  <Pressable onPress={() => setFiltersOpen((prev) => !prev)} hitSlop={6}>
+                    <MaterialCommunityIcons
+                      name={filtersOpen ? 'chevron-up' : 'chevron-down'}
+                      size={iconSizes.md}
+                      color={theme.colors.onSurfaceVariant}
+                    />
+                  </Pressable>
+                </View>
+                {filtersOpen && (
+                  <>
+                    <View style={styles.filterRow}>
+                      <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                        Current campaign only
+                      </Text>
+                      <Switch
+                        value={onlyCurrent && !!currentCampaign}
+                        onValueChange={setOnlyCurrent}
+                        disabled={!currentCampaign}
+                      />
+                    </View>
+                    <View style={styles.typeHeader}>
+                      <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                        Type focus
+                      </Text>
+                      {typeFilter !== 'all' && (
+                        <Pressable onPress={() => setTypeFilter('all')} hitSlop={6}>
+                          <Text variant="labelSmall" style={{ color: theme.colors.primary }}>
+                            Clear
+                          </Text>
+                        </Pressable>
+                      )}
+                    </View>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.typeScroll}
+                    >
+                      <View style={styles.typeCard}>
+                        <StatCard
+                          label={pluralize('Location', locations.length)}
+                          value={locations.length}
+                          layout="compact"
+                          style={getTypeFocusStyle(typeFilter === 'all')}
+                          onPress={() => setTypeFilter('all')}
+                          icon={
+                            <MaterialCommunityIcons
+                              name="earth"
+                              size={iconSizes.md}
+                              color={getTypeFocusIconColor(typeFilter === 'all')}
+                            />
+                          }
+                        />
+                      </View>
+                      {LOCATION_TYPE_ORDER.map((type) => {
+                        const count = typeCounts.get(type) || 0;
+                        const isActive = typeFilter === type;
+                        return (
+                          <View key={type} style={styles.typeCard}>
+                            <StatCard
+                              label={pluralizeLocationType(type, count)}
+                              value={count}
+                              layout="compact"
+                              style={getTypeFocusStyle(isActive)}
+                              onPress={() => setTypeFilter(type)}
+                              icon={
+                                <MaterialCommunityIcons
+                                  name="compass-rose"
+                                  size={iconSizes.md}
+                                  color={getTypeFocusIconColor(isActive)}
+                                />
+                              }
+                            />
+                          </View>
+                        );
+                      })}
+                    </ScrollView>
+                  </>
+                )}
               </View>
               <View style={styles.listHeader}>
-                <MaterialCommunityIcons
-                  name="map-marker"
-                  size={18}
-                  color={theme.colors.primary}
-                  style={styles.listHeaderIcon}
-                />
-                <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-                  Locations
+                <View style={styles.listHeaderRow}>
+                  <MaterialCommunityIcons
+                    name="map-marker"
+                    size={18}
+                    color={theme.colors.primary}
+                    style={styles.listHeaderIcon}
+                  />
+                  <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+                    {listTitle}
+                  </Text>
+                </View>
+                <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  {listCountLabel}
                 </Text>
               </View>
             </View>
           }
           renderSectionHeader={({ section }) => (
-            <View style={styles.sectionHeader}>
-              <Text variant="titleSmall" style={{ color: theme.colors.onSurface }}>
-                {section.title}
-              </Text>
-              <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                {section.data.length}
-              </Text>
-            </View>
+            <Pressable
+              onPress={() => router.push(`/location/${section.root.id}`)}
+              style={[
+                styles.rootHeader,
+                {
+                  backgroundColor: theme.colors.surfaceVariant,
+                  borderColor: theme.colors.outlineVariant,
+                },
+                !section.isRootVisible && styles.rootHeaderDimmed,
+              ]}
+            >
+              <View style={styles.rootHeaderText}>
+                <Text variant="titleMedium" style={{ color: theme.colors.onSurface }} numberOfLines={1}>
+                  {section.title}
+                </Text>
+                <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  {section.root.type} root
+                </Text>
+              </View>
+              <View style={styles.rootHeaderMeta}>
+                {!section.isRootVisible && (
+                  <View
+                    style={[
+                      styles.rootFilteredPill,
+                      {
+                        backgroundColor: theme.colors.surface,
+                        borderColor: theme.colors.outlineVariant,
+                      },
+                    ]}
+                  >
+                    <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                      Filtered
+                    </Text>
+                  </View>
+                )}
+                <View
+                  style={[
+                    styles.rootCountPill,
+                    { backgroundColor: theme.colors.surface, borderColor: theme.colors.outline },
+                  ]}
+                >
+                  <Text variant="labelSmall" style={{ color: theme.colors.onSurface }}>
+                    {section.count} {pluralize('location', section.count)}
+                  </Text>
+                </View>
+                <MaterialCommunityIcons
+                  name="chevron-right"
+                  size={iconSizes.md}
+                  color={theme.colors.onSurfaceVariant}
+                />
+              </View>
+            </Pressable>
           )}
           renderItem={({ item }) => {
-            const parentName = item.parentId ? locationById.get(item.parentId)?.name : undefined;
+            const parent = item.parentId ? locationById.get(item.parentId) : undefined;
             const resolvedTags = item.tagIds
               .map((tagId) => tagById.get(tagId))
               .filter((tag): tag is Tag => tag !== undefined);
-            const depth = depthById.get(item.id) ?? 0;
-            const indent = depth * spacing[3];
+            let statusLabel: string | undefined;
+
+            if (item.parentId && !parent) {
+              statusLabel = 'Parent missing';
+            } else if (parent) {
+              const allowedParents = new Set(getAllowedParentTypes(item.type));
+              if (!allowedParents.has(parent.type)) {
+                statusLabel = 'Hierarchy mismatch';
+              }
+            }
+
+            const pathLabel = pathById.get(item.id);
 
             return (
-              <View style={[styles.cardWrapper, indent ? { marginLeft: indent } : null]}>
-                <LocationCard
+              <View style={styles.cardWrapper}>
+                <LocationRow
                   location={item}
-                  parentName={parentName}
+                  pathLabel={pathLabel}
                   tags={resolvedTags}
+                  statusLabel={statusLabel}
                   onPress={() => router.push(`/location/${item.id}`)}
                 />
               </View>
@@ -339,8 +695,21 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: spacing[3],
   },
-  filterHeader: {
+  filtersContainer: {
     marginBottom: spacing[3],
+    borderWidth: 1,
+    borderRadius: layout.cardBorderRadius,
+    padding: spacing[3],
+    gap: spacing[3],
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: spacing[3],
+  },
+  filterHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   filterTitle: {
     flexDirection: 'row',
@@ -355,22 +724,68 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  typeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   listHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  listHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   listHeaderIcon: {
     marginRight: spacing[2],
   },
-  sectionHeader: {
+  typeScroll: {
+    paddingRight: spacing[2],
+    gap: spacing[2],
+  },
+  typeCard: {
+    width: 132,
+  },
+  rootHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: spacing[4],
-    marginBottom: spacing[2],
+    marginTop: spacing[3],
+    marginBottom: spacing[1.5],
+    paddingVertical: spacing[2],
+    paddingHorizontal: spacing[3],
+    borderRadius: layout.cardBorderRadius,
+    borderWidth: 1,
+  },
+  rootHeaderText: {
+    flex: 1,
+    gap: spacing[1],
+    marginRight: spacing[2],
+  },
+  rootHeaderDimmed: {
+    opacity: 0.7,
+  },
+  rootHeaderMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
+  },
+  rootFilteredPill: {
+    borderRadius: layout.cardBorderRadius,
+    borderWidth: 1,
+    paddingHorizontal: spacing[1.5],
+    paddingVertical: spacing[0.5],
+  },
+  rootCountPill: {
+    borderRadius: layout.cardBorderRadius,
+    borderWidth: 1,
+    paddingHorizontal: spacing[1.5],
+    paddingVertical: spacing[0.5],
   },
   cardWrapper: {
-    marginBottom: spacing[3],
+    marginBottom: spacing[1.5],
   },
   fab: {
     position: 'absolute',

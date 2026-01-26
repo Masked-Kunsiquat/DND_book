@@ -21,6 +21,8 @@ export interface ScreenProps {
   refreshing?: boolean;
   /** Called when user pulls to refresh */
   onRefresh?: () => void;
+  /** Indices of sticky headers in ScrollView */
+  stickyHeaderIndices?: number[];
   /** Additional style for the container */
   style?: object;
 }
@@ -32,6 +34,7 @@ export function Screen({
   padding = layout.screenPadding,
   refreshing,
   onRefresh,
+  stickyHeaderIndices,
   style,
 }: ScreenProps) {
   const { theme } = useTheme();
@@ -47,6 +50,7 @@ export function Screen({
       style={styles.scrollView}
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
+      stickyHeaderIndices={stickyHeaderIndices}
       refreshControl={
         onRefresh ? (
           <RefreshControl

@@ -8,6 +8,7 @@ export { StatCard, type StatCardProps } from './cards/StatCard';
 export { CampaignCard, type CampaignCardProps } from './cards/CampaignCard';
 export { NoteCard, type NoteCardProps } from './cards/NoteCard';
 export { LocationCard, type LocationCardProps } from './cards/LocationCard';
+export { LocationRow, type LocationRowProps } from './cards/LocationRow';
 export { NPCCard, type NPCCardProps } from './cards/NPCCard';
 
 // Chips/Tags
@@ -16,6 +17,7 @@ export { TagChip, type TagChipProps } from './chips/TagChip';
 // Layout
 export { Screen, type ScreenProps } from './layout/Screen';
 export { Section, type SectionProps } from './layout/Section';
+export { Breadcrumb, type BreadcrumbProps, type BreadcrumbItem } from './layout/Breadcrumb';
 
 // Forms
 export { FormTextInput, type FormTextInputProps } from './forms/FormTextInput';
