@@ -10,8 +10,13 @@ const log = createLogger('files');
 const IMAGES_DIR_NAME = 'images';
 
 function getImagesDir(): string | null {
-  if (!FileSystem.documentDirectory) return null;
-  return `${FileSystem.documentDirectory}${IMAGES_DIR_NAME}/`;
+  if (FileSystem.documentDirectory) {
+    return `${FileSystem.documentDirectory}${IMAGES_DIR_NAME}/`;
+  }
+  if (FileSystem.cacheDirectory) {
+    return `${FileSystem.cacheDirectory}${IMAGES_DIR_NAME}/`;
+  }
+  return null;
 }
 
 function getFileExtension(uri: string): string {
@@ -19,10 +24,10 @@ function getFileExtension(uri: string): string {
   return match ? match[1].toLowerCase() : 'jpg';
 }
 
-export async function ensureImagesDir(): Promise<string> {
+export async function ensureImagesDir(): Promise<string | null> {
   const dir = getImagesDir();
   if (!dir) {
-    throw new Error('Document directory is unavailable.');
+    return null;
   }
 
   const info = await FileSystem.getInfoAsync(dir);
@@ -38,6 +43,10 @@ export async function saveImageToLibrary(sourceUri: string): Promise<string> {
   }
 
   const dir = await ensureImagesDir();
+  if (!dir) {
+    log.warn('File system is unavailable; using source image URI.');
+    return sourceUri;
+  }
   const ext = getFileExtension(sourceUri);
   const filename = `${generateId()}.${ext}`;
   const destination = `${dir}${filename}`;
