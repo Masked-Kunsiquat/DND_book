@@ -146,14 +146,14 @@ export const green = {
 
 // Tag color definitions (matching web app)
 export const tagColors = [
-  { bg: primary[100], text: primary[800], name: 'blue' },
-  { bg: gray[100], text: gray[800], name: 'gray' },
-  { bg: error[100], text: error[800], name: 'red' },
-  { bg: green[100], text: green[800], name: 'green' },
-  { bg: yellow[100], text: yellow[800], name: 'yellow' },
-  { bg: secondary[100], text: secondary[800], name: 'indigo' },
-  { bg: purple[100], text: purple[800], name: 'purple' },
-  { bg: pink[100], text: pink[800], name: 'pink' },
+  { bg: error[500], text: '#ffffff', name: 'red' },
+  { bg: warning[500], text: '#ffffff', name: 'orange' },
+  { bg: yellow[500], text: gray[900], name: 'yellow' },
+  { bg: green[500], text: '#ffffff', name: 'green' },
+  { bg: primary[500], text: '#ffffff', name: 'blue' },
+  { bg: secondary[500], text: '#ffffff', name: 'indigo' },
+  { bg: purple[500], text: '#ffffff', name: 'purple' },
+  { bg: pink[500], text: '#ffffff', name: 'pink' },
 ] as const;
 
 const tagColorCache = new Map<string, (typeof tagColors)[number]>();

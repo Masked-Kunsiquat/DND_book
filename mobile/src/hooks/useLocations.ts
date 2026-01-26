@@ -7,6 +7,7 @@ import { useRow, useTable } from 'tinybase/ui-react';
 import { useStore } from '../store';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
+import { removeManagedImage } from '../utils/files';
 import type { Location, LocationRow, LocationType, RecordId } from '../types/schema';
 
 const log = createLogger('locations');
@@ -253,7 +254,17 @@ export function useDeleteLocation(): (id: string) => void {
 
   return useCallback(
     (id: string) => {
+      const row = store.getRow('locations', id) as unknown as LocationRow | undefined;
       store.delRow('locations', id);
+      if (row) {
+        if (row.map) {
+          void removeManagedImage(row.map);
+        }
+        const images = parseJsonArray(row.images);
+        images.forEach((uri) => {
+          void removeManagedImage(uri);
+        });
+      }
       log.debug('Deleted location', id);
     },
     [store]

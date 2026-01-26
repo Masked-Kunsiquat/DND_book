@@ -17,6 +17,8 @@ export interface NPCCardProps {
   npc: Npc;
   /** Optional resolved tag objects */
   tags?: Tag[];
+  /** Called when a tag is pressed */
+  onTagPress?: (tagId: string) => void;
   /** Called when card is pressed */
   onPress?: () => void;
   /** Additional style for the card container */
@@ -54,7 +56,7 @@ function NpcAvatar({ imageUri }: { imageUri?: string }) {
   );
 }
 
-export function NPCCard({ npc, tags = [], onPress, style }: NPCCardProps) {
+export function NPCCard({ npc, tags = [], onTagPress, onPress, style }: NPCCardProps) {
   return (
     <AppCard
       title={npc.name || 'Unnamed NPC'}
@@ -66,7 +68,14 @@ export function NPCCard({ npc, tags = [], onPress, style }: NPCCardProps) {
       {tags.length > 0 && (
         <View style={styles.tagsRow}>
           {tags.map((tag) => (
-            <TagChip key={tag.id} id={tag.id} name={tag.name} size="small" />
+            <TagChip
+              key={tag.id}
+              id={tag.id}
+              name={tag.name}
+              color={tag.color}
+              size="small"
+              onPress={onTagPress ? () => onTagPress(tag.id) : undefined}
+            />
           ))}
         </View>
       )}

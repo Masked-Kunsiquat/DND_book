@@ -5,7 +5,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { Chip } from 'react-native-paper';
-import { getTagColor } from '../../theme';
+import { getTagColor, layout, spacing } from '../../theme';
 import { useTheme } from '../../theme/ThemeProvider';
 
 export interface TagChipProps {
@@ -13,6 +13,8 @@ export interface TagChipProps {
   id: string;
   /** Tag name to display */
   name: string;
+  /** Optional custom color (hex) */
+  color?: string;
   /** Called when chip is pressed */
   onPress?: () => void;
   /** Called when close icon is pressed (shows close icon if provided) */
@@ -23,9 +25,53 @@ export interface TagChipProps {
   size?: 'small' | 'medium';
 }
 
-export function TagChip({ id, name, onPress, onClose, selected, size = 'medium' }: TagChipProps) {
+function getLuminance(color: string): number | null {
+  const normalized = color.replace('#', '');
+  const hex =
+    normalized.length === 3
+      ? normalized
+          .split('')
+          .map((char) => `${char}${char}`)
+          .join('')
+      : normalized;
+  if (hex.length !== 6) return null;
+  const r = parseInt(hex.slice(0, 2), 16) / 255;
+  const g = parseInt(hex.slice(2, 4), 16) / 255;
+  const b = parseInt(hex.slice(4, 6), 16) / 255;
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function getReadableTextColor(color: string, lightText: string, darkText: string): string {
+  const luminance = getLuminance(color);
+  if (luminance === null) return lightText;
+  return luminance > 0.6 ? darkText : lightText;
+}
+
+export function TagChip({
+  id,
+  name,
+  color,
+  onPress,
+  onClose,
+  selected,
+  size = 'medium',
+}: TagChipProps) {
   const colors = getTagColor(id);
   const { theme } = useTheme();
+  const customColor = color?.trim();
+  const hasCustomColor = Boolean(customColor);
+  const resolvedColor = customColor ?? colors.bg;
+  const luminance = getLuminance(resolvedColor);
+  const unselectedTextColor = hasCustomColor
+    ? luminance !== null && luminance < 0.3
+      ? theme.colors.onSurface
+      : resolvedColor
+    : colors.text;
+  const textColor = selected
+    ? hasCustomColor
+      ? getReadableTextColor(resolvedColor, theme.colors.onPrimary, theme.colors.onSurface)
+      : colors.text
+    : unselectedTextColor;
 
   return (
     <Chip
@@ -35,10 +81,10 @@ export function TagChip({ id, name, onPress, onClose, selected, size = 'medium' 
       style={[
         styles.chip,
         size === 'small' && styles.chipSmall,
-        selected && { backgroundColor: colors.bg },
-        { borderColor: selected ? colors.bg : theme.colors.outlineVariant },
+        selected && { backgroundColor: resolvedColor },
+        { borderColor: resolvedColor },
       ]}
-      textStyle={[styles.text, size === 'small' && styles.textSmall, { color: colors.text }]}
+      textStyle={[styles.text, size === 'small' && styles.textSmall, { color: textColor }]}
       closeIconAccessibilityLabel="Remove tag"
     >
       {name}
@@ -51,12 +97,15 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   chipSmall: {
-    height: 24,
+    minHeight: layout.chipSmallHeight,
+    paddingVertical: layout.chipSmallPaddingY,
   },
   text: {
     fontSize: 14,
+    lineHeight: 18,
   },
   textSmall: {
     fontSize: 12,
+    lineHeight: 16,
   },
 });

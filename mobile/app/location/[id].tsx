@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Image, Pressable, StyleSheet, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { Button, IconButton, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import {
   AppCard,
   Breadcrumb,
+  ConfirmDialog,
   EmptyState,
   FormModal,
   FormImageGallery,
@@ -104,6 +105,7 @@ export default function LocationDetailScreen() {
   const [moveError, setMoveError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   const linkedCampaigns = useMemo(() => {
     if (!location) return [];
@@ -347,31 +349,26 @@ export default function LocationDetailScreen() {
 
   const handleDelete = () => {
     if (!location || isDeleting) return;
-    Alert.alert(
-      'Delete location?',
-      'This will remove the location and leave any children orphaned.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            try {
-              setIsDeleting(true);
-              deleteLocation(location.id);
-              router.back();
-            } catch (err) {
-              const message =
-                err instanceof Error ? err.message : 'Failed to delete location.';
-              setError(message);
-            } finally {
-              setIsDeleting(false);
-            }
-          },
-        },
-      ],
-      { cancelable: true }
-    );
+    setIsDeleteOpen(true);
+  };
+
+  const closeDeleteDialog = () => {
+    setIsDeleteOpen(false);
+  };
+
+  const confirmDelete = () => {
+    if (!location || isDeleting) return;
+    try {
+      setIsDeleting(true);
+      deleteLocation(location.id);
+      router.back();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete location.';
+      setError(message);
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteOpen(false);
+    }
   };
 
   const moveModal = (
@@ -581,7 +578,7 @@ export default function LocationDetailScreen() {
         {isEditing ? (
           <Section title="Tags" icon="tag-outline">
             <TagInput
-              tags={tags.map((tag) => ({ id: tag.id, name: tag.name }))}
+              tags={tags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color }))}
               selectedIds={tagIds}
               onChange={setTagIds}
               onCreateTag={handleCreateTag}
@@ -589,17 +586,24 @@ export default function LocationDetailScreen() {
           </Section>
         ) : (
           <Section title="Tags" icon="tag-outline">
-            {resolvedTags.length === 0 ? (
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                No tags yet.
-              </Text>
-            ) : (
-              <View style={styles.tagsRow}>
-                {resolvedTags.map((tag) => (
-                  <TagChip key={tag.id} id={tag.id} name={tag.name} size="small" />
-                ))}
-              </View>
-            )}
+              {resolvedTags.length === 0 ? (
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  No tags yet.
+                </Text>
+              ) : (
+                <View style={styles.tagsRow}>
+                  {resolvedTags.map((tag) => (
+                    <TagChip
+                      key={tag.id}
+                      id={tag.id}
+                      name={tag.name}
+                      color={tag.color}
+                      size="small"
+                      onPress={() => router.push(`/tag/${tag.id}`)}
+                    />
+                  ))}
+                </View>
+              )}
           </Section>
         )}
 
@@ -694,6 +698,16 @@ export default function LocationDetailScreen() {
         </View>
         </View>
       </Screen>
+      <ConfirmDialog
+        visible={isDeleteOpen}
+        title="Delete location?"
+        description="This will remove the location and leave any children orphaned."
+        confirmLabel="Delete"
+        onCancel={closeDeleteDialog}
+        onConfirm={confirmDelete}
+        confirmLoading={isDeleting}
+        destructive
+      />
       {moveModal}
     </>
   );

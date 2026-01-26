@@ -1,3 +1,7 @@
+---
+status: complete
+---
+
 # Screen Implementation Plan
 
 ## Overview
@@ -11,7 +15,7 @@ This document outlines the plan for building out mobile screens, adapting patter
 - ✅ CRUD hooks for all entities
 - ✅ P2P sync infrastructure
 - ✅ Theme system (colors, spacing, typography)
-- ✅ Base components (Screen, Section, AppCard, TagChip, EmptyState, LoadingScreen)
+- ✅ Base components (Screen, Section, AppCard, TagChip, EmptyState, LoadingScreen, Breadcrumb)
 
 **To Build:**
 - Tab navigation structure
@@ -154,10 +158,10 @@ export default function EntitiesScreen() {
 - Group by first letter (SectionList) - optional
 
 ### 3.4 Locations List
-- SectionList grouped by type (Plane → Realm → etc.)
-- LocationCard for each item
+- SectionList grouped by root cluster (tap header to open root)
+- Compact row list with path context (no indentation)
 - FAB to create new location
-- Show hierarchy with indentation
+- Highlight hierarchy mismatches with status labels
 
 ---
 
@@ -281,8 +285,7 @@ Create form components in `src/components/forms/`:
 - Connection status
 
 ### 7.4 Sync Status Component
-- Floating indicator showing sync state
-- Tap to open sync hub
+- Surface sync status within the sync hub + dashboard quick action (no floating pill)
 
 ---
 
@@ -341,6 +344,7 @@ Recommended sequence:
 - [x] `src/components/cards/NoteCard.tsx`
 - [x] `src/components/cards/NPCCard.tsx`
 - [x] `src/components/cards/LocationCard.tsx`
+- [x] `src/components/cards/LocationRow.tsx`
 
 ### Components - Forms
 - [x] `src/components/forms/FormTextInput.tsx`
@@ -360,7 +364,7 @@ Recommended sequence:
 ## Notes
 
 - Use `FlatList` for long lists (virtualized)
-- Use `SectionList` for grouped data (locations by type)
+- Use `SectionList` for grouped data (locations by root cluster)
 - Prefer modals for create/edit on mobile (vs separate screens)
 - FAB (Floating Action Button) for primary create actions
 - Swipe actions for quick delete/edit on list items (optional)

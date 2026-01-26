@@ -3,8 +3,8 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
-import { Chip, Menu, Text, TextInput } from 'react-native-paper';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Checkbox, Chip, List, Modal, Portal, Text, TextInput } from 'react-native-paper';
 import { useTheme } from '../../theme/ThemeProvider';
 import { spacing } from '../../theme';
 
@@ -74,6 +74,7 @@ export function FormMultiSelect({
   };
 
   const handleClose = () => setVisible(false);
+  const handleToggle = () => (visible ? handleClose() : handleOpen());
 
   return (
     <View style={[styles.container, containerStyle]}>
@@ -90,42 +91,64 @@ export function FormMultiSelect({
           ))}
         </View>
       )}
-      <Menu
-        visible={visible}
-        onDismiss={handleClose}
-        anchor={
-          <Pressable onPress={handleOpen} disabled={disabled}>
-            <View pointerEvents="none">
-              <TextInput
-                mode="outlined"
-                label={label}
-                value={displayValue}
-                placeholder={placeholder}
-                editable={false}
-                disabled={disabled}
-                error={hasError}
-                right={<TextInput.Icon icon="menu-down" />}
-              />
-            </View>
-          </Pressable>
-        }
-      >
-        {options.length === 0 ? (
-          <Menu.Item title="No options" disabled />
-        ) : (
-          options.map((option) => {
-            const selected = value.includes(option.value);
-            return (
-              <Menu.Item
-                key={option.value}
-                title={option.label}
-                leadingIcon={selected ? 'check' : undefined}
-                onPress={() => toggleValue(option.value)}
-              />
-            );
-          })
-        )}
-      </Menu>
+      <Pressable onPress={handleToggle} disabled={disabled}>
+        <View pointerEvents="none" collapsable={false}>
+          <TextInput
+            mode="outlined"
+            label={label}
+            value={displayValue}
+            placeholder={placeholder}
+            editable={false}
+            disabled={disabled}
+            error={hasError}
+            right={<TextInput.Icon icon="menu-down" />}
+          />
+        </View>
+      </Pressable>
+      <Portal>
+        <Modal
+          visible={visible}
+          onDismiss={handleClose}
+          contentContainerStyle={[
+            styles.modal,
+            { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant },
+          ]}
+        >
+          <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+            {label}
+          </Text>
+          {options.length === 0 ? (
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+              No options available.
+            </Text>
+          ) : (
+            <ScrollView
+              style={styles.options}
+              contentContainerStyle={styles.optionsContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {options.map((option) => {
+                const selected = value.includes(option.value);
+                return (
+                  <List.Item
+                    key={option.value}
+                    title={option.label}
+                    titleStyle={{ color: theme.colors.onSurface }}
+                    left={() => (
+                      <Checkbox
+                        status={selected ? 'checked' : 'unchecked'}
+                        onPress={() => toggleValue(option.value)}
+                      />
+                    )}
+                    onPress={() => toggleValue(option.value)}
+                  />
+                );
+              })}
+            </ScrollView>
+          )}
+        </Modal>
+      </Portal>
       {message ? (
         <Text
           variant="bodySmall"
@@ -152,6 +175,22 @@ const styles = StyleSheet.create({
   },
   chip: {
     marginRight: spacing[1],
+  },
+  modal: {
+    marginHorizontal: spacing[4],
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: spacing[3],
+    width: '100%',
+    maxWidth: 420,
+    alignSelf: 'center',
+    gap: spacing[2],
+  },
+  options: {
+    maxHeight: 320,
+  },
+  optionsContent: {
+    gap: spacing[1],
   },
   helperText: {
     marginLeft: spacing[1],

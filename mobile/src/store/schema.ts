@@ -57,6 +57,7 @@ export const tablesSchema = {
   tags: {
     id: { type: 'string' },
     name: { type: 'string' },
+    color: { type: 'string' },
     created: { type: 'string' },
     updated: { type: 'string' },
   },

@@ -12,6 +12,7 @@ export { LocationRow, type LocationRowProps } from './cards/LocationRow';
 export { NPCCard, type NPCCardProps } from './cards/NPCCard';
 
 // Chips/Tags
+export { ComingSoonBadge, type ComingSoonBadgeProps } from './chips/ComingSoonBadge';
 export { TagChip, type TagChipProps } from './chips/TagChip';
 
 // Layout
@@ -27,6 +28,7 @@ export { FormImagePicker, type FormImagePickerProps } from './forms/FormImagePic
 export { FormImageGallery, type FormImageGalleryProps } from './forms/FormImageGallery';
 export { TagInput, type TagInputProps } from './forms/TagInput';
 export { FormModal, type FormModalProps } from './forms/FormModal';
+export { ConfirmDialog, type ConfirmDialogProps } from './forms/ConfirmDialog';
 
 // Sync
 export { SyncStatus, type SyncStatusProps } from './sync/SyncStatus';

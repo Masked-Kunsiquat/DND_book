@@ -7,6 +7,7 @@ import { useTable } from 'tinybase/ui-react';
 import { useStore } from '../store';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
+import { getTagColor } from '../theme';
 import type { Tag, TagRow } from '../types/schema';
 
 const log = createLogger('tags');
@@ -18,9 +19,23 @@ function rowToTag(row: TagRow): Tag {
   return {
     id: row.id,
     name: row.name,
+    color: row.color || getTagColor(row.id).bg,
     created: row.created,
     updated: row.updated,
   };
+}
+
+/**
+ * Safely parses a JSON array string, returning empty array on failure.
+ */
+function parseJsonArray(value: string): string[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
 /**
@@ -85,6 +100,7 @@ export function useTagByName(name: string): Tag | null {
 
 export interface CreateTagInput {
   name: string;
+  color?: string;
 }
 
 /**
@@ -98,10 +114,12 @@ export function useCreateTag(): (data: CreateTagInput) => string {
       log.debug('Creating tag', data.name);
       const id = generateId();
       const timestamp = now();
+      const color = data.color || getTagColor(id).bg;
 
       store.setRow('tags', id, {
         id,
         name: data.name,
+        color,
         created: timestamp,
         updated: timestamp,
       });
@@ -140,10 +158,12 @@ export function useGetOrCreateTag(): (name: string) => string {
 
         const id = generateId();
         const timestamp = now();
+        const color = getTagColor(id).bg;
 
         store.setRow('tags', id, {
           id,
           name,
+          color,
           created: timestamp,
           updated: timestamp,
         });
@@ -166,6 +186,7 @@ export function useGetOrCreateTag(): (name: string) => string {
 
 export interface UpdateTagInput {
   name?: string;
+  color?: string;
 }
 
 /**
@@ -184,6 +205,7 @@ export function useUpdateTag(): (id: string, data: UpdateTagInput) => void {
 
       const updates: Record<string, string> = { updated: now() };
       if (data.name !== undefined) updates.name = data.name;
+      if (data.color !== undefined) updates.color = data.color;
 
       store.setRow('tags', id, {
         ...existing,
@@ -198,14 +220,37 @@ export function useUpdateTag(): (id: string, data: UpdateTagInput) => void {
 
 /**
  * Hook to delete a tag.
- * Note: This does not remove the tag from entities that reference it.
+ * Also removes the tag from entities that reference it.
  */
 export function useDeleteTag(): (id: string) => void {
   const store = useStore();
 
   return useCallback(
     (id: string) => {
-      store.delRow('tags', id);
+      store.transaction(() => {
+        const tables: Array<{ tableId: string; field: string }> = [
+          { tableId: 'notes', field: 'tagIds' },
+          { tableId: 'npcs', field: 'tagIds' },
+          { tableId: 'locations', field: 'tagIds' },
+          { tableId: 'sessionLogs', field: 'tagIds' },
+        ];
+
+        tables.forEach(({ tableId, field }) => {
+          const table = store.getTable(tableId);
+          Object.entries(table).forEach(([rowId, row]) => {
+            const raw = (row as Record<string, string>)[field] ?? '';
+            const tags = parseJsonArray(raw);
+            if (!tags.includes(id)) return;
+            const nextTags = tags.filter((tagId) => tagId !== id);
+            store.setRow(tableId, rowId, {
+              ...row,
+              [field]: JSON.stringify(nextTags),
+            });
+          });
+        });
+
+        store.delRow('tags', id);
+      });
       log.debug('Deleted tag', id);
     },
     [store]

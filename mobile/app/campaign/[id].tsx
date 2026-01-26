@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Button, IconButton, Text } from 'react-native-paper';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import {
   AppCard,
+  ConfirmDialog,
   FormTextInput,
   Screen,
   EmptyState,
@@ -60,6 +61,7 @@ export default function CampaignDetailScreen() {
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   const topNotes = useMemo(() => {
     return [...notes]
@@ -154,31 +156,26 @@ export default function CampaignDetailScreen() {
 
   const handleDelete = () => {
     if (!campaign || isDeleting) return;
-    Alert.alert(
-      'Delete campaign?',
-      'This will remove the campaign and leave related records unlinked.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            try {
-              setIsDeleting(true);
-              deleteCampaign(campaign.id);
-              router.back();
-            } catch (err) {
-              const message =
-                err instanceof Error ? err.message : 'Failed to delete campaign.';
-              setError(message);
-            } finally {
-              setIsDeleting(false);
-            }
-          },
-        },
-      ],
-      { cancelable: true }
-    );
+    setIsDeleteOpen(true);
+  };
+
+  const closeDeleteDialog = () => {
+    setIsDeleteOpen(false);
+  };
+
+  const confirmDelete = () => {
+    if (!campaign || isDeleting) return;
+    try {
+      setIsDeleting(true);
+      deleteCampaign(campaign.id);
+      router.back();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete campaign.';
+      setError(message);
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteOpen(false);
+    }
   };
 
   if (!hasCampaignId) {
@@ -372,6 +369,16 @@ export default function CampaignDetailScreen() {
           )}
         </View>
       </Screen>
+      <ConfirmDialog
+        visible={isDeleteOpen}
+        title="Delete campaign?"
+        description="This will remove the campaign and leave related records unlinked."
+        confirmLabel="Delete"
+        onCancel={closeDeleteDialog}
+        onConfirm={confirmDelete}
+        confirmLoading={isDeleting}
+        destructive
+      />
     </>
   );
 }

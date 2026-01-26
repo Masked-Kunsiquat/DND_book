@@ -10,7 +10,7 @@ import { useNotes } from '../../src/hooks/useNotes';
 import { useNpcs } from '../../src/hooks/useNpcs';
 import { useLocations } from '../../src/hooks/useLocations';
 import { useTags } from '../../src/hooks/useTags';
-import { spacing, semanticColors } from '../../src/theme';
+import { iconSizes, spacing, semanticColors } from '../../src/theme';
 
 export default function Home() {
   const { theme } = useTheme();
@@ -63,10 +63,11 @@ export default function Home() {
             label="Notes"
             value={notes.length}
             onPress={() => router.push('/notes')}
+            layout="compact"
             icon={
               <MaterialCommunityIcons
                 name="note-text-outline"
-                size={20}
+                size={iconSizes.md}
                 color={theme.colors.primary}
               />
             }
@@ -75,10 +76,11 @@ export default function Home() {
             label="NPCs"
             value={npcs.length}
             onPress={() => router.push('/npcs')}
+            layout="compact"
             icon={
               <MaterialCommunityIcons
                 name="account-group-outline"
-                size={20}
+                size={iconSizes.md}
                 color={theme.colors.primary}
               />
             }
@@ -89,10 +91,11 @@ export default function Home() {
             label="Locations"
             value={locations.length}
             onPress={() => router.push('/locations')}
+            layout="compact"
             icon={
               <MaterialCommunityIcons
                 name="map-marker-outline"
-                size={20}
+                size={iconSizes.md}
                 color={theme.colors.primary}
               />
             }
@@ -100,10 +103,12 @@ export default function Home() {
           <StatCard
             label="Tags"
             value={tags.length}
+            onPress={() => router.push('/tags')}
+            layout="compact"
             icon={
               <MaterialCommunityIcons
                 name="tag-outline"
-                size={20}
+                size={iconSizes.md}
                 color={theme.colors.primary}
               />
             }
@@ -127,7 +132,7 @@ export default function Home() {
               key={note.id}
               title={note.title || 'Untitled note'}
               subtitle={note.content ? note.content.slice(0, 100) : 'No content yet'}
-              onPress={() => router.push('/notes')}
+              onPress={() => router.push(`/note/${note.id}`)}
             />
           ))
         )}

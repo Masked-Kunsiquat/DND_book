@@ -299,6 +299,9 @@ export const layout = {
   // Card
   cardPadding: spacing[4],
   cardBorderRadius: borderRadius.xl,
+  // Chips
+  chipSmallHeight: spacing[6],
+  chipSmallPaddingY: spacing[0.5],
   // List items
   listItemPadding: spacing[3],
   listItemHeight: 56,

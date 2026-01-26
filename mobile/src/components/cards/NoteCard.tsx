@@ -18,6 +18,8 @@ export interface NoteCardProps {
   tags?: Tag[];
   /** Optional campaign label */
   campaignName?: string;
+  /** Called when a tag is pressed */
+  onTagPress?: (tagId: string) => void;
   /** Called when card is pressed */
   onPress?: () => void;
   /** Additional style for the card container */
@@ -33,7 +35,14 @@ function buildPreview(content: string): string {
   return `${trimmed.slice(0, PREVIEW_LENGTH)}...`;
 }
 
-export function NoteCard({ note, tags = [], campaignName, onPress, style }: NoteCardProps) {
+export function NoteCard({
+  note,
+  tags = [],
+  campaignName,
+  onTagPress,
+  onPress,
+  style,
+}: NoteCardProps) {
   const { theme } = useTheme();
 
   const campaignBadge = campaignName ? (
@@ -63,7 +72,14 @@ export function NoteCard({ note, tags = [], campaignName, onPress, style }: Note
       {tags.length > 0 && (
         <View style={styles.tagsRow}>
           {tags.map((tag) => (
-            <TagChip key={tag.id} id={tag.id} name={tag.name} size="small" />
+            <TagChip
+              key={tag.id}
+              id={tag.id}
+              name={tag.name}
+              color={tag.color}
+              size="small"
+              onPress={onTagPress ? () => onTagPress(tag.id) : undefined}
+            />
           ))}
         </View>
       )}
