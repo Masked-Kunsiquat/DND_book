@@ -8,6 +8,7 @@ import { Button, IconButton, Text } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../theme/ThemeProvider';
 import { layout, spacing } from '../../theme';
+import { removeManagedImage, saveImageToLibrary } from '../../utils/files';
 
 export interface FormImageGalleryProps {
   /** Field label */
@@ -62,7 +63,7 @@ export function FormImageGallery({
       });
 
       if (!result.canceled && Array.isArray(result.assets) && result.assets.length > 0) {
-        const uri = result.assets[0].uri;
+        const uri = await saveImageToLibrary(result.assets[0].uri);
         const currentValues = valuesRef.current;
         if (!currentValues.includes(uri)) {
           onChange([...currentValues, uri]);
@@ -77,6 +78,7 @@ export function FormImageGallery({
   const handleRemove = (uri: string) => {
     if (disabled) return;
     onChange(values.filter((value) => value !== uri));
+    void removeManagedImage(uri);
   };
 
   return (

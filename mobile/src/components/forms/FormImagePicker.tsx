@@ -8,6 +8,7 @@ import { Button, Text } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../theme/ThemeProvider';
 import { layout, spacing } from '../../theme';
+import { removeManagedImage, saveImageToLibrary } from '../../utils/files';
 
 export interface FormImagePickerProps {
   /** Field label */
@@ -57,12 +58,20 @@ export function FormImagePicker({
       });
 
       if (!result.canceled && Array.isArray(result.assets) && result.assets.length > 0) {
-        onChange(result.assets[0].uri);
+        const savedUri = await saveImageToLibrary(result.assets[0].uri);
+        onChange(savedUri);
       }
     } catch (pickerErr) {
       setPickerError('Unable to open the image library. Please try again.');
       console.error('Image picker failed', pickerErr);
     }
+  };
+
+  const handleRemove = () => {
+    if (disabled) return;
+    const currentUri = value;
+    onChange(null);
+    void removeManagedImage(currentUri);
   };
 
   return (
@@ -85,12 +94,7 @@ export function FormImagePicker({
             Choose
           </Button>
           {value ? (
-            <Button
-              mode="outlined"
-              onPress={() => onChange(null)}
-              disabled={disabled}
-              compact
-            >
+            <Button mode="outlined" onPress={handleRemove} disabled={disabled} compact>
               Remove
             </Button>
           ) : null}
