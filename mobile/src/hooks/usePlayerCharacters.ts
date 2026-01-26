@@ -35,6 +35,7 @@ function rowToPlayerCharacter(row: PlayerCharacterRow): PlayerCharacter {
     race: row.race,
     class: row.class,
     background: row.background,
+    image: row.image || '',
     campaignIds: parseJsonArray(row.campaignIds),
     noteIds: parseJsonArray(row.noteIds),
     created: row.created,
@@ -94,6 +95,7 @@ export interface CreatePlayerCharacterInput {
   race?: string;
   class?: string;
   background?: string;
+  image?: string;
   campaignIds?: RecordId[];
   noteIds?: RecordId[];
 }
@@ -117,6 +119,7 @@ export function useCreatePlayerCharacter(): (data: CreatePlayerCharacterInput) =
         race: data.race || '',
         class: data.class || '',
         background: data.background || '',
+        image: data.image || '',
         campaignIds: JSON.stringify(data.campaignIds || []),
         noteIds: JSON.stringify(data.noteIds || []),
         created: timestamp,
@@ -136,6 +139,7 @@ export interface UpdatePlayerCharacterInput {
   race?: string;
   class?: string;
   background?: string;
+  image?: string;
   campaignIds?: RecordId[];
   noteIds?: RecordId[];
 }
@@ -161,6 +165,7 @@ export function useUpdatePlayerCharacter(): (id: string, data: UpdatePlayerChara
       if (data.race !== undefined) updates.race = data.race;
       if (data.class !== undefined) updates.class = data.class;
       if (data.background !== undefined) updates.background = data.background;
+      if (data.image !== undefined) updates.image = data.image;
       if (data.campaignIds !== undefined) updates.campaignIds = JSON.stringify(data.campaignIds);
       if (data.noteIds !== undefined) updates.noteIds = JSON.stringify(data.noteIds);
 

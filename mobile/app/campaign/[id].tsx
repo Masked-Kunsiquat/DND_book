@@ -26,6 +26,7 @@ import {
   usePlayerCharacters,
   useSetCurrentCampaign,
   useSessionLogs,
+  useSessionLogsByDate,
   useUpdateCampaign,
 } from '../../src/hooks';
 
@@ -34,6 +35,13 @@ function formatDate(value?: string): string {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return 'Unknown';
   return parsed.toLocaleString();
+}
+
+function formatSessionDate(value?: string): string {
+  if (!value) return 'Unknown';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return 'Unknown';
+  return parsed.toLocaleDateString();
 }
 
 export default function CampaignDetailScreen() {
@@ -55,6 +63,7 @@ export default function CampaignDetailScreen() {
   const npcs = useNpcs(scopedCampaignId);
   const locations = useLocations(scopedCampaignId);
   const sessionLogs = useSessionLogs(scopedCampaignId);
+  const sessionLogsByDate = useSessionLogsByDate(scopedCampaignId);
   const party = usePlayerCharacters(scopedCampaignId);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -83,6 +92,10 @@ export default function CampaignDetailScreen() {
     return [...party].sort((a, b) => (a.name || '').localeCompare(b.name || '')).slice(0, 3);
   }, [party]);
 
+  const topSessions = useMemo(() => {
+    return sessionLogsByDate.slice(0, 3);
+  }, [sessionLogsByDate]);
+
   const handleSeeNotes = () => {
     if (!campaign) return;
     setCurrentCampaign(campaign.id);
@@ -99,6 +112,11 @@ export default function CampaignDetailScreen() {
     if (!campaign) return;
     setCurrentCampaign(campaign.id);
     router.push('/locations');
+  };
+
+  const handleSeeSessions = () => {
+    if (!campaign) return;
+    router.push(`/campaign/${campaign.id}/sessions`);
   };
 
   const handleSeeParty = () => {
@@ -236,7 +254,7 @@ export default function CampaignDetailScreen() {
           </View>
           <View style={styles.statsRow}>
             <StatCard label="Locations" value={locations.length} />
-            <StatCard label="Sessions" value={sessionLogs.length} />
+            <StatCard label="Sessions" value={sessionLogs.length} onPress={handleSeeSessions} />
           </View>
         </Section>
 
@@ -305,6 +323,32 @@ export default function CampaignDetailScreen() {
         </Section>
 
         <Section
+          title="Sessions"
+          icon="calendar-blank-outline"
+          action={{
+            label: sessionLogs.length > 0 ? 'See all' : 'Add',
+            onPress: handleSeeSessions,
+          }}
+        >
+          {topSessions.length === 0 ? (
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+              No sessions yet.
+            </Text>
+          ) : (
+            topSessions.map((session) => (
+              <AppCard
+                key={session.id}
+                title={session.title || 'Untitled session'}
+                subtitle={
+                  session.summary?.trim() ? session.summary : formatSessionDate(session.date)
+                }
+                onPress={() => router.push(`/session/${session.id}`)}
+              />
+            ))
+          )}
+        </Section>
+
+        <Section
           title="Party"
           icon="account-group-outline"
           action={{ label: party.length > 0 ? 'See all' : 'Add', onPress: handleSeeParty }}
@@ -328,7 +372,7 @@ export default function CampaignDetailScreen() {
                   character.race,
                   character.class
                 )}
-                onPress={handleSeeParty}
+                onPress={() => router.push(`/player-character/${character.id}`)}
               />
             ))
           )}

@@ -22,10 +22,10 @@ const TAB_ICONS: Record<string, TabIconConfig> = {
     active: 'view-dashboard',
     inactive: 'view-dashboard-outline',
   },
-  campaigns: {
-    label: 'Campaigns',
-    active: 'folder',
-    inactive: 'folder-outline',
+  sessions: {
+    label: 'Sessions',
+    active: 'calendar',
+    inactive: 'calendar-outline',
   },
   notes: {
     label: 'Notes',
@@ -135,6 +135,7 @@ export default function TabLayout() {
           }}
         />
       ))}
+      <Tabs.Screen name="campaigns" options={{ href: null }} />
     </Tabs>
   );
 }
