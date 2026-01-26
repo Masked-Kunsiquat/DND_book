@@ -29,7 +29,7 @@ import { layout, spacing } from '../../src/theme';
 
 export default function CampaignsScreen() {
   const { theme } = useTheme();
-  const params = useLocalSearchParams<{ create?: string | string[] }>();
+  const params = useLocalSearchParams<{ create?: string | string[]; continuityId?: string | string[] }>();
   const campaigns = useCampaigns();
   const currentCampaign = useCurrentCampaign();
   const setCurrentCampaign = useSetCurrentCampaign();
@@ -45,6 +45,18 @@ export default function CampaignsScreen() {
   const npcs = useNpcs();
   const locations = useLocations();
   const { refreshing, onRefresh } = usePullToRefresh();
+
+  const continuityParam = useMemo(() => {
+    const raw = params.continuityId;
+    return Array.isArray(raw) ? raw[0] : raw ?? '';
+  }, [params.continuityId]);
+
+  const continuityId = continuityParam || currentCampaign?.continuityId || '';
+
+  const continuityCampaigns = useMemo(() => {
+    if (!continuityId) return campaigns;
+    return campaigns.filter((campaign) => campaign.continuityId === continuityId);
+  }, [campaigns, continuityId]);
 
   const noteCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -76,13 +88,16 @@ export default function CampaignsScreen() {
   }, [locations]);
 
   const openCreateModal = useCallback(() => {
-    setDraftName(`New Campaign ${campaigns.length + 1}`);
-    setDraftContinuityId(
-      currentCampaign?.continuityId ?? continuities[0]?.id ?? ''
-    );
+    setDraftName(`New Campaign ${continuityCampaigns.length + 1}`);
+    const preferredContinuity =
+      continuityParam ||
+      currentCampaign?.continuityId ||
+      continuities[0]?.id ||
+      '';
+    setDraftContinuityId(preferredContinuity);
     setCreateError(null);
     setIsCreateOpen(true);
-  }, [campaigns.length, continuities, currentCampaign?.continuityId]);
+  }, [continuityCampaigns.length, continuities, continuityParam, currentCampaign?.continuityId]);
 
   const closeCreateModal = useCallback(() => {
     setIsCreateOpen(false);
@@ -170,6 +185,7 @@ export default function CampaignsScreen() {
     </FormModal>
   );
 
+  const headerTitle = continuityId ? 'Continuity Campaigns' : 'All Campaigns';
   const header = (
     <View>
       <Section title="Current Campaign" icon="compass">
@@ -211,7 +227,7 @@ export default function CampaignsScreen() {
             style={styles.listHeaderIcon}
           />
           <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-            All Campaigns
+            {headerTitle}
           </Text>
         </View>
         <Pressable onPress={openCreateModal} hitSlop={8}>
@@ -223,13 +239,16 @@ export default function CampaignsScreen() {
     </View>
   );
 
-  if (campaigns.length === 0) {
+  if (continuityCampaigns.length === 0) {
+    const description = continuityId
+      ? 'Create the first campaign in this continuity.'
+      : 'Create your first campaign to get started.';
     return (
       <>
         <Screen onRefresh={onRefresh} refreshing={refreshing}>
           <EmptyState
             title="No campaigns yet"
-            description="Create your first campaign to get started."
+            description={description}
             icon="folder-plus"
             action={{ label: 'Create Campaign', onPress: openCreateModal }}
           />
@@ -243,7 +262,7 @@ export default function CampaignsScreen() {
     <>
       <Screen scroll={false}>
         <FlatList
-          data={campaigns}
+          data={continuityCampaigns}
           keyExtractor={(campaign) => campaign.id}
           contentContainerStyle={styles.listContent}
           ListHeaderComponent={header}

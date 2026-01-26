@@ -67,6 +67,11 @@ function HeaderMenu() {
     router.push('/settings');
   };
 
+  const goToContinuity = () => {
+    closeMenu();
+    router.push('/continuities');
+  };
+
   return (
     <>
       <IconButton
@@ -94,6 +99,12 @@ function HeaderMenu() {
             title="Settings"
             left={(props) => <List.Icon {...props} icon="cog-outline" />}
             onPress={goToSettings}
+            titleStyle={{ color: theme.colors.onSurface }}
+          />
+          <List.Item
+            title="Continuity"
+            left={(props) => <List.Icon {...props} icon="infinity" />}
+            onPress={goToContinuity}
             titleStyle={{ color: theme.colors.onSurface }}
           />
         </Modal>
@@ -135,7 +146,7 @@ export default function TabLayout() {
           }}
         />
       ))}
-      <Tabs.Screen name="campaigns" options={{ href: null }} />
+      <Tabs.Screen name="campaigns" options={{ href: null, title: 'Campaigns' }} />
     </Tabs>
   );
 }
