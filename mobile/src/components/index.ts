@@ -27,6 +27,7 @@ export { FormImagePicker, type FormImagePickerProps } from './forms/FormImagePic
 export { FormImageGallery, type FormImageGalleryProps } from './forms/FormImageGallery';
 export { TagInput, type TagInputProps } from './forms/TagInput';
 export { FormModal, type FormModalProps } from './forms/FormModal';
+export { ConfirmDialog, type ConfirmDialogProps } from './forms/ConfirmDialog';
 
 // Sync
 export { SyncStatus, type SyncStatusProps } from './sync/SyncStatus';

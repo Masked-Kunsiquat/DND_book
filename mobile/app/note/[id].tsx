@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Button, IconButton, Text } from 'react-native-paper';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import {
   AppCard,
+  ConfirmDialog,
   EmptyState,
   FormMultiSelect,
   FormSelect,
@@ -58,6 +59,7 @@ export default function NoteDetailScreen() {
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   useEffect(() => {
     if (note && !isEditing) {
@@ -174,30 +176,26 @@ export default function NoteDetailScreen() {
 
   const handleDelete = () => {
     if (!note || isDeleting) return;
-    Alert.alert(
-      'Delete note?',
-      'This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setIsDeleting(true);
-              await Promise.resolve(deleteNote(note.id));
-              router.back();
-            } catch (err) {
-              const message = err instanceof Error ? err.message : 'Failed to delete note.';
-              setError(message);
-            } finally {
-              setIsDeleting(false);
-            }
-          },
-        },
-      ],
-      { cancelable: true }
-    );
+    setIsDeleteOpen(true);
+  };
+
+  const closeDeleteDialog = () => {
+    setIsDeleteOpen(false);
+  };
+
+  const confirmDelete = async () => {
+    if (!note || isDeleting) return;
+    try {
+      setIsDeleting(true);
+      await Promise.resolve(deleteNote(note.id));
+      router.back();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete note.';
+      setError(message);
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteOpen(false);
+    }
   };
 
   if (!note) {
@@ -361,6 +359,16 @@ export default function NoteDetailScreen() {
           )}
         </View>
       </Screen>
+      <ConfirmDialog
+        visible={isDeleteOpen}
+        title="Delete note?"
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        onCancel={closeDeleteDialog}
+        onConfirm={confirmDelete}
+        confirmLoading={isDeleting}
+        destructive
+      />
     </>
   );
 }

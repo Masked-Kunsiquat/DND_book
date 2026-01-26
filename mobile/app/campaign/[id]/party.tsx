@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
-import { Alert, FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
 import { Button, FAB, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import {
   AppCard,
+  ConfirmDialog,
   EmptyState,
   FormModal,
   FormMultiSelect,
@@ -46,6 +47,7 @@ export default function CampaignPartyScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingCharacter, setEditingCharacter] = useState<PlayerCharacter | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [draftName, setDraftName] = useState('');
@@ -137,33 +139,27 @@ export default function CampaignPartyScreen() {
 
   const handleDelete = () => {
     if (!editingCharacter || isSaving) return;
-    Alert.alert(
-      'Delete character?',
-      'This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            try {
-              setIsSaving(true);
-              deletePlayerCharacter(editingCharacter.id);
-              setIsModalOpen(false);
-            } catch (deleteError) {
-              const message =
-                deleteError instanceof Error
-                  ? deleteError.message
-                  : 'Failed to delete character.';
-              setError(message);
-            } finally {
-              setIsSaving(false);
-            }
-          },
-        },
-      ],
-      { cancelable: true }
-    );
+    setIsDeleteOpen(true);
+  };
+
+  const closeDeleteDialog = () => {
+    setIsDeleteOpen(false);
+  };
+
+  const confirmDelete = () => {
+    if (!editingCharacter || isSaving) return;
+    try {
+      setIsSaving(true);
+      deletePlayerCharacter(editingCharacter.id);
+      setIsModalOpen(false);
+    } catch (deleteError) {
+      const message =
+        deleteError instanceof Error ? deleteError.message : 'Failed to delete character.';
+      setError(message);
+    } finally {
+      setIsSaving(false);
+      setIsDeleteOpen(false);
+    }
   };
 
   const renderSubtitle = (character: PlayerCharacter) => {
@@ -265,6 +261,16 @@ export default function CampaignPartyScreen() {
             action={{ label: 'Add Character', onPress: openCreateModal }}
           />
         </Screen>
+        <ConfirmDialog
+          visible={isDeleteOpen}
+          title="Delete character?"
+          description="This action cannot be undone."
+          confirmLabel="Delete"
+          onCancel={closeDeleteDialog}
+          onConfirm={confirmDelete}
+          confirmLoading={isSaving}
+          destructive
+        />
         {modal}
       </>
     );
@@ -314,6 +320,16 @@ export default function CampaignPartyScreen() {
           color={theme.colors.onPrimary}
         />
       </Screen>
+      <ConfirmDialog
+        visible={isDeleteOpen}
+        title="Delete character?"
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        onCancel={closeDeleteDialog}
+        onConfirm={confirmDelete}
+        confirmLoading={isSaving}
+        destructive
+      />
       {modal}
     </>
   );

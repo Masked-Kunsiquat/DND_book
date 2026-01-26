@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Image, StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 import { Button, IconButton, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import {
   AppCard,
+  ConfirmDialog,
   EmptyState,
   FormImagePicker,
   FormMultiSelect,
@@ -64,6 +65,7 @@ export default function NpcDetailScreen() {
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   useEffect(() => {
     if (npc && !isEditing) {
@@ -185,30 +187,26 @@ export default function NpcDetailScreen() {
 
   const handleDelete = () => {
     if (!npc || isDeleting) return;
-    Alert.alert(
-      'Delete NPC?',
-      'This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setIsDeleting(true);
-              deleteNpc(npc.id);
-              router.back();
-            } catch (err) {
-              const message = err instanceof Error ? err.message : 'Failed to delete NPC.';
-              setError(message);
-            } finally {
-              setIsDeleting(false);
-            }
-          },
-        },
-      ],
-      { cancelable: true }
-    );
+    setIsDeleteOpen(true);
+  };
+
+  const closeDeleteDialog = () => {
+    setIsDeleteOpen(false);
+  };
+
+  const confirmDelete = () => {
+    if (!npc || isDeleting) return;
+    try {
+      setIsDeleting(true);
+      deleteNpc(npc.id);
+      router.back();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete NPC.';
+      setError(message);
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteOpen(false);
+    }
   };
 
   if (!npc) {
@@ -437,6 +435,16 @@ export default function NpcDetailScreen() {
           )}
         </View>
       </Screen>
+      <ConfirmDialog
+        visible={isDeleteOpen}
+        title="Delete NPC?"
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        onCancel={closeDeleteDialog}
+        onConfirm={confirmDelete}
+        confirmLoading={isDeleting}
+        destructive
+      />
     </>
   );
 }

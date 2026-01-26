@@ -1,9 +1,18 @@
 import { useMemo, useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import ColorPicker, { Swatches } from 'reanimated-color-picker';
-import { EmptyState, FormModal, FormTextInput, Screen, Section, StatCard, TagChip } from '../../src/components';
+import {
+  ConfirmDialog,
+  EmptyState,
+  FormModal,
+  FormTextInput,
+  Screen,
+  Section,
+  StatCard,
+  TagChip,
+} from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { spacing, tagColors } from '../../src/theme';
 import {
@@ -35,6 +44,8 @@ export default function TagDetailScreen() {
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [draftName, setDraftName] = useState('');
   const [draftColor, setDraftColor] = useState(tagColors[0]?.bg ?? '#3b82f6');
@@ -85,23 +96,27 @@ export default function TagDetailScreen() {
   };
 
   const handleDelete = () => {
-    if (!tag) return;
-    Alert.alert('Delete tag', 'This tag will be removed from all linked content.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => {
-          try {
-            deleteTag(tag.id);
-            router.back();
-          } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to delete tag.';
-            setEditError(message);
-          }
-        },
-      },
-    ]);
+    if (!tag || isDeleting) return;
+    setIsDeleteOpen(true);
+  };
+
+  const closeDeleteDialog = () => {
+    setIsDeleteOpen(false);
+  };
+
+  const confirmDelete = () => {
+    if (!tag || isDeleting) return;
+    try {
+      setIsDeleting(true);
+      deleteTag(tag.id);
+      router.back();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete tag.';
+      setEditError(message);
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteOpen(false);
+    }
   };
 
   const editModal = (
@@ -220,6 +235,16 @@ export default function TagDetailScreen() {
           )}
         </Section>
       </Screen>
+      <ConfirmDialog
+        visible={isDeleteOpen}
+        title="Delete tag?"
+        description="This tag will be removed from all linked content."
+        confirmLabel="Delete"
+        onCancel={closeDeleteDialog}
+        onConfirm={confirmDelete}
+        confirmLoading={isDeleting}
+        destructive
+      />
       {editModal}
     </>
   );
