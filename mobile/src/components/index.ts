@@ -38,3 +38,4 @@ export { PeerList, type PeerListProps } from './sync/PeerList';
 // Shared
 export { EmptyState, type EmptyStateProps } from './shared/EmptyState';
 export { LoadingScreen } from './shared/LoadingScreen';
+export { AvatarGroup, type AvatarGroupProps, type AvatarGroupItem } from './shared/AvatarGroup';

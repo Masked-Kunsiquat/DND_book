@@ -98,6 +98,7 @@ export interface PlayerCharacter {
   race: string;
   class: string;
   background: string;
+  image: string;
   campaignIds: RecordId[];
   noteIds: RecordId[];
   created: IsoDateString;
@@ -184,6 +185,7 @@ export interface PlayerCharacterRow {
   race: string;
   class: string;
   background: string;
+  image: string;
   campaignIds: string; // JSON array
   noteIds: string;
   created: string;

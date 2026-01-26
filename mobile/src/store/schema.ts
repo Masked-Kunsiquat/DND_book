@@ -84,6 +84,7 @@ export const tablesSchema = {
     race: { type: 'string' },
     class: { type: 'string' },
     background: { type: 'string' },
+    image: { type: 'string' },
     campaignIds: { type: 'string' }, // JSON array
     noteIds: { type: 'string' },
     created: { type: 'string' },
