@@ -1,13 +1,26 @@
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { Button, Text } from 'react-native-paper';
+import { Button, IconButton, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { AppCard, EmptyState, FormModal, FormTextInput, Screen, Section } from '../src/components';
+import {
+  AppCard,
+  ConfirmDialog,
+  EmptyState,
+  FormModal,
+  FormTextInput,
+  Screen,
+  Section,
+} from '../src/components';
 import { useTheme } from '../src/theme/ThemeProvider';
 import { spacing } from '../src/theme';
 import { useCampaigns, useCurrentCampaign, useSetCurrentCampaign } from '../src/hooks/useCampaigns';
-import { useContinuities, useCreateContinuity } from '../src/hooks/useContinuities';
+import {
+  useContinuities,
+  useCreateContinuity,
+  useDeleteContinuity,
+  useUpdateContinuity,
+} from '../src/hooks/useContinuities';
 
 const pluralize = (word: string, count: number) => (count === 1 ? word : `${word}s`);
 
@@ -18,12 +31,22 @@ export default function ContinuitiesScreen() {
   const currentCampaign = useCurrentCampaign();
   const setCurrentCampaign = useSetCurrentCampaign();
   const createContinuity = useCreateContinuity();
+  const updateContinuity = useUpdateContinuity();
+  const deleteContinuity = useDeleteContinuity();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [draftName, setDraftName] = useState('');
   const [draftDescription, setDraftDescription] = useState('');
   const [createError, setCreateError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [editingContinuityId, setEditingContinuityId] = useState<string | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editError, setEditError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const currentContinuityId = currentCampaign?.continuityId ?? '';
 
@@ -94,6 +117,74 @@ export default function ContinuitiesScreen() {
     }
   };
 
+  const openEditModal = (continuityId: string) => {
+    const continuity = continuityById.get(continuityId);
+    if (!continuity) return;
+    setEditingContinuityId(continuityId);
+    setEditName(continuity.name);
+    setEditDescription(continuity.description);
+    setEditError(null);
+    setIsEditOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setIsEditOpen(false);
+    setEditError(null);
+  };
+
+  const editingContinuity = editingContinuityId
+    ? continuityById.get(editingContinuityId)
+    : undefined;
+
+  const editingCampaignCount = editingContinuityId
+    ? (campaignsByContinuity.get(editingContinuityId) ?? []).length
+    : 0;
+
+  const handleSaveEdit = () => {
+    if (!editingContinuity || isSaving) return;
+    const trimmed = editName.trim();
+    if (!trimmed) {
+      setEditError('Continuity name is required.');
+      return;
+    }
+    setIsSaving(true);
+    try {
+      updateContinuity(editingContinuity.id, {
+        name: trimmed,
+        description: editDescription.trim(),
+      });
+      setIsEditOpen(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update continuity.';
+      setEditError(message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const openDeleteDialog = () => {
+    setIsDeleteOpen(true);
+  };
+
+  const closeDeleteDialog = () => {
+    setIsDeleteOpen(false);
+  };
+
+  const confirmDelete = () => {
+    if (!editingContinuity || isDeleting) return;
+    setIsDeleting(true);
+    try {
+      deleteContinuity(editingContinuity.id);
+      setIsEditOpen(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete continuity.';
+      setEditError(message);
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteOpen(false);
+    }
+  };
+
   const createModal = (
     <FormModal
       title="New Continuity"
@@ -121,6 +212,52 @@ export default function ContinuitiesScreen() {
       {createError && (
         <Text variant="bodySmall" style={{ color: theme.colors.error }}>
           {createError}
+        </Text>
+      )}
+    </FormModal>
+  );
+
+  const editModal = (
+    <FormModal
+      title="Edit Continuity"
+      visible={isEditOpen}
+      onDismiss={closeEditModal}
+      actions={
+        <>
+          <Button mode="text" onPress={closeEditModal} disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button mode="contained" onPress={handleSaveEdit} loading={isSaving} disabled={isSaving}>
+            Save
+          </Button>
+        </>
+      }
+    >
+      <FormTextInput label="Name" value={editName} onChangeText={setEditName} />
+      <FormTextInput
+        label="Description"
+        value={editDescription}
+        onChangeText={setEditDescription}
+        multiline
+        style={styles.descriptionInput}
+      />
+      {editingCampaignCount > 0 ? (
+        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+          Remove all campaigns before deleting this continuity.
+        </Text>
+      ) : (
+        <Button
+          mode="text"
+          onPress={openDeleteDialog}
+          textColor={theme.colors.error}
+          disabled={isDeleting}
+        >
+          Delete continuity
+        </Button>
+      )}
+      {editError && (
+        <Text variant="bodySmall" style={{ color: theme.colors.error }}>
+          {editError}
         </Text>
       )}
     </FormModal>
@@ -169,21 +306,22 @@ export default function ContinuitiesScreen() {
         </Section>
 
         <Section title="All Continuities" icon="infinity" action={{ label: 'New', onPress: openCreateModal }}>
-          {continuities.map((continuity) => {
-            const list = campaignsByContinuity.get(continuity.id) ?? [];
-            const isCurrent = continuity.id === currentContinuityId;
-            const subtitle =
-              list.length === 0
-                ? 'No campaigns yet'
-                : `${list.length} ${pluralize('campaign', list.length)}`;
-            return (
-              <AppCard
-                key={continuity.id}
-                title={continuity.name || 'Untitled continuity'}
-                subtitle={subtitle}
-                onPress={() => handleSelectContinuity(continuity.id)}
-                right={
-                  isCurrent ? (
+        {continuities.map((continuity) => {
+          const list = campaignsByContinuity.get(continuity.id) ?? [];
+          const isCurrent = continuity.id === currentContinuityId;
+          const subtitle =
+            list.length === 0
+              ? 'No campaigns yet'
+              : `${list.length} ${pluralize('campaign', list.length)}`;
+          return (
+            <AppCard
+              key={continuity.id}
+              title={continuity.name || 'Untitled continuity'}
+              subtitle={subtitle}
+              onPress={() => handleSelectContinuity(continuity.id)}
+              right={
+                <View style={styles.cardActions}>
+                  {isCurrent ? (
                     <MaterialCommunityIcons
                       name="check-circle"
                       size={18}
@@ -195,12 +333,18 @@ export default function ContinuitiesScreen() {
                       size={18}
                       color={theme.colors.onSurfaceVariant}
                     />
-                  )
-                }
-              />
-            );
-          })}
-          <View style={styles.helper}>
+                  )}
+                  <IconButton
+                    icon="pencil"
+                    size={18}
+                    onPress={() => openEditModal(continuity.id)}
+                  />
+                </View>
+              }
+            />
+          );
+        })}
+        <View style={styles.helper}>
             <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
               Tap a continuity to switch to its most recently updated campaign.
             </Text>
@@ -208,6 +352,17 @@ export default function ContinuitiesScreen() {
         </Section>
       </Screen>
       {createModal}
+      {editModal}
+      <ConfirmDialog
+        visible={isDeleteOpen}
+        title="Delete continuity?"
+        description="This cannot be undone."
+        confirmLabel="Delete"
+        onCancel={closeDeleteDialog}
+        onConfirm={confirmDelete}
+        confirmLoading={isDeleting}
+        destructive
+      />
     </>
   );
 }
@@ -218,5 +373,10 @@ const styles = StyleSheet.create({
   },
   helper: {
     marginTop: spacing[1],
+  },
+  cardActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[1],
   },
 });
