@@ -105,18 +105,17 @@ export default function TagDetailScreen() {
     setIsDeleteOpen(false);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!tag || isDeleting) return;
+    setIsDeleting(true);
     try {
-      setIsDeleting(true);
-      deleteTag(tag.id);
+      await Promise.resolve(deleteTag(tag.id));
+      setIsDeleteOpen(false);
       router.back();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to delete tag.';
       setEditError(message);
-    } finally {
       setIsDeleting(false);
-      setIsDeleteOpen(false);
     }
   };
 

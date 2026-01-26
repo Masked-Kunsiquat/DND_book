@@ -34,7 +34,7 @@ export default function SettingsScreen() {
             title={item.title}
             subtitle={item.subtitle}
             onPress={item.route ? () => router.push(item.route) : undefined}
-            right={<ComingSoonBadge />}
+            right={item.route ? undefined : <ComingSoonBadge />}
           />
         ))}
         <View style={styles.note}>
