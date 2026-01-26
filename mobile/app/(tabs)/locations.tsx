@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, SectionList, StyleSheet, View } from 'react-native';
-import { Button, FAB, Switch, Text } from 'react-native-paper';
+import { Button, FAB, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
@@ -56,7 +56,6 @@ const pluralizeLocationType = (type: LocationType, count: number) => {
 export default function LocationsScreen() {
   const { theme } = useTheme();
   const currentCampaign = useCurrentCampaign();
-  const [onlyCurrent, setOnlyCurrent] = useState(true);
   const [typeFilter, setTypeFilter] = useState<LocationType | 'all'>('all');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
@@ -71,7 +70,7 @@ export default function LocationsScreen() {
   const allLocations = useLocations();
   const tags = useTags();
   const { refreshing, onRefresh } = usePullToRefresh();
-  const effectiveCampaignId = onlyCurrent && currentCampaign ? currentCampaign.id : undefined;
+  const effectiveCampaignId = currentCampaign?.id;
   const locations = useLocations(effectiveCampaignId);
   const params = useLocalSearchParams<{ tagId?: string | string[] }>();
 
@@ -271,6 +270,19 @@ export default function LocationsScreen() {
   useEffect(() => {
     setSelectedTagIds(tagParam ? [tagParam] : []);
   }, [tagParam]);
+
+  if (!currentCampaign) {
+    return (
+      <Screen>
+        <EmptyState
+          title="No campaign selected"
+          description="Select a campaign to view locations."
+          icon="map-marker-outline"
+          action={{ label: 'Choose campaign', onPress: () => router.push('/campaigns') }}
+        />
+      </Screen>
+    );
+  }
 
   const toggleTag = (id: string) => {
     setSelectedTagIds((prev) =>
@@ -534,16 +546,6 @@ export default function LocationsScreen() {
                 </View>
                 {filtersOpen && (
                   <>
-                    <View style={styles.filterRow}>
-                      <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                        Current campaign only
-                      </Text>
-                      <Switch
-                        value={onlyCurrent && !!currentCampaign}
-                        onValueChange={setOnlyCurrent}
-                        disabled={!currentCampaign}
-                      />
-                    </View>
                     <View style={styles.typeHeader}>
                       <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
                         Type focus
@@ -783,11 +785,6 @@ const styles = StyleSheet.create({
   },
   filterIcon: {
     marginRight: spacing[2],
-  },
-  filterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
   },
   typeHeader: {
     flexDirection: 'row',

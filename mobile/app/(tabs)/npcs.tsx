@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Button, FAB, Switch, Text, TextInput } from 'react-native-paper';
+import { Button, FAB, Text, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
@@ -33,7 +33,6 @@ export default function NpcsScreen() {
   const { theme } = useTheme();
   const currentCampaign = useCurrentCampaign();
   const [query, setQuery] = useState('');
-  const [onlyCurrent, setOnlyCurrent] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -55,7 +54,7 @@ export default function NpcsScreen() {
   const notes = useNotes();
   const tags = useTags();
   const { refreshing, onRefresh } = usePullToRefresh();
-  const effectiveCampaignId = onlyCurrent && currentCampaign ? currentCampaign.id : undefined;
+  const effectiveCampaignId = currentCampaign?.id;
   const npcs = useNpcs(effectiveCampaignId);
   const params = useLocalSearchParams<{ tagId?: string | string[] }>();
 
@@ -85,6 +84,19 @@ export default function NpcsScreen() {
   useEffect(() => {
     setSelectedTagIds(tagParam ? [tagParam] : []);
   }, [tagParam]);
+
+  if (!currentCampaign) {
+    return (
+      <Screen>
+        <EmptyState
+          title="No campaign selected"
+          description="Select a campaign to view NPCs."
+          icon="account-group-outline"
+          action={{ label: 'Choose campaign', onPress: () => router.push('/campaigns') }}
+        />
+      </Screen>
+    );
+  }
 
   const toggleTag = (id: string) => {
     setSelectedTagIds((prev) =>
@@ -331,16 +343,6 @@ export default function NpcsScreen() {
                 </View>
                 {filtersOpen && (
                   <>
-                    <View style={styles.filterRow}>
-                      <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                        Current campaign only
-                      </Text>
-                      <Switch
-                        value={onlyCurrent && !!currentCampaign}
-                        onValueChange={setOnlyCurrent}
-                        disabled={!currentCampaign}
-                      />
-                    </View>
                     <View style={styles.tagHeader}>
                       <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
                         Tags
@@ -445,11 +447,6 @@ const styles = StyleSheet.create({
   },
   filterIcon: {
     marginRight: spacing[2],
-  },
-  filterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
   },
   searchInput: {
     marginBottom: spacing[3],
