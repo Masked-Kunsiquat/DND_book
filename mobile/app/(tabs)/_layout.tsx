@@ -1,7 +1,11 @@
 import type { ComponentProps } from 'react';
+import { useState } from 'react';
 import { Tabs } from 'expo-router';
+import { router } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { IconButton, Menu } from 'react-native-paper';
 import { useTheme } from '../../src/theme/ThemeProvider';
+import { spacing } from '../../src/theme';
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -39,6 +43,38 @@ const TAB_ICONS: Record<string, TabIconConfig> = {
   },
 };
 
+function HeaderMenu() {
+  const { theme } = useTheme();
+  const [visible, setVisible] = useState(false);
+
+  const openMenu = () => setVisible(true);
+  const closeMenu = () => setVisible(false);
+
+  const goToSettings = () => {
+    closeMenu();
+    router.push('/settings');
+  };
+
+  return (
+    <Menu
+      visible={visible}
+      onDismiss={closeMenu}
+      anchor={
+        <IconButton
+          icon="dots-vertical"
+          onPress={openMenu}
+          iconColor={theme.colors.onSurface}
+          accessibilityLabel="Open menu"
+          style={{ marginRight: spacing[1] }}
+        />
+      }
+      contentStyle={{ backgroundColor: theme.colors.surface }}
+    >
+      <Menu.Item onPress={goToSettings} title="Settings" />
+    </Menu>
+  );
+}
+
 export default function TabLayout() {
   const { theme } = useTheme();
 
@@ -47,6 +83,7 @@ export default function TabLayout() {
       screenOptions={{
         headerStyle: { backgroundColor: theme.colors.surface },
         headerTintColor: theme.colors.onSurface,
+        headerRight: () => <HeaderMenu />,
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.outlineVariant,
