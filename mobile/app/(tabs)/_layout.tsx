@@ -1,9 +1,10 @@
 import type { ComponentProps } from 'react';
 import { useState } from 'react';
-import { Tabs } from 'expo-router';
-import { router } from 'expo-router';
+import { Tabs, router } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { IconButton, Menu } from 'react-native-paper';
+import { IconButton, List, Modal, Portal } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useHeaderHeight } from '@react-navigation/elements';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { spacing } from '../../src/theme';
 
@@ -46,6 +47,8 @@ const TAB_ICONS: Record<string, TabIconConfig> = {
 function HeaderMenu() {
   const { theme } = useTheme();
   const [visible, setVisible] = useState(false);
+  const insets = useSafeAreaInsets();
+  const headerHeight = useHeaderHeight();
 
   const openMenu = () => {
     setTimeout(() => setVisible(true), 0);
@@ -65,23 +68,37 @@ function HeaderMenu() {
   };
 
   return (
-    <Menu
-      visible={visible}
-      onDismiss={closeMenu}
-      anchorPosition="bottom"
-      anchor={
-        <IconButton
-          icon="dots-vertical"
-          onPress={toggleMenu}
-          iconColor={theme.colors.onSurface}
-          accessibilityLabel="Open menu"
-          style={{ marginRight: spacing[1] }}
-        />
-      }
-      contentStyle={{ backgroundColor: theme.colors.surface }}
-    >
-      <Menu.Item onPress={goToSettings} title="Settings" />
-    </Menu>
+    <>
+      <IconButton
+        icon="dots-vertical"
+        onPress={toggleMenu}
+        iconColor={theme.colors.onSurface}
+        accessibilityLabel="Open menu"
+        style={{ marginRight: spacing[1] }}
+      />
+      <Portal>
+        <Modal
+          visible={visible}
+          onDismiss={closeMenu}
+          contentContainerStyle={[
+            styles.menuSurface,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.outlineVariant,
+              top: Math.max(insets.top, headerHeight - spacing[1]),
+              right: spacing[2],
+            },
+          ]}
+        >
+          <List.Item
+            title="Settings"
+            left={(props) => <List.Icon {...props} icon="cog-outline" />}
+            onPress={goToSettings}
+            titleStyle={{ color: theme.colors.onSurface }}
+          />
+        </Modal>
+      </Portal>
+    </>
   );
 }
 
@@ -121,3 +138,13 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
+const styles = {
+  menuSurface: {
+    position: 'absolute',
+    minWidth: 180,
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+} as const;

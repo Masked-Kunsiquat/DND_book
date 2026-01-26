@@ -3,8 +3,8 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
-import { Menu, Text, TextInput } from 'react-native-paper';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { List, Modal, Portal, Text, TextInput } from 'react-native-paper';
 import { useTheme } from '../../theme/ThemeProvider';
 import { spacing } from '../../theme';
 
@@ -56,59 +56,70 @@ export function FormSelect({
 
   const handleOpen = () => {
     if (!disabled) {
-      setTimeout(() => setVisible(true), 0);
+      setVisible(true);
     }
-  };
-
-  const handleToggle = () => {
-    if (visible) {
-      setVisible(false);
-      return;
-    }
-    handleOpen();
   };
 
   const handleClose = () => setVisible(false);
+  const handleToggle = () => (visible ? handleClose() : handleOpen());
 
   return (
     <View style={[styles.container, containerStyle]}>
-      <Menu
-        visible={visible}
-        onDismiss={handleClose}
-        anchorPosition="bottom"
-        keyboardShouldPersistTaps="handled"
-        anchor={
-          <Pressable onPress={handleToggle} disabled={disabled}>
-            <View pointerEvents="none" collapsable={false}>
-              <TextInput
-                mode="outlined"
-                label={label}
-                value={selectedLabel}
-                placeholder={placeholder}
-                editable={false}
-                disabled={disabled}
-                error={hasError}
-                right={<TextInput.Icon icon="menu-down" />}
-              />
-            </View>
-          </Pressable>
-        }
-      >
-        {options.length === 0 ? (
-          <Menu.Item title="No options" disabled />
-        ) : (
-          options.map((option) => (
-            <Menu.Item
-              key={option.value}
-              title={option.label}
-              onPress={() => {
-                onChange(option.value);
-                handleClose();
-              }}
-            />
-          ))
-        )}
-      </Menu>
+      <Pressable onPress={handleToggle} disabled={disabled}>
+        <View pointerEvents="none" collapsable={false}>
+          <TextInput
+            mode="outlined"
+            label={label}
+            value={selectedLabel}
+            placeholder={placeholder}
+            editable={false}
+            disabled={disabled}
+            error={hasError}
+            right={<TextInput.Icon icon="menu-down" />}
+          />
+        </View>
+      </Pressable>
+      <Portal>
+        <Modal
+          visible={visible}
+          onDismiss={handleClose}
+          contentContainerStyle={[
+            styles.modal,
+            { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant },
+          ]}
+        >
+          <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+            {label}
+          </Text>
+          {options.length === 0 ? (
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+              No options available.
+            </Text>
+          ) : (
+            <ScrollView
+              style={styles.options}
+              contentContainerStyle={styles.optionsContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {options.map((option) => (
+                <List.Item
+                  key={option.value}
+                  title={option.label}
+                  titleStyle={{ color: theme.colors.onSurface }}
+                  right={(props) =>
+                    option.value === value ? <List.Icon {...props} icon="check" /> : null
+                  }
+                  onPress={() => {
+                    onChange(option.value);
+                    handleClose();
+                  }}
+                />
+              ))}
+            </ScrollView>
+          )}
+        </Modal>
+      </Portal>
       {message ? (
         <Text
           variant="bodySmall"
@@ -126,6 +137,22 @@ export function FormSelect({
 
 const styles = StyleSheet.create({
   container: {
+    gap: spacing[1],
+  },
+  modal: {
+    marginHorizontal: spacing[4],
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: spacing[3],
+    width: '100%',
+    maxWidth: 420,
+    alignSelf: 'center',
+    gap: spacing[2],
+  },
+  options: {
+    maxHeight: 320,
+  },
+  optionsContent: {
     gap: spacing[1],
   },
   helperText: {
