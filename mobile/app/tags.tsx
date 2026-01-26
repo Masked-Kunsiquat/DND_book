@@ -288,12 +288,16 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   swatches: {
-    justifyContent: 'flex-start',
-    gap: spacing[2],
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
   swatch: {
-    marginHorizontal: spacing[0.5],
-    marginBottom: spacing[1.5],
+    width: '24%',
+    aspectRatio: 1,
+    marginHorizontal: 0,
+    marginBottom: spacing[2],
+    borderRadius: 999,
   },
   fab: {
     position: 'absolute',

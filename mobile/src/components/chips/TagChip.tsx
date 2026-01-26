@@ -62,7 +62,7 @@ export function TagChip({
   const resolvedColor = hasCustomColor ? color.trim() : colors.bg;
   const luminance = getLuminance(resolvedColor);
   const unselectedTextColor = hasCustomColor
-    ? luminance !== null && luminance < 0.45
+    ? luminance !== null && luminance < 0.3
       ? theme.colors.onSurface
       : resolvedColor
     : colors.text;
