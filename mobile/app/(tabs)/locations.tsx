@@ -269,9 +269,7 @@ export default function LocationsScreen() {
     isActive ? theme.colors.onPrimaryContainer : theme.colors.primary;
 
   useEffect(() => {
-    if (tagParam) {
-      setSelectedTagIds([tagParam]);
-    }
+    setSelectedTagIds(tagParam ? [tagParam] : []);
   }, [tagParam]);
 
   const toggleTag = (id: string) => {

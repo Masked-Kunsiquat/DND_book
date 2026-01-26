@@ -83,9 +83,7 @@ export default function NpcsScreen() {
   }, [npcs, query, selectedTagIds]);
 
   useEffect(() => {
-    if (tagParam) {
-      setSelectedTagIds([tagParam]);
-    }
+    setSelectedTagIds(tagParam ? [tagParam] : []);
   }, [tagParam]);
 
   const toggleTag = (id: string) => {

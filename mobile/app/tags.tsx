@@ -26,7 +26,6 @@ type TagUsage = {
 
 const EMPTY_USAGE: TagUsage = { notes: 0, npcs: 0, locations: 0, sessions: 0 };
 const TAG_SWATCHES = tagColors.map((tag) => tag.bg);
-const DEFAULT_TAG_COLOR = TAG_SWATCHES[0] ?? '#3b82f6';
 
 function buildUsageLabel(usage: TagUsage): string {
   const parts: string[] = [];
@@ -49,11 +48,12 @@ export default function TagsScreen() {
   const createTag = useCreateTag();
   const { refreshing, onRefresh } = usePullToRefresh();
   const [query, setQuery] = useState('');
+  const defaultTagColor = TAG_SWATCHES[0] ?? theme.colors.primary;
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [draftName, setDraftName] = useState('');
-  const [draftColor, setDraftColor] = useState<string>(DEFAULT_TAG_COLOR);
+  const [draftColor, setDraftColor] = useState<string>(defaultTagColor);
 
   const tagUsage = useMemo(() => {
     const map = new Map<string, TagUsage>();
@@ -91,7 +91,7 @@ export default function TagsScreen() {
 
   const openCreateModal = () => {
     setDraftName('');
-    setDraftColor(DEFAULT_TAG_COLOR);
+    setDraftColor(defaultTagColor);
     setCreateError(null);
     setIsCreateOpen(true);
   };

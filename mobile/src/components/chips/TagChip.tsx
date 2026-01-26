@@ -5,7 +5,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { Chip } from 'react-native-paper';
-import { getTagColor, spacing } from '../../theme';
+import { getTagColor, layout, spacing } from '../../theme';
 import { useTheme } from '../../theme/ThemeProvider';
 
 export interface TagChipProps {
@@ -41,10 +41,10 @@ function getLuminance(color: string): number | null {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
-function getReadableTextColor(color: string): string {
+function getReadableTextColor(color: string, lightText: string, darkText: string): string {
   const luminance = getLuminance(color);
-  if (luminance === null) return '#ffffff';
-  return luminance > 0.6 ? '#000000' : '#ffffff';
+  if (luminance === null) return lightText;
+  return luminance > 0.6 ? darkText : lightText;
 }
 
 export function TagChip({
@@ -69,7 +69,7 @@ export function TagChip({
     : colors.text;
   const textColor = selected
     ? hasCustomColor
-      ? getReadableTextColor(resolvedColor)
+      ? getReadableTextColor(resolvedColor, theme.colors.onPrimary, theme.colors.onSurface)
       : colors.text
     : unselectedTextColor;
 
@@ -97,8 +97,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   chipSmall: {
-    minHeight: 24,
-    paddingVertical: spacing[0.5],
+    minHeight: layout.chipSmallHeight,
+    paddingVertical: layout.chipSmallPaddingY,
   },
   text: {
     fontSize: 14,

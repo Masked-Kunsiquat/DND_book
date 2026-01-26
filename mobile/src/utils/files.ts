@@ -25,16 +25,21 @@ function getFileExtension(uri: string): string {
 }
 
 export async function ensureImagesDir(): Promise<string | null> {
-  const dir = getImagesDir();
-  if (!dir) {
+  try {
+    const dir = getImagesDir();
+    if (!dir) {
+      return null;
+    }
+
+    const info = await FileSystem.getInfoAsync(dir);
+    if (!info.exists) {
+      await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
+    }
+    return dir;
+  } catch (error) {
+    log.warn('Failed to ensure images directory', error);
     return null;
   }
-
-  const info = await FileSystem.getInfoAsync(dir);
-  if (!info.exists) {
-    await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
-  }
-  return dir;
 }
 
 export async function saveImageToLibrary(sourceUri: string): Promise<string> {
@@ -51,8 +56,13 @@ export async function saveImageToLibrary(sourceUri: string): Promise<string> {
   const filename = `${generateId()}.${ext}`;
   const destination = `${dir}${filename}`;
 
-  await FileSystem.copyAsync({ from: sourceUri, to: destination });
-  return destination;
+  try {
+    await FileSystem.copyAsync({ from: sourceUri, to: destination });
+    return destination;
+  } catch (error) {
+    log.warn('Failed to copy image', error);
+    return sourceUri;
+  }
 }
 
 export function isManagedImageUri(uri: string): boolean {
