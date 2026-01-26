@@ -5,6 +5,8 @@ import { Profile } from "./pages/Profile";
 import { Notes } from "./pages/Notes";
 import { Login } from "./pages/Login";
 import { Locations } from "./pages/Locations";
+import { NPCsPage } from "./pages/NPC";
+import LocationDetail from "./pages/LocationDetail";
 
 function App() {
   return (
@@ -14,9 +16,11 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<Dashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/npcs" element={<NPCsPage />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/notes" element={<Notes />} />
           <Route path="/locations" element={<Locations />} />
+          <Route path="/locations/:locationId" element={<LocationDetail />} />
           <Route path="*" element={<h1 className="text-center text-2xl">404 - Not Found</h1>} />
         </Routes>
       </MainLayout>
