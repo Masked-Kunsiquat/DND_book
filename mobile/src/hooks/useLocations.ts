@@ -254,7 +254,7 @@ export function useDeleteLocation(): (id: string) => void {
 
   return useCallback(
     (id: string) => {
-      const row = store.getRow('locations', id) as LocationRow | undefined;
+      const row = store.getRow('locations', id) as unknown as LocationRow | undefined;
       store.delRow('locations', id);
       if (row) {
         if (row.map) {

@@ -2,7 +2,7 @@
  * Local file utilities for images.
  */
 
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { generateId } from './id';
 import { createLogger } from './logger';
 

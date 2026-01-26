@@ -48,7 +48,8 @@ export default function TagDetailScreen() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [draftName, setDraftName] = useState('');
-  const [draftColor, setDraftColor] = useState(tagColors[0]?.bg ?? '#3b82f6');
+  const defaultTagColor: string = tagColors[0]?.bg ?? '#3b82f6';
+  const [draftColor, setDraftColor] = useState(defaultTagColor);
 
   const sessionsForTag = useMemo(() => {
     if (!tagId) return [];
@@ -58,7 +59,7 @@ export default function TagDetailScreen() {
   const openEditModal = () => {
     if (!tag) return;
     setDraftName(tag.name);
-    setDraftColor(tag.color || tagColors[0]?.bg || '#3b82f6');
+    setDraftColor(tag.color || defaultTagColor);
     setEditError(null);
     setIsEditOpen(true);
   };

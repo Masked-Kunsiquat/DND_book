@@ -208,7 +208,7 @@ export function useDeleteNpc(): (id: string) => void {
 
   return useCallback(
     (id: string) => {
-      const row = store.getRow('npcs', id) as NpcRow | undefined;
+      const row = store.getRow('npcs', id) as unknown as NpcRow | undefined;
       store.delRow('npcs', id);
       if (row?.image) {
         void removeManagedImage(row.image);

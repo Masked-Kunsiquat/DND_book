@@ -53,7 +53,7 @@ export default function TagsScreen() {
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [draftName, setDraftName] = useState('');
-  const [draftColor, setDraftColor] = useState(DEFAULT_TAG_COLOR);
+  const [draftColor, setDraftColor] = useState<string>(DEFAULT_TAG_COLOR);
 
   const tagUsage = useMemo(() => {
     const map = new Map<string, TagUsage>();

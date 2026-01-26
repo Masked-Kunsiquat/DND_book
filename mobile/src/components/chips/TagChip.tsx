@@ -58,8 +58,9 @@ export function TagChip({
 }: TagChipProps) {
   const colors = getTagColor(id);
   const { theme } = useTheme();
-  const hasCustomColor = Boolean(color && color.trim());
-  const resolvedColor = hasCustomColor ? color.trim() : colors.bg;
+  const customColor = color?.trim();
+  const hasCustomColor = Boolean(customColor);
+  const resolvedColor = customColor ?? colors.bg;
   const luminance = getLuminance(resolvedColor);
   const unselectedTextColor = hasCustomColor
     ? luminance !== null && luminance < 0.3
