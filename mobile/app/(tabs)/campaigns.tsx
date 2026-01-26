@@ -8,9 +8,9 @@ import {
   useCurrentCampaign,
   useSetCurrentCampaign,
   useCreateCampaign,
-  useContinuities,
   usePullToRefresh,
 } from '../../src/hooks';
+import { useContinuities } from '../../src/hooks/useContinuities';
 import { useNotes } from '../../src/hooks/useNotes';
 import { useNpcs } from '../../src/hooks/useNpcs';
 import { useLocations } from '../../src/hooks/useLocations';
