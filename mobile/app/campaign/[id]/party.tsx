@@ -5,10 +5,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import {
   AppCard,
-  ConfirmDialog,
   EmptyState,
   FormModal,
-  FormMultiSelect,
   FormTextInput,
   Screen,
 } from '../../../src/components';
@@ -17,11 +15,8 @@ import { layout, spacing } from '../../../src/theme';
 import {
   useCampaign,
   useCreatePlayerCharacter,
-  useDeletePlayerCharacter,
-  useNotes,
   usePlayerCharacters,
   usePullToRefresh,
-  useUpdatePlayerCharacter,
 } from '../../../src/hooks';
 import type { PlayerCharacter } from '../../../src/types/schema';
 
@@ -37,17 +32,11 @@ export default function CampaignPartyScreen() {
 
   const campaign = useCampaign(scopedCampaignId);
   const party = usePlayerCharacters(scopedCampaignId);
-  const notes = useNotes(scopedCampaignId);
   const { refreshing, onRefresh } = usePullToRefresh();
   const createPlayerCharacter = useCreatePlayerCharacter();
-  const updatePlayerCharacter = useUpdatePlayerCharacter();
-  const deletePlayerCharacter = useDeletePlayerCharacter();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingCharacter, setEditingCharacter] = useState<PlayerCharacter | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [draftName, setDraftName] = useState('');
@@ -55,14 +44,6 @@ export default function CampaignPartyScreen() {
   const [draftRace, setDraftRace] = useState('');
   const [draftClass, setDraftClass] = useState('');
   const [draftBackground, setDraftBackground] = useState('');
-  const [draftNoteIds, setDraftNoteIds] = useState<string[]>([]);
-
-  const noteOptions = useMemo(() => {
-    return notes.map((note) => ({
-      label: note.title || 'Untitled note',
-      value: note.id,
-    }));
-  }, [notes]);
 
   const openCreateModal = () => {
     setDraftName(`New Character ${party.length + 1}`);
@@ -70,22 +51,6 @@ export default function CampaignPartyScreen() {
     setDraftRace('');
     setDraftClass('');
     setDraftBackground('');
-    setDraftNoteIds([]);
-    setEditingCharacter(null);
-    setIsEditing(false);
-    setError(null);
-    setIsModalOpen(true);
-  };
-
-  const openEditModal = (character: PlayerCharacter) => {
-    setDraftName(character.name);
-    setDraftPlayer(character.player);
-    setDraftRace(character.race);
-    setDraftClass(character.class);
-    setDraftBackground(character.background);
-    setDraftNoteIds(character.noteIds);
-    setEditingCharacter(character);
-    setIsEditing(true);
     setError(null);
     setIsModalOpen(true);
   };
@@ -93,8 +58,6 @@ export default function CampaignPartyScreen() {
   const closeModal = () => {
     setIsModalOpen(false);
     setError(null);
-    setIsEditing(false);
-    setEditingCharacter(null);
   };
 
   const handleSave = () => {
@@ -107,58 +70,22 @@ export default function CampaignPartyScreen() {
 
     setIsSaving(true);
     try {
-      if (isEditing && editingCharacter) {
-        updatePlayerCharacter(editingCharacter.id, {
-          name: trimmedName,
-          player: draftPlayer.trim(),
-          race: draftRace.trim(),
-          class: draftClass.trim(),
-          background: draftBackground,
-          noteIds: draftNoteIds,
-        });
-      } else {
-        createPlayerCharacter({
-          name: trimmedName,
-          player: draftPlayer.trim(),
-          race: draftRace.trim(),
-          class: draftClass.trim(),
-          background: draftBackground,
-          noteIds: draftNoteIds,
-          campaignIds: [campaignId],
-        });
-      }
+      const createdId = createPlayerCharacter({
+        name: trimmedName,
+        player: draftPlayer.trim(),
+        race: draftRace.trim(),
+        class: draftClass.trim(),
+        background: draftBackground,
+        campaignIds: [campaignId],
+      });
       setIsModalOpen(false);
+      router.push(`/player-character/${createdId}`);
     } catch (saveError) {
       const message =
         saveError instanceof Error ? saveError.message : 'Failed to save character.';
       setError(message);
     } finally {
       setIsSaving(false);
-    }
-  };
-
-  const handleDelete = () => {
-    if (!editingCharacter || isSaving) return;
-    setIsDeleteOpen(true);
-  };
-
-  const closeDeleteDialog = () => {
-    setIsDeleteOpen(false);
-  };
-
-  const confirmDelete = () => {
-    if (!editingCharacter || isSaving) return;
-    try {
-      setIsSaving(true);
-      deletePlayerCharacter(editingCharacter.id);
-      setIsModalOpen(false);
-    } catch (deleteError) {
-      const message =
-        deleteError instanceof Error ? deleteError.message : 'Failed to delete character.';
-      setError(message);
-    } finally {
-      setIsSaving(false);
-      setIsDeleteOpen(false);
     }
   };
 
@@ -199,7 +126,7 @@ export default function CampaignPartyScreen() {
 
   const modal = (
     <FormModal
-      title={isEditing ? 'Edit Character' : 'New Character'}
+      title="New Character"
       visible={isModalOpen}
       onDismiss={closeModal}
       actions={
@@ -207,16 +134,6 @@ export default function CampaignPartyScreen() {
           <Button mode="text" onPress={closeModal} disabled={isSaving}>
             Cancel
           </Button>
-          {isEditing && (
-            <Button
-              mode="outlined"
-              onPress={handleDelete}
-              disabled={isSaving}
-              textColor={theme.colors.error}
-            >
-              Delete
-            </Button>
-          )}
           <Button mode="contained" onPress={handleSave} loading={isSaving} disabled={isSaving}>
             Save
           </Button>
@@ -233,13 +150,6 @@ export default function CampaignPartyScreen() {
         onChangeText={setDraftBackground}
         multiline
         style={styles.backgroundInput}
-      />
-      <FormMultiSelect
-        label="Linked notes"
-        value={draftNoteIds}
-        options={noteOptions}
-        onChange={setDraftNoteIds}
-        helperText="Optional: connect notes to this character."
       />
       {error && (
         <Text variant="bodySmall" style={{ color: theme.colors.error }}>
@@ -261,16 +171,6 @@ export default function CampaignPartyScreen() {
             action={{ label: 'Add Character', onPress: openCreateModal }}
           />
         </Screen>
-        <ConfirmDialog
-          visible={isDeleteOpen}
-          title="Delete character?"
-          description="This action cannot be undone."
-          confirmLabel="Delete"
-          onCancel={closeDeleteDialog}
-          onConfirm={confirmDelete}
-          confirmLoading={isSaving}
-          destructive
-        />
         {modal}
       </>
     );
@@ -308,7 +208,7 @@ export default function CampaignPartyScreen() {
             <AppCard
               title={item.name || 'Unnamed character'}
               subtitle={renderSubtitle(item)}
-              onPress={() => openEditModal(item)}
+              onPress={() => router.push(`/player-character/${item.id}`)}
               style={styles.card}
             />
           )}
@@ -320,16 +220,6 @@ export default function CampaignPartyScreen() {
           color={theme.colors.onPrimary}
         />
       </Screen>
-      <ConfirmDialog
-        visible={isDeleteOpen}
-        title="Delete character?"
-        description="This action cannot be undone."
-        confirmLabel="Delete"
-        onCancel={closeDeleteDialog}
-        onConfirm={confirmDelete}
-        confirmLoading={isSaving}
-        destructive
-      />
       {modal}
     </>
   );
