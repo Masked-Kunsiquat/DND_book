@@ -439,6 +439,7 @@ export default function LocationsScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           stickySectionHeadersEnabled={false}
+          showsVerticalScrollIndicator={false}
           refreshing={refreshing}
           onRefresh={onRefresh}
           ListHeaderComponent={
