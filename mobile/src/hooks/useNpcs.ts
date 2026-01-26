@@ -7,6 +7,7 @@ import { useTable } from 'tinybase/ui-react';
 import { useStore } from '../store';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
+import { removeManagedImage } from '../utils/files';
 import type { Npc, NpcRow, RecordId } from '../types/schema';
 
 const log = createLogger('npcs');
@@ -207,7 +208,11 @@ export function useDeleteNpc(): (id: string) => void {
 
   return useCallback(
     (id: string) => {
+      const row = store.getRow('npcs', id) as NpcRow | undefined;
       store.delRow('npcs', id);
+      if (row?.image) {
+        void removeManagedImage(row.image);
+      }
       log.debug('Deleted npc', id);
     },
     [store]
