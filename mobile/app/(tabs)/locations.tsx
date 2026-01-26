@@ -81,6 +81,7 @@ export default function LocationsScreen() {
   const effectiveCampaignId = currentCampaign?.id;
   const locations = useLocations(effectiveCampaignId);
   const params = useLocalSearchParams<{ tagId?: string | string[] }>();
+  const continuityId = currentCampaign?.continuityId ?? '';
 
   const continuityLocations = useMemo(() => {
     if (!currentCampaign) return [];
@@ -317,6 +318,17 @@ export default function LocationsScreen() {
     setIsCreateOpen(true);
   };
 
+  const openLibrary = () => {
+    if (isCreateOpen) {
+      setIsCreateOpen(false);
+      setCreateError(null);
+    }
+    router.push({
+      pathname: '/library/locations',
+      params: continuityId ? { continuityId } : undefined,
+    });
+  };
+
   const closeCreateModal = () => {
     setIsCreateOpen(false);
     setCreateError(null);
@@ -401,6 +413,9 @@ export default function LocationsScreen() {
         </>
       }
     >
+      <Button mode="outlined" icon="book-outline" onPress={openLibrary}>
+        Add from Continuity
+      </Button>
       <FormTextInput label="Name" value={draftName} onChangeText={setDraftName} />
       <FormSelect
         label="Type"
@@ -686,9 +701,23 @@ export default function LocationsScreen() {
                     {listTitle}
                   </Text>
                 </View>
-                <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                  {listCountLabel}
-                </Text>
+                <View style={styles.listHeaderMeta}>
+                  <View style={styles.listHeaderActions}>
+                    <Pressable onPress={openLibrary} hitSlop={8}>
+                      <Text variant="labelMedium" style={{ color: theme.colors.primary }}>
+                        Library
+                      </Text>
+                    </Pressable>
+                    <Pressable onPress={openCreateModal} hitSlop={8}>
+                      <Text variant="labelMedium" style={{ color: theme.colors.primary }}>
+                        New
+                      </Text>
+                    </Pressable>
+                  </View>
+                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                    {listCountLabel}
+                  </Text>
+                </View>
               </View>
             </View>
           }
@@ -840,6 +869,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  listHeaderMeta: {
+    alignItems: 'flex-end',
+    gap: spacing[0.5],
+  },
+  listHeaderActions: {
+    flexDirection: 'row',
+    gap: spacing[2],
   },
   listHeaderRow: {
     flexDirection: 'row',
