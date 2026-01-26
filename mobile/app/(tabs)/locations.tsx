@@ -238,6 +238,15 @@ export default function LocationsScreen() {
     return { missingParent, mismatch, total: missingParent + mismatch };
   }, [locationById, locations]);
 
+  const getTypeFocusStyle = (isActive: boolean) => ({
+    borderWidth: 1,
+    borderColor: isActive ? theme.colors.primary : theme.colors.outlineVariant,
+    backgroundColor: isActive ? theme.colors.primaryContainer : theme.colors.surface,
+  });
+
+  const getTypeFocusIconColor = (isActive: boolean) =>
+    isActive ? theme.colors.onPrimaryContainer : theme.colors.primary;
+
   const openCreateModal = () => {
     setDraftName(`New Location ${allLocations.length + 1}`);
     setDraftType('Locale');
@@ -519,30 +528,33 @@ export default function LocationsScreen() {
                           label={pluralize('Location', locations.length)}
                           value={locations.length}
                           layout="compact"
+                          style={getTypeFocusStyle(typeFilter === 'all')}
                           onPress={() => setTypeFilter('all')}
                           icon={
                             <MaterialCommunityIcons
                               name="earth"
                               size={iconSizes.md}
-                              color={theme.colors.primary}
+                              color={getTypeFocusIconColor(typeFilter === 'all')}
                             />
                           }
                         />
                       </View>
                       {LOCATION_TYPE_ORDER.map((type) => {
                         const count = typeCounts.get(type) || 0;
+                        const isActive = typeFilter === type;
                         return (
                           <View key={type} style={styles.typeCard}>
                             <StatCard
                               label={pluralizeLocationType(type, count)}
                               value={count}
                               layout="compact"
+                              style={getTypeFocusStyle(isActive)}
                               onPress={() => setTypeFilter(type)}
                               icon={
                                 <MaterialCommunityIcons
                                   name="compass-rose"
                                   size={iconSizes.md}
-                                  color={theme.colors.primary}
+                                  color={getTypeFocusIconColor(isActive)}
                                 />
                               }
                             />
@@ -587,14 +599,26 @@ export default function LocationsScreen() {
                   {section.title}
                 </Text>
                 <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                  {section.root.type} • {section.count} {pluralize('location', section.count)}
+                  {section.root.type} root
                 </Text>
               </View>
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={iconSizes.md}
-                color={theme.colors.onSurfaceVariant}
-              />
+              <View style={styles.rootHeaderMeta}>
+                <View
+                  style={[
+                    styles.rootCountPill,
+                    { backgroundColor: theme.colors.surface, borderColor: theme.colors.outline },
+                  ]}
+                >
+                  <Text variant="labelSmall" style={{ color: theme.colors.onSurface }}>
+                    {section.count} {pluralize('location', section.count)}
+                  </Text>
+                </View>
+                <MaterialCommunityIcons
+                  name="chevron-right"
+                  size={iconSizes.md}
+                  color={theme.colors.onSurfaceVariant}
+                />
+              </View>
             </Pressable>
           )}
           renderItem={({ item }) => {
@@ -705,8 +729,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: spacing[4],
-    marginBottom: spacing[2],
+    marginTop: spacing[3],
+    marginBottom: spacing[1.5],
     paddingVertical: spacing[2],
     paddingHorizontal: spacing[3],
     borderRadius: layout.cardBorderRadius,
@@ -717,8 +741,19 @@ const styles = StyleSheet.create({
     gap: spacing[1],
     marginRight: spacing[2],
   },
+  rootHeaderMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
+  },
+  rootCountPill: {
+    borderRadius: layout.cardBorderRadius,
+    borderWidth: 1,
+    paddingHorizontal: spacing[1.5],
+    paddingVertical: spacing[0.5],
+  },
   cardWrapper: {
-    marginBottom: spacing[2],
+    marginBottom: spacing[1.5],
   },
   fab: {
     position: 'absolute',

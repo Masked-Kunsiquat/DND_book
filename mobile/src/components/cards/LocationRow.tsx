@@ -52,7 +52,7 @@ function TypeBadge({ label }: TypeBadgeProps) {
   );
 }
 
-const MAX_TAGS = 3;
+const MAX_TAGS = 2;
 
 export function LocationRow({
   location,
@@ -85,11 +85,11 @@ export function LocationRow({
     >
       <View style={styles.headerRow}>
         <View style={styles.headerText}>
-          <Text variant="titleMedium" style={{ color: theme.colors.onSurface }} numberOfLines={1}>
+          <Text variant="titleSmall" style={{ color: theme.colors.onSurface }} numberOfLines={1}>
             {location.name || 'Unnamed location'}
           </Text>
           <Text
-            variant="bodySmall"
+            variant="labelSmall"
             style={{ color: theme.colors.onSurfaceVariant }}
             numberOfLines={1}
           >
@@ -137,28 +137,28 @@ const styles = StyleSheet.create({
   row: {
     borderRadius: layout.cardBorderRadius,
     borderWidth: 1,
-    padding: spacing[3],
-    gap: spacing[2],
+    padding: spacing[2],
+    gap: spacing[1.5],
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing[2],
+    gap: spacing[1.5],
   },
   headerText: {
     flex: 1,
-    gap: spacing[1],
+    gap: spacing[0.5],
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing[2],
+    gap: spacing[1.5],
   },
   tagsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
-    gap: spacing[2],
+    gap: spacing[1.5],
   },
   statusRow: {
     flexDirection: 'row',
@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     gap: spacing[1],
   },
   typeBadge: {
-    paddingHorizontal: spacing[2],
+    paddingHorizontal: spacing[1.5],
     paddingVertical: spacing[0.5],
     borderRadius: layout.cardBorderRadius,
     borderWidth: 1,
