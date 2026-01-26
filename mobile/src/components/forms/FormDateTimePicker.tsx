@@ -21,7 +21,7 @@ export interface FormDateTimePickerProps {
   value?: string;
   /** Change handler */
   onChange: (value: string) => void;
-  /** Optional mode (date/time/datetime) */
+  /** Optional mode (date/time) */
   mode?: DateTimeMode;
   /** Optional placeholder */
   placeholder?: string;
@@ -64,9 +64,20 @@ export function FormDateTimePicker({
   const { theme, isDark } = useTheme();
   const [visible, setVisible] = useState(false);
   const parsedValue = useMemo(() => {
-    const dateValue = value ? new Date(value) : new Date();
+    if (!value) return new Date();
+    if (mode === 'date') {
+      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+      if (match) {
+        const year = Number(match[1]);
+        const month = Number(match[2]) - 1;
+        const day = Number(match[3]);
+        const localDate = new Date(year, month, day);
+        return Number.isNaN(localDate.getTime()) ? new Date() : localDate;
+      }
+    }
+    const dateValue = new Date(value);
     return Number.isNaN(dateValue.getTime()) ? new Date() : dateValue;
-  }, [value]);
+  }, [mode, value]);
   const [tempDate, setTempDate] = useState(parsedValue);
   const hasError = Boolean(error);
   const message = error ?? helperText;
