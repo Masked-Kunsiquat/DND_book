@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Text, Button } from 'react-native-paper';
+import { Button, List, Modal, Portal, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTheme } from '../../src/theme/ThemeProvider';
@@ -26,8 +26,38 @@ export default function Home() {
       .slice(0, 3);
   }, [notes]);
 
+  const [newMenuVisible, setNewMenuVisible] = useState(false);
+
   const handleCreateCampaign = () => {
     router.push({ pathname: '/campaigns', params: { create: '1' } });
+  };
+
+  const openNewMenu = () => {
+    setTimeout(() => setNewMenuVisible(true), 0);
+  };
+
+  const toggleNewMenu = () => {
+    if (newMenuVisible) {
+      setNewMenuVisible(false);
+      return;
+    }
+    openNewMenu();
+  };
+
+  const closeNewMenu = () => setNewMenuVisible(false);
+
+  const handleNewCampaign = () => {
+    closeNewMenu();
+    handleCreateCampaign();
+  };
+
+  const handleNewSession = () => {
+    if (!currentCampaign) return;
+    closeNewMenu();
+    router.push({
+      pathname: `/campaign/${currentCampaign.id}/sessions`,
+      params: { create: '1' },
+    });
   };
 
   return (
@@ -142,11 +172,11 @@ export default function Home() {
         <View style={styles.actions}>
           <Button
             mode="contained"
-            icon="folder-plus"
+            icon="plus"
             style={styles.actionButton}
-            onPress={handleCreateCampaign}
+            onPress={toggleNewMenu}
           >
-            New Campaign
+            New...
           </Button>
           <Button
             mode="outlined"
@@ -171,6 +201,34 @@ export default function Home() {
           </Button>
         </View>
       </Section>
+      <Portal>
+        <Modal
+          visible={newMenuVisible}
+          onDismiss={closeNewMenu}
+          contentContainerStyle={[
+            styles.menuSurface,
+            { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant },
+          ]}
+        >
+          <List.Item
+            title="New Campaign"
+            left={(props) => <List.Icon {...props} icon="folder-plus-outline" />}
+            onPress={handleNewCampaign}
+            titleStyle={{ color: theme.colors.onSurface }}
+          />
+          <List.Item
+            title="New Session"
+            description={!currentCampaign ? 'Select a campaign first' : undefined}
+            left={(props) => <List.Icon {...props} icon="calendar-plus" />}
+            onPress={handleNewSession}
+            disabled={!currentCampaign}
+            titleStyle={{
+              color: currentCampaign ? theme.colors.onSurface : theme.colors.onSurfaceVariant,
+            }}
+            descriptionStyle={{ color: theme.colors.onSurfaceVariant }}
+          />
+        </Modal>
+      </Portal>
     </Screen>
   );
 }
@@ -187,5 +245,13 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
+  },
+  menuSurface: {
+    marginHorizontal: spacing[4],
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: spacing[1],
+    minWidth: 220,
+    alignSelf: 'center',
   },
 });

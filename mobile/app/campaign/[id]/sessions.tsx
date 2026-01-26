@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { Button, FAB, Text } from 'react-native-paper';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
@@ -31,11 +31,13 @@ function formatDate(value?: string): string {
 
 export default function CampaignSessionsScreen() {
   const { theme } = useTheme();
-  const params = useLocalSearchParams<{ id?: string | string[] }>();
+  const params = useLocalSearchParams<{ id?: string | string[]; create?: string }>();
   const campaignId = useMemo(() => {
     const raw = params.id;
     return Array.isArray(raw) ? raw[0] : raw ?? '';
   }, [params.id]);
+  const shouldOpenCreate =
+    params.create === '1' || params.create === 'true' || params.create === 'yes';
   const hasCampaignId = campaignId.trim().length > 0;
   const scopedCampaignId = hasCampaignId ? campaignId : '__missing__';
 
@@ -52,6 +54,7 @@ export default function CampaignSessionsScreen() {
   const [draftDate, setDraftDate] = useState('');
   const [draftSummary, setDraftSummary] = useState('');
   const [draftPlayerIds, setDraftPlayerIds] = useState<string[]>([]);
+  const [openedFromParam, setOpenedFromParam] = useState(false);
 
   const participantOptions = useMemo(() => {
     return party.map((pc) => ({
@@ -68,6 +71,13 @@ export default function CampaignSessionsScreen() {
     setCreateError(null);
     setIsCreateOpen(true);
   };
+
+  useEffect(() => {
+    if (!openedFromParam && shouldOpenCreate && campaign) {
+      openCreateModal();
+      setOpenedFromParam(true);
+    }
+  }, [campaign, openedFromParam, shouldOpenCreate]);
 
   const closeCreateModal = () => {
     setIsCreateOpen(false);
@@ -155,6 +165,22 @@ export default function CampaignSessionsScreen() {
           <EmptyState
             title="No campaign selected"
             description="Select a campaign to view session logs."
+            icon="calendar-blank-outline"
+            action={{ label: 'Go Back', onPress: () => router.back() }}
+          />
+        </Screen>
+      </>
+    );
+  }
+
+  if (!campaign) {
+    return (
+      <>
+        <Stack.Screen options={{ title: 'Sessions' }} />
+        <Screen>
+          <EmptyState
+            title="Campaign not found"
+            description="This campaign may have been deleted."
             icon="calendar-blank-outline"
             action={{ label: 'Go Back', onPress: () => router.back() }}
           />
