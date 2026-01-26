@@ -22,6 +22,8 @@ export interface LocationRowProps {
   statusLabel?: string;
   /** Optional status tone */
   statusTone?: 'warning' | 'error';
+  /** Called when a tag is pressed */
+  onTagPress?: (tagId: string) => void;
   /** Called when row is pressed */
   onPress?: () => void;
   /** Additional style for the row container */
@@ -60,6 +62,7 @@ export function LocationRow({
   tags = [],
   statusLabel,
   statusTone = 'warning',
+  onTagPress,
   onPress,
   style,
 }: LocationRowProps) {
@@ -120,7 +123,13 @@ export function LocationRow({
       {visibleTags.length > 0 && (
         <View style={styles.tagsRow}>
           {visibleTags.map((tag) => (
-            <TagChip key={tag.id} id={tag.id} name={tag.name} size="small" />
+            <TagChip
+              key={tag.id}
+              id={tag.id}
+              name={tag.name}
+              size="small"
+              onPress={onTagPress ? () => onTagPress(tag.id) : undefined}
+            />
           ))}
           {extraCount > 0 && (
             <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>

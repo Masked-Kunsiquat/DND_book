@@ -376,7 +376,13 @@ export default function NpcDetailScreen() {
               {resolvedTags.length > 0 && (
                 <View style={styles.tagsRow}>
                   {resolvedTags.map((tag) => (
-                    <TagChip key={tag.id} id={tag.id} name={tag.name} size="small" />
+                    <TagChip
+                      key={tag.id}
+                      id={tag.id}
+                      name={tag.name}
+                      size="small"
+                      onPress={() => router.push(`/tag/${tag.id}`)}
+                    />
                   ))}
                 </View>
               )}

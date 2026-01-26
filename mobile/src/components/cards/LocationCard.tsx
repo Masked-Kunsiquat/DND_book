@@ -23,6 +23,8 @@ export interface LocationCardProps {
   statusLabel?: string;
   /** Optional status tone */
   statusTone?: 'warning' | 'error';
+  /** Called when a tag is pressed */
+  onTagPress?: (tagId: string) => void;
   /** Called when card is pressed */
   onPress?: () => void;
   /** Additional style for the card container */
@@ -59,6 +61,7 @@ export function LocationCard({
   tags = [],
   statusLabel,
   statusTone = 'warning',
+  onTagPress,
   onPress,
   style,
 }: LocationCardProps) {
@@ -89,7 +92,13 @@ export function LocationCard({
       {tags.length > 0 && (
         <View style={styles.tagsRow}>
           {tags.map((tag) => (
-            <TagChip key={tag.id} id={tag.id} name={tag.name} size="small" />
+            <TagChip
+              key={tag.id}
+              id={tag.id}
+              name={tag.name}
+              size="small"
+              onPress={onTagPress ? () => onTagPress(tag.id) : undefined}
+            />
           ))}
         </View>
       )}

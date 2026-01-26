@@ -589,17 +589,23 @@ export default function LocationDetailScreen() {
           </Section>
         ) : (
           <Section title="Tags" icon="tag-outline">
-            {resolvedTags.length === 0 ? (
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                No tags yet.
-              </Text>
-            ) : (
-              <View style={styles.tagsRow}>
-                {resolvedTags.map((tag) => (
-                  <TagChip key={tag.id} id={tag.id} name={tag.name} size="small" />
-                ))}
-              </View>
-            )}
+              {resolvedTags.length === 0 ? (
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  No tags yet.
+                </Text>
+              ) : (
+                <View style={styles.tagsRow}>
+                  {resolvedTags.map((tag) => (
+                    <TagChip
+                      key={tag.id}
+                      id={tag.id}
+                      name={tag.name}
+                      size="small"
+                      onPress={() => router.push(`/tag/${tag.id}`)}
+                    />
+                  ))}
+                </View>
+              )}
           </Section>
         )}
 

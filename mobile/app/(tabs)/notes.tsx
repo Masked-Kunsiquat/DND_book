@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { StyleSheet, View, FlatList } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { FlatList, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, FAB, Switch, Text, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
@@ -10,11 +10,12 @@ import {
   Screen,
   EmptyState,
   NoteCard,
+  TagChip,
   TagInput,
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { layout, spacing } from '../../src/theme';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import type { Tag } from '../../src/types/schema';
 import {
   useCampaigns,
@@ -34,6 +35,7 @@ export default function NotesScreen() {
   const locations = useLocations();
   const [query, setQuery] = useState('');
   const [onlyCurrent, setOnlyCurrent] = useState(true);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
@@ -49,6 +51,12 @@ export default function NotesScreen() {
 
   const effectiveCampaignId = onlyCurrent && currentCampaign ? currentCampaign.id : undefined;
   const notes = useNotes(effectiveCampaignId);
+  const params = useLocalSearchParams<{ tagId?: string | string[] }>();
+
+  const tagParam = useMemo(() => {
+    const raw = params.tagId;
+    return Array.isArray(raw) ? raw[0] : raw ?? '';
+  }, [params.tagId]);
 
   const tagById = useMemo(() => {
     return new Map(tags.map((tag) => [tag.id, tag]));
@@ -77,13 +85,28 @@ export default function NotesScreen() {
 
   const filteredNotes = useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    if (!normalized) return notes;
-    return notes.filter((note) => {
+    const scoped = selectedTagIds.length
+      ? notes.filter((note) => note.tagIds.some((id) => selectedTagIds.includes(id)))
+      : notes;
+    if (!normalized) return scoped;
+    return scoped.filter((note) => {
       const title = note.title?.toLowerCase() ?? '';
       const content = note.content?.toLowerCase() ?? '';
       return title.includes(normalized) || content.includes(normalized);
     });
-  }, [notes, query]);
+  }, [notes, query, selectedTagIds]);
+
+  useEffect(() => {
+    if (tagParam) {
+      setSelectedTagIds([tagParam]);
+    }
+  }, [tagParam]);
+
+  const toggleTag = (id: string) => {
+    setSelectedTagIds((prev) =>
+      prev.includes(id) ? prev.filter((tagId) => tagId !== id) : [...prev, id]
+    );
+  };
 
   const openCreateModal = () => {
     setDraftTitle(`New Note ${notes.length + 1}`);
@@ -204,7 +227,7 @@ export default function NotesScreen() {
     </FormModal>
   );
 
-  if (filteredNotes.length === 0) {
+  if (notes.length === 0) {
     return (
       <>
         <Screen onRefresh={onRefresh} refreshing={refreshing}>
@@ -221,6 +244,28 @@ export default function NotesScreen() {
                 ? { label: 'Create Note', onPress: openCreateModal }
                 : undefined
             }
+          />
+        </Screen>
+        {createModal}
+      </>
+    );
+  }
+
+  if (filteredNotes.length === 0) {
+    return (
+      <>
+        <Screen onRefresh={onRefresh} refreshing={refreshing}>
+          <EmptyState
+            title="No notes match your filters"
+            description="Try clearing search or tag filters."
+            icon="note-text-outline"
+            action={{
+              label: 'Clear Filters',
+              onPress: () => {
+                setQuery('');
+                setSelectedTagIds([]);
+              },
+            }}
           />
         </Screen>
         {createModal}
@@ -269,6 +314,38 @@ export default function NotesScreen() {
                 placeholder="Search notes..."
                 style={styles.searchInput}
               />
+              <View style={styles.tagHeader}>
+                <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                  Tags
+                </Text>
+                {selectedTagIds.length > 0 && (
+                  <Button mode="text" onPress={() => setSelectedTagIds([])} compact>
+                    Clear
+                  </Button>
+                )}
+              </View>
+              {tags.length > 0 ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.tagScroll}
+                >
+                  {tags.map((tag) => (
+                    <TagChip
+                      key={tag.id}
+                      id={tag.id}
+                      name={tag.name}
+                      size="small"
+                      selected={selectedTagIds.includes(tag.id)}
+                      onPress={() => toggleTag(tag.id)}
+                    />
+                  ))}
+                </ScrollView>
+              ) : (
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  No tags yet.
+                </Text>
+              )}
               <View style={styles.listHeader}>
                 <MaterialCommunityIcons
                   name="note-text"
@@ -297,6 +374,7 @@ export default function NotesScreen() {
                   tags={resolvedTags}
                   campaignName={campaignName}
                   onPress={() => router.push(`/note/${item.id}`)}
+                  onTagPress={(tagId) => router.push(`/tag/${tagId}`)}
                 />
               </View>
             );
@@ -340,6 +418,16 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     marginBottom: spacing[3],
+  },
+  tagHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing[1],
+  },
+  tagScroll: {
+    paddingBottom: spacing[2],
+    gap: spacing[2],
   },
   listHeader: {
     flexDirection: 'row',

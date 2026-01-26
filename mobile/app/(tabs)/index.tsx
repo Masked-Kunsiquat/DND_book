@@ -100,6 +100,7 @@ export default function Home() {
           <StatCard
             label="Tags"
             value={tags.length}
+            onPress={() => router.push('/tags')}
             icon={
               <MaterialCommunityIcons
                 name="tag-outline"

@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, SectionList, StyleSheet, View } from 'react-native';
 import { Button, FAB, Switch, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import {
   FormModal,
   FormSelect,
@@ -12,6 +12,7 @@ import {
   LocationRow,
   Section,
   StatCard,
+  TagChip,
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { iconSizes, layout, semanticColors, spacing } from '../../src/theme';
@@ -58,6 +59,7 @@ export default function LocationsScreen() {
   const [onlyCurrent, setOnlyCurrent] = useState(true);
   const [typeFilter, setTypeFilter] = useState<LocationType | 'all'>('all');
   const [filtersOpen, setFiltersOpen] = useState(true);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
@@ -71,11 +73,20 @@ export default function LocationsScreen() {
   const { refreshing, onRefresh } = usePullToRefresh();
   const effectiveCampaignId = onlyCurrent && currentCampaign ? currentCampaign.id : undefined;
   const locations = useLocations(effectiveCampaignId);
+  const params = useLocalSearchParams<{ tagId?: string | string[] }>();
+
+  const tagParam = useMemo(() => {
+    const raw = params.tagId;
+    return Array.isArray(raw) ? raw[0] : raw ?? '';
+  }, [params.tagId]);
 
   const visibleLocations = useMemo(() => {
-    if (typeFilter === 'all') return locations;
-    return locations.filter((location) => location.type === typeFilter);
-  }, [locations, typeFilter]);
+    const scoped = selectedTagIds.length
+      ? locations.filter((location) => location.tagIds.some((id) => selectedTagIds.includes(id)))
+      : locations;
+    if (typeFilter === 'all') return scoped;
+    return scoped.filter((location) => location.type === typeFilter);
+  }, [locations, selectedTagIds, typeFilter]);
 
   const { locationById, depthById } = useMemo(() => {
     const locationMap = new Map<string, Location>();
@@ -217,11 +228,14 @@ export default function LocationsScreen() {
 
   const typeCounts = useMemo(() => {
     const counts = new Map<LocationType, number>();
-    locations.forEach((location) => {
+    const scoped = selectedTagIds.length
+      ? locations.filter((location) => location.tagIds.some((id) => selectedTagIds.includes(id)))
+      : locations;
+    scoped.forEach((location) => {
       counts.set(location.type, (counts.get(location.type) || 0) + 1);
     });
     return counts;
-  }, [locations]);
+  }, [locations, selectedTagIds]);
 
   const rootCount = useMemo(() => {
     return locations.filter((location) => !location.parentId).length;
@@ -253,6 +267,18 @@ export default function LocationsScreen() {
 
   const getTypeFocusIconColor = (isActive: boolean) =>
     isActive ? theme.colors.onPrimaryContainer : theme.colors.primary;
+
+  useEffect(() => {
+    if (tagParam) {
+      setSelectedTagIds([tagParam]);
+    }
+  }, [tagParam]);
+
+  const toggleTag = (id: string) => {
+    setSelectedTagIds((prev) =>
+      prev.includes(id) ? prev.filter((tagId) => tagId !== id) : [...prev, id]
+    );
+  };
 
   const openCreateModal = () => {
     setDraftName(`New Location ${allLocations.length + 1}`);
@@ -391,9 +417,15 @@ export default function LocationsScreen() {
         <Screen onRefresh={onRefresh} refreshing={refreshing}>
           <EmptyState
             title="No locations found"
-            description="Try clearing the type filter."
+            description="Try clearing the type or tag filters."
             icon="map-marker-outline"
-            action={{ label: 'Clear Filter', onPress: () => setTypeFilter('all') }}
+            action={{
+              label: 'Clear Filters',
+              onPress: () => {
+                setTypeFilter('all');
+                setSelectedTagIds([]);
+              },
+            }}
           />
         </Screen>
         {createModal}
@@ -569,6 +601,38 @@ export default function LocationsScreen() {
                         );
                       })}
                     </ScrollView>
+                    <View style={styles.tagHeader}>
+                      <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                        Tags
+                      </Text>
+                      {selectedTagIds.length > 0 && (
+                        <Button mode="text" onPress={() => setSelectedTagIds([])} compact>
+                          Clear
+                        </Button>
+                      )}
+                    </View>
+                    {tags.length > 0 ? (
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.tagScroll}
+                      >
+                        {tags.map((tag) => (
+                          <TagChip
+                            key={tag.id}
+                            id={tag.id}
+                            name={tag.name}
+                            size="small"
+                            selected={selectedTagIds.includes(tag.id)}
+                            onPress={() => toggleTag(tag.id)}
+                          />
+                        ))}
+                      </ScrollView>
+                    ) : (
+                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                        No tags yet.
+                      </Text>
+                    )}
                   </>
                 )}
               </View>
@@ -670,6 +734,7 @@ export default function LocationsScreen() {
                   tags={resolvedTags}
                   statusLabel={statusLabel}
                   onPress={() => router.push(`/location/${item.id}`)}
+                  onTagPress={(tagId) => router.push(`/tag/${tagId}`)}
                 />
               </View>
             );
@@ -728,6 +793,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  tagHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  tagScroll: {
+    paddingBottom: spacing[2],
+    gap: spacing[2],
   },
   listHeader: {
     flexDirection: 'row',

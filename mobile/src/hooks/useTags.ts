@@ -24,6 +24,19 @@ function rowToTag(row: TagRow): Tag {
 }
 
 /**
+ * Safely parses a JSON array string, returning empty array on failure.
+ */
+function parseJsonArray(value: string): string[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Hook to get all tags.
  */
 export function useTags(): Tag[] {
@@ -198,14 +211,37 @@ export function useUpdateTag(): (id: string, data: UpdateTagInput) => void {
 
 /**
  * Hook to delete a tag.
- * Note: This does not remove the tag from entities that reference it.
+ * Also removes the tag from entities that reference it.
  */
 export function useDeleteTag(): (id: string) => void {
   const store = useStore();
 
   return useCallback(
     (id: string) => {
-      store.delRow('tags', id);
+      store.transaction(() => {
+        const tables: Array<{ tableId: string; field: string }> = [
+          { tableId: 'notes', field: 'tagIds' },
+          { tableId: 'npcs', field: 'tagIds' },
+          { tableId: 'locations', field: 'tagIds' },
+          { tableId: 'sessionLogs', field: 'tagIds' },
+        ];
+
+        tables.forEach(({ tableId, field }) => {
+          const table = store.getTable(tableId);
+          Object.entries(table).forEach(([rowId, row]) => {
+            const raw = (row as Record<string, string>)[field] ?? '';
+            const tags = parseJsonArray(raw);
+            if (!tags.includes(id)) return;
+            const nextTags = tags.filter((tagId) => tagId !== id);
+            store.setRow(tableId, rowId, {
+              ...row,
+              [field]: JSON.stringify(nextTags),
+            });
+          });
+        });
+
+        store.delRow('tags', id);
+      });
       log.debug('Deleted tag', id);
     },
     [store]
