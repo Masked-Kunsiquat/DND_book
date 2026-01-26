@@ -132,7 +132,7 @@ export default function Home() {
               key={note.id}
               title={note.title || 'Untitled note'}
               subtitle={note.content ? note.content.slice(0, 100) : 'No content yet'}
-              onPress={() => router.push('/notes')}
+              onPress={() => router.push(`/note/${note.id}`)}
             />
           ))
         )}

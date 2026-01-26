@@ -35,7 +35,7 @@ export default function NotesScreen() {
   const locations = useLocations();
   const [query, setQuery] = useState('');
   const [onlyCurrent, setOnlyCurrent] = useState(true);
-  const [filtersOpen, setFiltersOpen] = useState(true);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
