@@ -54,10 +54,7 @@ export default function Home() {
   const handleNewSession = () => {
     if (!currentCampaign) return;
     closeNewMenu();
-    router.push({
-      pathname: `/campaign/${currentCampaign.id}/sessions`,
-      params: { create: '1' },
-    });
+    router.push({ pathname: '/sessions', params: { create: '1' } });
   };
 
   return (
