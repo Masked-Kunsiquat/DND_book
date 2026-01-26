@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { Text } from 'react-native-paper';
-import { AppCard, Screen, Section } from '../src/components';
+import { AppCard, ComingSoonBadge, Screen, Section } from '../src/components';
 import { useTheme } from '../src/theme/ThemeProvider';
 import { spacing } from '../src/theme';
 
@@ -9,6 +9,7 @@ const SETTINGS_ITEMS = [
   {
     title: 'Appearance',
     subtitle: 'Theme and display preferences.',
+    route: '/settings/appearance',
   },
   {
     title: 'Sync',
@@ -28,7 +29,13 @@ export default function SettingsScreen() {
       <Stack.Screen options={{ title: 'Settings' }} />
       <Section title="General" icon="cog-outline">
         {SETTINGS_ITEMS.map((item) => (
-          <AppCard key={item.title} title={item.title} subtitle={item.subtitle} />
+          <AppCard
+            key={item.title}
+            title={item.title}
+            subtitle={item.subtitle}
+            onPress={item.route ? () => router.push(item.route) : undefined}
+            right={<ComingSoonBadge />}
+          />
         ))}
         <View style={styles.note}>
           <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>

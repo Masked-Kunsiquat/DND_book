@@ -12,6 +12,7 @@ export { LocationRow, type LocationRowProps } from './cards/LocationRow';
 export { NPCCard, type NPCCardProps } from './cards/NPCCard';
 
 // Chips/Tags
+export { ComingSoonBadge, type ComingSoonBadgeProps } from './chips/ComingSoonBadge';
 export { TagChip, type TagChipProps } from './chips/TagChip';
 
 // Layout
