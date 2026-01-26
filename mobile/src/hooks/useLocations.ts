@@ -35,6 +35,11 @@ function rowToLocation(row: LocationRow): Location {
     type: (row.type as LocationType) || 'Locale',
     description: row.description,
     parentId: row.parentId,
+    scope: (row.scope as Location['scope']) || 'campaign',
+    continuityId: row.continuityId || '',
+    originId: row.originId || '',
+    originContinuityId: row.originContinuityId || '',
+    forkedAt: row.forkedAt || '',
     campaignIds: parseJsonArray(row.campaignIds),
     tagIds: parseJsonArray(row.tagIds),
     map: row.map,
@@ -159,6 +164,11 @@ export interface CreateLocationInput {
   type?: LocationType;
   description?: string;
   parentId?: RecordId;
+  scope?: Location['scope'];
+  continuityId?: RecordId;
+  originId?: RecordId;
+  originContinuityId?: RecordId;
+  forkedAt?: string;
   campaignIds?: RecordId[];
   tagIds?: RecordId[];
   map?: string;
@@ -183,6 +193,11 @@ export function useCreateLocation(): (data: CreateLocationInput) => string {
         type: data.type || 'Locale',
         description: data.description || '',
         parentId: data.parentId || '',
+        scope: data.scope || 'campaign',
+        continuityId: data.continuityId || '',
+        originId: data.originId || '',
+        originContinuityId: data.originContinuityId || '',
+        forkedAt: data.forkedAt || '',
         campaignIds: JSON.stringify(data.campaignIds || []),
         tagIds: JSON.stringify(data.tagIds || []),
         map: data.map || '',
@@ -203,6 +218,11 @@ export interface UpdateLocationInput {
   type?: LocationType;
   description?: string;
   parentId?: RecordId;
+  scope?: Location['scope'];
+  continuityId?: RecordId;
+  originId?: RecordId;
+  originContinuityId?: RecordId;
+  forkedAt?: string;
   campaignIds?: RecordId[];
   tagIds?: RecordId[];
   map?: string;
@@ -229,6 +249,12 @@ export function useUpdateLocation(): (id: string, data: UpdateLocationInput) => 
       if (data.type !== undefined) updates.type = data.type;
       if (data.description !== undefined) updates.description = data.description;
       if (data.parentId !== undefined) updates.parentId = data.parentId;
+      if (data.scope !== undefined) updates.scope = data.scope;
+      if (data.continuityId !== undefined) updates.continuityId = data.continuityId;
+      if (data.originId !== undefined) updates.originId = data.originId;
+      if (data.originContinuityId !== undefined)
+        updates.originContinuityId = data.originContinuityId;
+      if (data.forkedAt !== undefined) updates.forkedAt = data.forkedAt;
       if (data.campaignIds !== undefined) updates.campaignIds = JSON.stringify(data.campaignIds);
       if (data.tagIds !== undefined) updates.tagIds = JSON.stringify(data.tagIds);
       if (data.map !== undefined) updates.map = data.map;

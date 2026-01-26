@@ -7,6 +7,8 @@
 export type IsoDateString = string;
 export type RecordId = string;
 
+export type EntityScope = 'campaign' | 'continuity';
+
 // Location hierarchy types
 export type LocationType =
   | 'Plane'
@@ -22,6 +24,7 @@ export type LocationType =
 export interface Campaign {
   id: RecordId;
   name: string;
+  continuityId: RecordId;
   created: IsoDateString;
   updated: IsoDateString;
 }
@@ -58,10 +61,23 @@ export interface Location {
   type: LocationType;
   description: string;
   parentId: RecordId; // for hierarchy
+  scope: EntityScope;
+  continuityId: RecordId;
+  originId: RecordId;
+  originContinuityId: RecordId;
+  forkedAt: IsoDateString;
   campaignIds: RecordId[];
   tagIds: RecordId[];
   map: string; // local file path
   images: string[]; // local file paths
+  created: IsoDateString;
+  updated: IsoDateString;
+}
+
+export interface Continuity {
+  id: RecordId;
+  name: string;
+  description: string;
   created: IsoDateString;
   updated: IsoDateString;
 }
@@ -109,6 +125,7 @@ export interface PlayerCharacter {
 export interface CampaignRow {
   id: string;
   name: string;
+  continuityId: string;
   created: string;
   updated: string;
 }
@@ -145,10 +162,23 @@ export interface LocationRow {
   type: string;
   description: string;
   parentId: string;
+  scope: string;
+  continuityId: string;
+  originId: string;
+  originContinuityId: string;
+  forkedAt: string;
   campaignIds: string; // JSON array
   tagIds: string;
   map: string;
   images: string; // JSON array
+  created: string;
+  updated: string;
+}
+
+export interface ContinuityRow {
+  id: string;
+  name: string;
+  description: string;
   created: string;
   updated: string;
 }
@@ -194,6 +224,7 @@ export interface PlayerCharacterRow {
 
 // Table names as const for type safety
 export const Tables = {
+  continuities: 'continuities',
   campaigns: 'campaigns',
   notes: 'notes',
   npcs: 'npcs',

@@ -8,6 +8,7 @@ import {
   useCurrentCampaign,
   useSetCurrentCampaign,
   useCreateCampaign,
+  useContinuities,
   usePullToRefresh,
 } from '../../src/hooks';
 import { useNotes } from '../../src/hooks/useNotes';
@@ -16,6 +17,7 @@ import { useLocations } from '../../src/hooks/useLocations';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import {
   FormModal,
+  FormSelect,
   FormTextInput,
   Screen,
   EmptyState,
@@ -32,8 +34,10 @@ export default function CampaignsScreen() {
   const currentCampaign = useCurrentCampaign();
   const setCurrentCampaign = useSetCurrentCampaign();
   const createCampaign = useCreateCampaign();
+  const continuities = useContinuities();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [draftName, setDraftName] = useState('');
+  const [draftContinuityId, setDraftContinuityId] = useState('');
   const [createError, setCreateError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const hasOpenedFromParams = useRef(false);
@@ -73,9 +77,12 @@ export default function CampaignsScreen() {
 
   const openCreateModal = useCallback(() => {
     setDraftName(`New Campaign ${campaigns.length + 1}`);
+    setDraftContinuityId(
+      currentCampaign?.continuityId ?? continuities[0]?.id ?? ''
+    );
     setCreateError(null);
     setIsCreateOpen(true);
-  }, [campaigns.length]);
+  }, [campaigns.length, continuities, currentCampaign?.continuityId]);
 
   const closeCreateModal = useCallback(() => {
     setIsCreateOpen(false);
@@ -89,9 +96,13 @@ export default function CampaignsScreen() {
       setCreateError('Campaign name is required.');
       return;
     }
+    if (!draftContinuityId) {
+      setCreateError('Select a continuity.');
+      return;
+    }
     setIsCreating(true);
     try {
-      const id = createCampaign({ name: trimmed });
+      const id = createCampaign({ name: trimmed, continuityId: draftContinuityId });
       setCurrentCampaign(id);
       setIsCreateOpen(false);
     } catch (error) {
@@ -100,7 +111,14 @@ export default function CampaignsScreen() {
     } finally {
       setIsCreating(false);
     }
-  }, [createCampaign, draftName, isCreating, setCurrentCampaign]);
+  }, [createCampaign, draftName, draftContinuityId, isCreating, setCurrentCampaign]);
+
+  const continuityOptions = useMemo(() => {
+    return continuities.map((continuity) => ({
+      label: continuity.name || 'Unnamed continuity',
+      value: continuity.id,
+    }));
+  }, [continuities]);
 
   useEffect(() => {
     if (hasOpenedFromParams.current) return;
@@ -136,6 +154,13 @@ export default function CampaignsScreen() {
         label="Campaign name"
         value={draftName}
         onChangeText={setDraftName}
+      />
+      <FormSelect
+        label="Continuity"
+        value={draftContinuityId}
+        options={continuityOptions}
+        onChange={setDraftContinuityId}
+        helperText="Every campaign belongs to a continuity."
       />
       {createError && (
         <Text variant="bodySmall" style={{ color: theme.colors.error }}>

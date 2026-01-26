@@ -21,6 +21,17 @@ export {
   type UpdateCampaignInput,
 } from './useCampaigns';
 
+// Continuities
+export {
+  useContinuities,
+  useContinuity,
+  useCreateContinuity,
+  useUpdateContinuity,
+  useDeleteContinuity,
+  type CreateContinuityInput,
+  type UpdateContinuityInput,
+} from './useContinuities';
+
 // Notes
 export {
   useNotes,

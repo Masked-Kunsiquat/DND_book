@@ -11,9 +11,17 @@ import type { TablesSchema, ValuesSchema } from 'tinybase';
 // Arrays are stored as JSON strings
 
 export const tablesSchema = {
+  continuities: {
+    id: { type: 'string' },
+    name: { type: 'string' },
+    description: { type: 'string' },
+    created: { type: 'string' },
+    updated: { type: 'string' },
+  },
   campaigns: {
     id: { type: 'string' },
     name: { type: 'string' },
+    continuityId: { type: 'string' },
     created: { type: 'string' },
     updated: { type: 'string' },
   },
@@ -47,6 +55,11 @@ export const tablesSchema = {
     type: { type: 'string' },
     description: { type: 'string' },
     parentId: { type: 'string' },
+    scope: { type: 'string' },
+    continuityId: { type: 'string' },
+    originId: { type: 'string' },
+    originContinuityId: { type: 'string' },
+    forkedAt: { type: 'string' },
     campaignIds: { type: 'string' }, // JSON array
     tagIds: { type: 'string' },
     map: { type: 'string' },

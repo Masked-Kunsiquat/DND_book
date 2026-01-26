@@ -32,9 +32,10 @@ export interface LocationRowProps {
 
 interface TypeBadgeProps {
   label: string;
+  variant?: 'default' | 'shared';
 }
 
-function TypeBadge({ label }: TypeBadgeProps) {
+function TypeBadge({ label, variant = 'default' }: TypeBadgeProps) {
   const { theme } = useTheme();
 
   return (
@@ -42,12 +43,21 @@ function TypeBadge({ label }: TypeBadgeProps) {
       style={[
         styles.typeBadge,
         {
-          backgroundColor: theme.colors.surfaceVariant,
-          borderColor: theme.colors.outlineVariant,
+          backgroundColor:
+            variant === 'shared' ? theme.colors.primaryContainer : theme.colors.surfaceVariant,
+          borderColor: variant === 'shared' ? theme.colors.primary : theme.colors.outlineVariant,
         },
       ]}
     >
-      <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+      <Text
+        variant="labelSmall"
+        style={{
+          color:
+            variant === 'shared'
+              ? theme.colors.onPrimaryContainer
+              : theme.colors.onSurfaceVariant,
+        }}
+      >
         {label}
       </Text>
     </View>
@@ -100,6 +110,7 @@ export function LocationRow({
           </Text>
         </View>
         <View style={styles.headerRight}>
+          {location.scope === 'continuity' && <TypeBadge label="Shared" variant="shared" />}
           <TypeBadge label={location.type} />
           <MaterialCommunityIcons
             name="chevron-right"

@@ -18,12 +18,13 @@ import { useTheme } from '../../src/theme/ThemeProvider';
 import { iconSizes, layout, semanticColors, spacing } from '../../src/theme';
 import {
   useCreateLocation,
+  useCampaigns,
   useCurrentCampaign,
   useLocations,
   usePullToRefresh,
   useTags,
 } from '../../src/hooks';
-import type { Location, LocationType, Tag } from '../../src/types/schema';
+import type { EntityScope, Location, LocationType, Tag } from '../../src/types/schema';
 
 const LOCATION_TYPE_OPTIONS: { label: string; value: LocationType }[] = [
   { label: 'Plane', value: 'Plane' },
@@ -35,6 +36,11 @@ const LOCATION_TYPE_OPTIONS: { label: string; value: LocationType }[] = [
   { label: 'Landmark', value: 'Landmark' },
 ];
 const LOCATION_TYPE_ORDER = LOCATION_TYPE_OPTIONS.map((option) => option.value);
+
+const LOCATION_SCOPE_OPTIONS: { label: string; value: EntityScope }[] = [
+  { label: 'Campaign only', value: 'campaign' },
+  { label: 'Shared in continuity', value: 'continuity' },
+];
 
 const getAllowedParentTypes = (type: LocationType): LocationType[] => {
   const index = LOCATION_TYPE_ORDER.indexOf(type);
@@ -56,6 +62,7 @@ const pluralizeLocationType = (type: LocationType, count: number) => {
 export default function LocationsScreen() {
   const { theme } = useTheme();
   const currentCampaign = useCurrentCampaign();
+  const campaigns = useCampaigns();
   const [typeFilter, setTypeFilter] = useState<LocationType | 'all'>('all');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
@@ -64,6 +71,7 @@ export default function LocationsScreen() {
   const [createError, setCreateError] = useState<string | null>(null);
   const [draftName, setDraftName] = useState('');
   const [draftType, setDraftType] = useState<LocationType>('Locale');
+  const [draftScope, setDraftScope] = useState<EntityScope>('campaign');
   const [draftParentId, setDraftParentId] = useState('');
   const [draftDescription, setDraftDescription] = useState('');
   const createLocation = useCreateLocation();
@@ -73,6 +81,13 @@ export default function LocationsScreen() {
   const effectiveCampaignId = currentCampaign?.id;
   const locations = useLocations(effectiveCampaignId);
   const params = useLocalSearchParams<{ tagId?: string | string[] }>();
+
+  const continuityLocations = useMemo(() => {
+    if (!currentCampaign) return [];
+    return allLocations.filter(
+      (location) => location.continuityId === currentCampaign.continuityId
+    );
+  }, [allLocations, currentCampaign]);
 
   const tagParam = useMemo(() => {
     const raw = params.tagId;
@@ -89,7 +104,7 @@ export default function LocationsScreen() {
 
   const { locationById, depthById } = useMemo(() => {
     const locationMap = new Map<string, Location>();
-    allLocations.forEach((location) => {
+    continuityLocations.forEach((location) => {
       locationMap.set(location.id, location);
     });
 
@@ -115,10 +130,10 @@ export default function LocationsScreen() {
       return depth;
     };
 
-    allLocations.forEach((location) => resolveDepth(location));
+    continuityLocations.forEach((location) => resolveDepth(location));
 
     return { locationById: locationMap, depthById: depthMap };
-  }, [allLocations]);
+  }, [continuityLocations]);
 
   const tagById = useMemo(() => {
     return new Map(tags.map((tag) => [tag.id, tag]));
@@ -201,22 +216,24 @@ export default function LocationsScreen() {
   const allowedParentIds = useMemo(() => {
     const allowed = new Set(allowedParentTypes);
     return new Set(
-      allLocations.filter((location) => allowed.has(location.type)).map((location) => location.id)
+      continuityLocations
+        .filter((location) => allowed.has(location.type))
+        .map((location) => location.id)
     );
-  }, [allLocations, allowedParentTypes]);
+  }, [continuityLocations, allowedParentTypes]);
 
   const parentOptions = useMemo(() => {
     const allowed = new Set(allowedParentTypes);
     return [
       { label: 'No parent', value: '' },
-      ...allLocations
+      ...continuityLocations
         .filter((location) => allowed.has(location.type))
         .map((location) => ({
           label: location.name || 'Untitled location',
           value: location.id,
         })),
     ];
-  }, [allLocations, allowedParentTypes]);
+  }, [continuityLocations, allowedParentTypes]);
 
   const parentHelper = useMemo(() => {
     if (allowedParentTypes.length === 0) {
@@ -291,8 +308,9 @@ export default function LocationsScreen() {
   };
 
   const openCreateModal = () => {
-    setDraftName(`New Location ${allLocations.length + 1}`);
+    setDraftName(`New Location ${continuityLocations.length + 1}`);
     setDraftType('Locale');
+    setDraftScope('campaign');
     setDraftParentId('');
     setDraftDescription('');
     setCreateError(null);
@@ -308,7 +326,7 @@ export default function LocationsScreen() {
     const nextType = value as LocationType;
     setDraftType(nextType);
     if (!draftParentId) return;
-    const parent = allLocations.find((location) => location.id === draftParentId);
+    const parent = continuityLocations.find((location) => location.id === draftParentId);
     const allowed = new Set(getAllowedParentTypes(nextType));
     if (!parent || !allowed.has(parent.type)) {
       setDraftParentId('');
@@ -329,13 +347,24 @@ export default function LocationsScreen() {
     setIsCreating(true);
     setCreateError(null);
     try {
+      const continuityId = currentCampaign?.continuityId ?? '';
+      const sharedCampaignIds =
+        draftScope === 'continuity'
+          ? campaigns
+              .filter((campaign) => campaign.continuityId === continuityId)
+              .map((campaign) => campaign.id)
+          : currentCampaign
+            ? [currentCampaign.id]
+            : [];
       await Promise.resolve(
         createLocation({
           name: trimmed,
           type: draftType,
           description: draftDescription,
           parentId: draftParentId || '',
-          campaignIds: currentCampaign ? [currentCampaign.id] : [],
+          scope: draftScope,
+          continuityId,
+          campaignIds: sharedCampaignIds,
         })
       );
       setIsCreateOpen(false);
@@ -378,6 +407,13 @@ export default function LocationsScreen() {
         value={draftType}
         options={LOCATION_TYPE_OPTIONS}
         onChange={handleDraftTypeChange}
+      />
+      <FormSelect
+        label="Scope"
+        value={draftScope}
+        options={LOCATION_SCOPE_OPTIONS}
+        onChange={(value) => setDraftScope(value as EntityScope)}
+        helperText="Shared locations appear in every campaign in this continuity."
       />
       <FormSelect
         label="Parent location"

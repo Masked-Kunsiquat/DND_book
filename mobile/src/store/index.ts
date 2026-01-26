@@ -6,7 +6,7 @@
 import React, { createContext, useContext, useEffect, useState, useRef, type ReactNode } from 'react';
 import { createAppStore, type AppStore } from './schema';
 import { createPersister, type Persister } from './persistence';
-import { generateDeviceId } from '../utils/id';
+import { generateDeviceId, generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
 
 // Context for the store
@@ -30,6 +30,7 @@ export function StoreProvider({ children }: StoreProviderProps) {
     async function initStore() {
       const appStore = createAppStore();
       let persister: Persister | null = null;
+      let didMigrateContinuity = false;
 
       try {
         // Create persister and load existing data
@@ -51,11 +52,61 @@ export function StoreProvider({ children }: StoreProviderProps) {
           appStore.setValue('deviceId', generateDeviceId());
         }
 
+        // Ensure at least one continuity exists
+        const continuitiesTable = appStore.getTable('continuities');
+        let defaultContinuityId = Object.keys(continuitiesTable)[0];
+        if (!defaultContinuityId) {
+          defaultContinuityId = generateId();
+          const timestamp = now();
+          appStore.setRow('continuities', defaultContinuityId, {
+            id: defaultContinuityId,
+            name: 'Default Continuity',
+            description: '',
+            created: timestamp,
+            updated: timestamp,
+          });
+          didMigrateContinuity = true;
+        }
+
+        // Backfill campaign continuity ids
+        const campaignsTable = appStore.getTable('campaigns');
+        Object.entries(campaignsTable).forEach(([campaignId, row]) => {
+          const continuityId = (row as { continuityId?: string }).continuityId;
+          if (!continuityId) {
+            appStore.setRow('campaigns', campaignId, {
+              ...row,
+              continuityId: defaultContinuityId,
+              updated: now(),
+            });
+            didMigrateContinuity = true;
+          }
+        });
+
+        // Backfill location scope metadata
+        const locationsTable = appStore.getTable('locations');
+        Object.entries(locationsTable).forEach(([locationId, row]) => {
+          const scope = (row as { scope?: string }).scope;
+          const continuityId = (row as { continuityId?: string }).continuityId;
+          if (!scope || !continuityId) {
+            appStore.setRow('locations', locationId, {
+              ...row,
+              scope: scope || 'campaign',
+              continuityId: continuityId || defaultContinuityId,
+              originId: (row as { originId?: string }).originId || '',
+              originContinuityId:
+                (row as { originContinuityId?: string }).originContinuityId || '',
+              forkedAt: (row as { forkedAt?: string }).forkedAt || '',
+              updated: now(),
+            });
+            didMigrateContinuity = true;
+          }
+        });
+
         // Start auto-saving changes
         persister.startAutoSave();
 
         // Save immediately if this is first run or device ID was newly set
-        if (!hadData || didSetDeviceId) {
+        if (!hadData || didSetDeviceId || didMigrateContinuity) {
           await persister.save();
         }
       } catch (error) {

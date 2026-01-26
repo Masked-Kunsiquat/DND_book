@@ -25,6 +25,8 @@ import { iconSizes, layout, spacing } from '../../src/theme';
 import {
   useCampaigns,
   useChildLocations,
+  useCurrentCampaign,
+  useCreateLocation,
   useDeleteLocation,
   useGetOrCreateTag,
   useLocation,
@@ -33,6 +35,7 @@ import {
   useTags,
   useUpdateLocation,
 } from '../../src/hooks';
+import { now } from '../../src/utils/id';
 import type { LocationType } from '../../src/types/schema';
 
 function formatDate(value?: string): string {
@@ -80,6 +83,7 @@ export default function LocationDetailScreen() {
   const scopedLocationId = hasLocationId ? locationId : '__missing__';
 
   const location = useLocation(scopedLocationId);
+  const createLocation = useCreateLocation();
   const updateLocation = useUpdateLocation();
   const deleteLocation = useDeleteLocation();
   const allLocations = useLocations();
@@ -88,6 +92,7 @@ export default function LocationDetailScreen() {
   const tags = useTags();
   const getOrCreateTag = useGetOrCreateTag();
   const campaigns = useCampaigns();
+  const currentCampaign = useCurrentCampaign();
 
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState('');
@@ -106,6 +111,11 @@ export default function LocationDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
+  const [isRemoveOpen, setIsRemoveOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [isForking, setIsForking] = useState(false);
 
   const linkedCampaigns = useMemo(() => {
     if (!location) return [];
@@ -113,18 +123,45 @@ export default function LocationDetailScreen() {
     return campaigns.filter((campaign) => ids.has(campaign.id));
   }, [campaigns, location]);
 
+  const continuityId = location?.continuityId || currentCampaign?.continuityId || '';
+
+  const continuityLocations = useMemo(() => {
+    if (!continuityId) return allLocations;
+    return allLocations.filter((item) => item.continuityId === continuityId);
+  }, [allLocations, continuityId]);
+
+  const canRemoveFromCampaign =
+    location?.scope === 'continuity' &&
+    currentCampaign &&
+    location.campaignIds.includes(currentCampaign.id);
+  const showShareActions =
+    location?.scope === 'campaign' ||
+    (location?.scope === 'continuity' && Boolean(currentCampaign));
+
+  const continuityCampaignIds = useMemo(() => {
+    if (!continuityId) return [] as string[];
+    return campaigns
+      .filter((campaign) => campaign.continuityId === continuityId)
+      .map((campaign) => campaign.id);
+  }, [campaigns, continuityId]);
+
+  const continuityCampaignOptions = useMemo(() => {
+    if (!continuityId) return campaigns;
+    return campaigns.filter((campaign) => campaign.continuityId === continuityId);
+  }, [campaigns, continuityId]);
+
   const parentOptions = useMemo(() => {
     const effectiveType =
       (isEditing ? (type as LocationType) : location?.type) ?? 'Locale';
     const allowed = new Set(getAllowedParentTypes(effectiveType));
     const options = [
       { label: 'No parent', value: '' },
-      ...allLocations
+      ...continuityLocations
         .filter((item) => item.id !== locationId && allowed.has(item.type))
         .map((item) => ({ label: item.name || 'Untitled location', value: item.id })),
     ];
     return options;
-  }, [allLocations, isEditing, location?.type, locationId, type]);
+  }, [continuityLocations, isEditing, location?.type, locationId, type]);
 
   const parentHelper = useMemo(() => {
     const effectiveType =
@@ -137,11 +174,11 @@ export default function LocationDetailScreen() {
   }, [isEditing, location?.type, type]);
 
   const campaignOptions = useMemo(() => {
-    return campaigns.map((campaign) => ({
+    return continuityCampaignOptions.map((campaign) => ({
       label: campaign.name || 'Untitled campaign',
       value: campaign.id,
     }));
-  }, [campaigns]);
+  }, [continuityCampaignOptions]);
 
   const displayTagIds = useMemo(() => {
     if (isEditing) return tagIds;
@@ -201,7 +238,7 @@ export default function LocationDetailScreen() {
     const nextType = value as LocationType;
     setType(nextType);
     if (!parentId) return;
-    const parent = allLocations.find((item) => item.id === parentId);
+    const parent = continuityLocations.find((item) => item.id === parentId);
     const allowed = new Set(getAllowedParentTypes(nextType));
     if (!parent || !allowed.has(parent.type)) {
       setParentId('');
@@ -274,7 +311,7 @@ export default function LocationDetailScreen() {
       return;
     }
     if (moveParentId) {
-      const parent = allLocations.find((item) => item.id === moveParentId);
+      const parent = continuityLocations.find((item) => item.id === moveParentId);
       const allowed = new Set(getAllowedParentTypes(location.type));
       if (!parent || !allowed.has(parent.type)) {
         setMoveError('Parent must be higher in the location hierarchy.');
@@ -309,12 +346,12 @@ export default function LocationDetailScreen() {
         setError('Location cannot be its own parent.');
         return;
       }
-      const hasParent = allLocations.some((item) => item.id === parentId);
+      const hasParent = continuityLocations.some((item) => item.id === parentId);
       if (!hasParent) {
         setError('Select a valid parent location.');
         return;
       }
-      const parent = allLocations.find((item) => item.id === parentId);
+      const parent = continuityLocations.find((item) => item.id === parentId);
       const allowed = new Set(getAllowedParentTypes(type as LocationType));
       if (!parent || !allowed.has(parent.type)) {
         setError('Parent must be higher in the location hierarchy.');
@@ -356,6 +393,32 @@ export default function LocationDetailScreen() {
     setIsDeleteOpen(false);
   };
 
+  const handleRemove = () => {
+    if (!location || !currentCampaign || isRemoving) return;
+    setIsRemoveOpen(true);
+  };
+
+  const closeRemoveDialog = () => {
+    setIsRemoveOpen(false);
+  };
+
+  const confirmRemove = () => {
+    if (!location || !currentCampaign || isRemoving) return;
+    try {
+      setIsRemoving(true);
+      updateLocation(location.id, {
+        campaignIds: location.campaignIds.filter((id) => id !== currentCampaign.id),
+      });
+      router.back();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to remove location.';
+      setError(message);
+    } finally {
+      setIsRemoving(false);
+      setIsRemoveOpen(false);
+    }
+  };
+
   const confirmDelete = () => {
     if (!location || isDeleting) return;
     try {
@@ -368,6 +431,78 @@ export default function LocationDetailScreen() {
     } finally {
       setIsDeleting(false);
       setIsDeleteOpen(false);
+    }
+  };
+
+  const handleShare = () => {
+    if (!location || isSharing) return;
+    setIsShareOpen(true);
+  };
+
+  const closeShareDialog = () => {
+    setIsShareOpen(false);
+  };
+
+  const confirmShare = () => {
+    if (!location || isSharing) return;
+    if (!continuityId) {
+      setError('Missing continuity information for this location.');
+      setIsShareOpen(false);
+      return;
+    }
+
+    if (location.parentId) {
+      const parent = continuityLocations.find((item) => item.id === location.parentId);
+      if (parent && parent.scope !== 'continuity') {
+        setError('Share the parent location before sharing this one.');
+        setIsShareOpen(false);
+        return;
+      }
+    }
+
+    setIsSharing(true);
+    try {
+      const sharedCampaignIds =
+        continuityCampaignIds.length > 0 ? continuityCampaignIds : location.campaignIds;
+      updateLocation(location.id, {
+        scope: 'continuity',
+        continuityId,
+        campaignIds: sharedCampaignIds,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to share location.';
+      setError(message);
+    } finally {
+      setIsSharing(false);
+      setIsShareOpen(false);
+    }
+  };
+
+  const handleFork = () => {
+    if (!location || !currentCampaign || isForking) return;
+    setIsForking(true);
+    try {
+      const forkedId = createLocation({
+        name: location.name,
+        type: location.type,
+        description: location.description,
+        parentId: location.parentId || '',
+        scope: 'campaign',
+        continuityId: location.continuityId,
+        originId: location.id,
+        originContinuityId: location.continuityId,
+        forkedAt: now(),
+        campaignIds: [currentCampaign.id],
+        tagIds: location.tagIds,
+        map: location.map,
+        images: location.images,
+      });
+      router.push(`/location/${forkedId}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to fork location.';
+      setError(message);
+    } finally {
+      setIsForking(false);
     }
   };
 
@@ -476,6 +611,11 @@ export default function LocationDetailScreen() {
               <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
                 Type: {isEditing ? type : location.type}
               </Text>
+              {!isEditing && location.scope === 'continuity' && (
+                <Text variant="labelSmall" style={{ color: theme.colors.primary }}>
+                  Shared in continuity
+                </Text>
+              )}
               {!isEditing && parentName && location.parentId && (
                 <Pressable
                   onPress={() => router.push(`/location/${location.parentId}`)}
@@ -508,53 +648,82 @@ export default function LocationDetailScreen() {
             )}
           </View>
 
-        <Section title="Details" icon="map-marker-outline">
-          {isEditing ? (
-            <>
-              <FormSelect
-                label="Type"
-                value={type}
-                options={LOCATION_TYPE_OPTIONS}
-                onChange={handleTypeChange}
-                containerStyle={styles.fieldInput}
-              />
-              <FormSelect
-                label="Parent location"
-                value={parentId}
-                options={parentOptions}
-                onChange={setParentId}
-                helperText={parentHelper}
-                containerStyle={styles.fieldInput}
-              />
-              <FormTextInput
-                label="Description"
-                value={description}
-                onChangeText={setDescription}
-                multiline
-                style={styles.descriptionInput}
-              />
-            </>
-          ) : (
-            <>
-              <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                {location.description?.trim() || 'No description yet.'}
-              </Text>
-              <View style={styles.metaRow}>
-                <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                  Created: {formatDate(location.created)}
+          <Section title="Details" icon="map-marker-outline">
+            {isEditing ? (
+              <>
+                <FormSelect
+                  label="Type"
+                  value={type}
+                  options={LOCATION_TYPE_OPTIONS}
+                  onChange={handleTypeChange}
+                  containerStyle={styles.fieldInput}
+                />
+                <FormSelect
+                  label="Parent location"
+                  value={parentId}
+                  options={parentOptions}
+                  onChange={setParentId}
+                  helperText={parentHelper}
+                  containerStyle={styles.fieldInput}
+                />
+                <FormTextInput
+                  label="Description"
+                  value={description}
+                  onChangeText={setDescription}
+                  multiline
+                  style={styles.descriptionInput}
+                />
+              </>
+            ) : (
+              <>
+                <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                  {location.description?.trim() || 'No description yet.'}
                 </Text>
-                <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                  Updated: {formatDate(location.updated)}
-                </Text>
-              </View>
-              <View style={styles.moveRow}>
-                <Button mode="outlined" icon="swap-vertical" onPress={openMoveModal}>
-                  Move
-                </Button>
-              </View>
-            </>
-          )}
-        </Section>
+                {location.scope === 'continuity' && (
+                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Editing shared locations affects all campaigns in this continuity.
+                  </Text>
+                )}
+                <View style={styles.metaRow}>
+                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Created: {formatDate(location.created)}
+                  </Text>
+                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Updated: {formatDate(location.updated)}
+                  </Text>
+                </View>
+                <View style={styles.moveRow}>
+                  <Button mode="outlined" icon="swap-vertical" onPress={openMoveModal}>
+                    Move
+                  </Button>
+                </View>
+                {showShareActions && (
+                  <View style={styles.shareRow}>
+                    {location.scope === 'campaign' && (
+                      <Button
+                        mode="outlined"
+                        icon="share-variant"
+                        onPress={handleShare}
+                        disabled={isSharing}
+                      >
+                        Share to Continuity
+                      </Button>
+                    )}
+                    {location.scope === 'continuity' && currentCampaign && (
+                      <Button
+                        mode="outlined"
+                        icon="source-fork"
+                        onPress={handleFork}
+                        disabled={isForking}
+                      >
+                        Fork to Campaign
+                      </Button>
+                    )}
+                  </View>
+                )}
+              </>
+            )}
+          </Section>
 
         <Section title="Campaigns" icon="folder-outline">
           {isEditing ? (
@@ -683,6 +852,16 @@ export default function LocationDetailScreen() {
               <Button mode="outlined" onPress={() => router.back()} style={styles.actionButton}>
                 Back
               </Button>
+              {canRemoveFromCampaign && (
+                <Button
+                  mode="outlined"
+                  icon="link-off"
+                  onPress={handleRemove}
+                  style={styles.actionButton}
+                >
+                  Remove
+                </Button>
+              )}
               <Button
                 mode="outlined"
                 icon="trash-can-outline"
@@ -701,12 +880,34 @@ export default function LocationDetailScreen() {
       <ConfirmDialog
         visible={isDeleteOpen}
         title="Delete location?"
-        description="This will remove the location and leave any children orphaned."
+        description={
+          location?.scope === 'continuity'
+            ? 'This deletes the shared location for every campaign in this continuity.'
+            : 'This will remove the location and leave any children orphaned.'
+        }
         confirmLabel="Delete"
         onCancel={closeDeleteDialog}
         onConfirm={confirmDelete}
         confirmLoading={isDeleting}
         destructive
+      />
+      <ConfirmDialog
+        visible={isRemoveOpen}
+        title="Remove from campaign?"
+        description="This will remove the location from this campaign only."
+        confirmLabel="Remove"
+        onCancel={closeRemoveDialog}
+        onConfirm={confirmRemove}
+        confirmLoading={isRemoving}
+      />
+      <ConfirmDialog
+        visible={isShareOpen}
+        title="Share to continuity?"
+        description="Shared locations appear in every campaign in this continuity."
+        confirmLabel="Share"
+        onCancel={closeShareDialog}
+        onConfirm={confirmShare}
+        confirmLoading={isSharing}
       />
       {moveModal}
     </>
@@ -766,6 +967,10 @@ const styles = StyleSheet.create({
   moveRow: {
     marginTop: spacing[3],
     alignSelf: 'flex-start',
+  },
+  shareRow: {
+    marginTop: spacing[2],
+    gap: spacing[2],
   },
   tagsRow: {
     flexDirection: 'row',
