@@ -5,6 +5,7 @@ import { Stack, router, useLocalSearchParams } from 'expo-router';
 import {
   AppCard,
   EmptyState,
+  FormDateTimePicker,
   FormModal,
   FormMultiSelect,
   FormTextInput,
@@ -129,11 +130,11 @@ export default function CampaignSessionsScreen() {
       }
     >
       <FormTextInput label="Title" value={draftTitle} onChangeText={setDraftTitle} />
-      <FormTextInput
+      <FormDateTimePicker
         label="Date"
         value={draftDate}
-        onChangeText={setDraftDate}
-        helperText="Use ISO format or a readable date."
+        onChange={setDraftDate}
+        helperText="Defaults to now."
       />
       <FormTextInput
         label="Summary"

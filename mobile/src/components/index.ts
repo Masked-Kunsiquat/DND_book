@@ -26,6 +26,7 @@ export { FormSelect, type FormSelectProps } from './forms/FormSelect';
 export { FormMultiSelect, type FormMultiSelectProps } from './forms/FormMultiSelect';
 export { FormImagePicker, type FormImagePickerProps } from './forms/FormImagePicker';
 export { FormImageGallery, type FormImageGalleryProps } from './forms/FormImageGallery';
+export { FormDateTimePicker, type FormDateTimePickerProps } from './forms/FormDateTimePicker';
 export { TagInput, type TagInputProps } from './forms/TagInput';
 export { FormModal, type FormModalProps } from './forms/FormModal';
 export { ConfirmDialog, type ConfirmDialogProps } from './forms/ConfirmDialog';

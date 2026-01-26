@@ -7,6 +7,7 @@ import {
   AvatarGroup,
   ConfirmDialog,
   EmptyState,
+  FormDateTimePicker,
   FormMultiSelect,
   FormTextInput,
   LocationCard,
@@ -350,11 +351,11 @@ export default function SessionDetailScreen() {
             {isEditing ? (
               <>
                 <FormTextInput label="Title" value={title} onChangeText={setTitle} />
-                <FormTextInput
+                <FormDateTimePicker
                   label="Date"
                   value={date}
-                  onChangeText={setDate}
-                  helperText="Use ISO or a readable date."
+                  onChange={setDate}
+                  helperText="Pick the session date."
                 />
               </>
             ) : (
