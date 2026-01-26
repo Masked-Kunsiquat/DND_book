@@ -19,6 +19,7 @@ import { spacing } from '../../src/theme';
 import {
   useCampaign,
   useCampaigns,
+  useCurrentCampaign,
   useDeleteNote,
   useGetOrCreateTag,
   useLocations,
@@ -45,6 +46,7 @@ export default function NoteDetailScreen() {
   const note = useNote(noteId);
   const campaign = useCampaign(note?.campaignId ?? '');
   const campaigns = useCampaigns();
+  const currentCampaign = useCurrentCampaign();
   const locations = useLocations();
   const tags = useTags();
   const updateNote = useUpdateNote();
@@ -71,12 +73,19 @@ export default function NoteDetailScreen() {
     }
   }, [note, isEditing]);
 
+  const continuityId = campaign?.continuityId || currentCampaign?.continuityId || '';
+
+  const continuityCampaigns = useMemo(() => {
+    if (!continuityId) return campaigns;
+    return campaigns.filter((item) => item.continuityId === continuityId);
+  }, [campaigns, continuityId]);
+
   const campaignOptions = useMemo(() => {
-    return campaigns.map((item) => ({
+    return continuityCampaigns.map((item) => ({
       label: item.name || 'Untitled campaign',
       value: item.id,
     }));
-  }, [campaigns]);
+  }, [continuityCampaigns]);
 
   const locationOptions = useMemo(() => {
     const filtered = campaignId

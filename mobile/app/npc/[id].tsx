@@ -20,6 +20,7 @@ import { iconSizes, spacing } from '../../src/theme';
 import type { Tag } from '../../src/types/schema';
 import {
   useCampaigns,
+  useCurrentCampaign,
   useDeleteNpc,
   useGetOrCreateTag,
   useLocations,
@@ -49,6 +50,7 @@ export default function NpcDetailScreen() {
   const deleteNpc = useDeleteNpc();
   const getOrCreateTag = useGetOrCreateTag();
   const campaigns = useCampaigns();
+  const currentCampaign = useCurrentCampaign();
   const locations = useLocations();
   const notes = useNotes();
   const tags = useTags();
@@ -81,12 +83,24 @@ export default function NpcDetailScreen() {
     }
   }, [npc, isEditing]);
 
+  const continuityId = useMemo(() => {
+    if (currentCampaign?.continuityId) return currentCampaign.continuityId;
+    const firstCampaignId = npc?.campaignIds[0];
+    const linked = campaigns.find((campaign) => campaign.id === firstCampaignId);
+    return linked?.continuityId ?? '';
+  }, [campaigns, currentCampaign?.continuityId, npc?.campaignIds]);
+
+  const continuityCampaigns = useMemo(() => {
+    if (!continuityId) return campaigns;
+    return campaigns.filter((campaign) => campaign.continuityId === continuityId);
+  }, [campaigns, continuityId]);
+
   const campaignOptions = useMemo(() => {
-    return campaigns.map((campaign) => ({
+    return continuityCampaigns.map((campaign) => ({
       label: campaign.name || 'Untitled campaign',
       value: campaign.id,
     }));
-  }, [campaigns]);
+  }, [continuityCampaigns]);
 
   const locationOptions = useMemo(() => {
     return locations.map((location) => ({
