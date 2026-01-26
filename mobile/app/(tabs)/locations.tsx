@@ -175,8 +175,15 @@ export default function LocationsScreen() {
         return (a.name || '').localeCompare(b.name || '');
       });
       const count = data.length + (visibleIdSet.has(section.root.id) ? 1 : 0);
+      const isRootVisible = visibleIdSet.has(section.root.id);
 
-      return { title: section.root.name || 'Unnamed location', root: section.root, data, count };
+      return {
+        title: section.root.name || 'Unnamed location',
+        root: section.root,
+        data,
+        count,
+        isRootVisible,
+      };
     });
   }, [visibleLocations, rootById, depthById, visibleIdSet]);
 
@@ -592,6 +599,7 @@ export default function LocationsScreen() {
                   backgroundColor: theme.colors.surfaceVariant,
                   borderColor: theme.colors.outlineVariant,
                 },
+                !section.isRootVisible && styles.rootHeaderDimmed,
               ]}
             >
               <View style={styles.rootHeaderText}>
@@ -603,6 +611,21 @@ export default function LocationsScreen() {
                 </Text>
               </View>
               <View style={styles.rootHeaderMeta}>
+                {!section.isRootVisible && (
+                  <View
+                    style={[
+                      styles.rootFilteredPill,
+                      {
+                        backgroundColor: theme.colors.surface,
+                        borderColor: theme.colors.outlineVariant,
+                      },
+                    ]}
+                  >
+                    <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                      Filtered
+                    </Text>
+                  </View>
+                )}
                 <View
                   style={[
                     styles.rootCountPill,
@@ -741,10 +764,19 @@ const styles = StyleSheet.create({
     gap: spacing[1],
     marginRight: spacing[2],
   },
+  rootHeaderDimmed: {
+    opacity: 0.7,
+  },
   rootHeaderMeta: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[2],
+  },
+  rootFilteredPill: {
+    borderRadius: layout.cardBorderRadius,
+    borderWidth: 1,
+    paddingHorizontal: spacing[1.5],
+    paddingVertical: spacing[0.5],
   },
   rootCountPill: {
     borderRadius: layout.cardBorderRadius,
