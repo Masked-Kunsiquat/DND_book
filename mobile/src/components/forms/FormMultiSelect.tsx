@@ -69,8 +69,16 @@ export function FormMultiSelect({
 
   const handleOpen = () => {
     if (!disabled) {
-      setVisible(true);
+      setTimeout(() => setVisible(true), 0);
     }
+  };
+
+  const handleToggle = () => {
+    if (visible) {
+      setVisible(false);
+      return;
+    }
+    handleOpen();
   };
 
   const handleClose = () => setVisible(false);
@@ -93,9 +101,11 @@ export function FormMultiSelect({
       <Menu
         visible={visible}
         onDismiss={handleClose}
+        anchorPosition="bottom"
+        keyboardShouldPersistTaps="handled"
         anchor={
-          <Pressable onPress={handleOpen} disabled={disabled}>
-            <View pointerEvents="none">
+          <Pressable onPress={handleToggle} disabled={disabled}>
+            <View pointerEvents="none" collapsable={false}>
               <TextInput
                 mode="outlined"
                 label={label}

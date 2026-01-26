@@ -47,7 +47,16 @@ function HeaderMenu() {
   const { theme } = useTheme();
   const [visible, setVisible] = useState(false);
 
-  const openMenu = () => setVisible(true);
+  const openMenu = () => {
+    setTimeout(() => setVisible(true), 0);
+  };
+  const toggleMenu = () => {
+    if (visible) {
+      setVisible(false);
+      return;
+    }
+    openMenu();
+  };
   const closeMenu = () => setVisible(false);
 
   const goToSettings = () => {
@@ -59,10 +68,11 @@ function HeaderMenu() {
     <Menu
       visible={visible}
       onDismiss={closeMenu}
+      anchorPosition="bottom"
       anchor={
         <IconButton
           icon="dots-vertical"
-          onPress={openMenu}
+          onPress={toggleMenu}
           iconColor={theme.colors.onSurface}
           accessibilityLabel="Open menu"
           style={{ marginRight: spacing[1] }}
