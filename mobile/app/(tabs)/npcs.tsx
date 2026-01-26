@@ -225,7 +225,7 @@ export default function NpcsScreen() {
         onChange={setDraftNoteIds}
       />
       <TagInput
-        tags={tags.map((tag) => ({ id: tag.id, name: tag.name }))}
+        tags={tags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color }))}
         selectedIds={draftTagIds}
         onChange={setDraftTagIds}
         onCreateTag={handleCreateTag}
@@ -342,6 +342,7 @@ export default function NpcsScreen() {
                       key={tag.id}
                       id={tag.id}
                       name={tag.name}
+                      color={tag.color}
                       size="small"
                       selected={selectedTagIds.includes(tag.id)}
                       onPress={() => toggleTag(tag.id)}

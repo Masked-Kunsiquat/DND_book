@@ -69,6 +69,7 @@ export interface Location {
 export interface Tag {
   id: RecordId;
   name: string;
+  color: string;
   created: IsoDateString;
   updated: IsoDateString;
 }
@@ -154,6 +155,7 @@ export interface LocationRow {
 export interface TagRow {
   id: string;
   name: string;
+  color: string;
   created: string;
   updated: string;
 }

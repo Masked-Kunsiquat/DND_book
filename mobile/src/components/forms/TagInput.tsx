@@ -12,6 +12,7 @@ import { spacing } from '../../theme';
 export interface TagOption {
   id: string;
   name: string;
+  color?: string;
 }
 
 export interface TagInputProps {
@@ -112,6 +113,7 @@ export function TagInput({
               key={tag.id}
               id={tag.id}
               name={tag.name}
+              color={tag.color}
               size="small"
               onClose={() => handleRemove(tag.id)}
             />
@@ -129,6 +131,7 @@ export function TagInput({
                 key={tag.id}
                 id={tag.id}
                 name={tag.name}
+                color={tag.color}
                 size="small"
                 onPress={() => handleAdd(tag.id)}
               />

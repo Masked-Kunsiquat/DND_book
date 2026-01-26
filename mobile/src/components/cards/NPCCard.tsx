@@ -72,6 +72,7 @@ export function NPCCard({ npc, tags = [], onTagPress, onPress, style }: NPCCardP
               key={tag.id}
               id={tag.id}
               name={tag.name}
+              color={tag.color}
               size="small"
               onPress={onTagPress ? () => onTagPress(tag.id) : undefined}
             />

@@ -7,6 +7,7 @@ import { useTable } from 'tinybase/ui-react';
 import { useStore } from '../store';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
+import { getTagColor } from '../theme';
 import type { Tag, TagRow } from '../types/schema';
 
 const log = createLogger('tags');
@@ -18,6 +19,7 @@ function rowToTag(row: TagRow): Tag {
   return {
     id: row.id,
     name: row.name,
+    color: row.color || getTagColor(row.id).bg,
     created: row.created,
     updated: row.updated,
   };
@@ -98,6 +100,7 @@ export function useTagByName(name: string): Tag | null {
 
 export interface CreateTagInput {
   name: string;
+  color?: string;
 }
 
 /**
@@ -111,10 +114,12 @@ export function useCreateTag(): (data: CreateTagInput) => string {
       log.debug('Creating tag', data.name);
       const id = generateId();
       const timestamp = now();
+      const color = data.color || getTagColor(id).bg;
 
       store.setRow('tags', id, {
         id,
         name: data.name,
+        color,
         created: timestamp,
         updated: timestamp,
       });
@@ -153,10 +158,12 @@ export function useGetOrCreateTag(): (name: string) => string {
 
         const id = generateId();
         const timestamp = now();
+        const color = getTagColor(id).bg;
 
         store.setRow('tags', id, {
           id,
           name,
+          color,
           created: timestamp,
           updated: timestamp,
         });
@@ -179,6 +186,7 @@ export function useGetOrCreateTag(): (name: string) => string {
 
 export interface UpdateTagInput {
   name?: string;
+  color?: string;
 }
 
 /**
@@ -197,6 +205,7 @@ export function useUpdateTag(): (id: string, data: UpdateTagInput) => void {
 
       const updates: Record<string, string> = { updated: now() };
       if (data.name !== undefined) updates.name = data.name;
+      if (data.color !== undefined) updates.color = data.color;
 
       store.setRow('tags', id, {
         ...existing,

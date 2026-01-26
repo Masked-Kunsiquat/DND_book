@@ -622,6 +622,7 @@ export default function LocationsScreen() {
                             key={tag.id}
                             id={tag.id}
                             name={tag.name}
+                            color={tag.color}
                             size="small"
                             selected={selectedTagIds.includes(tag.id)}
                             onPress={() => toggleTag(tag.id)}

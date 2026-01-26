@@ -277,7 +277,7 @@ export default function NoteDetailScreen() {
                 helperText="Optional: link this note to locations."
               />
               <TagInput
-                tags={tags.map((tag) => ({ id: tag.id, name: tag.name }))}
+                tags={tags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color }))}
                 selectedIds={tagIds}
                 onChange={setTagIds}
                 onCreateTag={handleCreateTag}
@@ -306,6 +306,7 @@ export default function NoteDetailScreen() {
                       key={tag.id}
                       id={tag.id}
                       name={tag.name}
+                      color={tag.color}
                       size="small"
                       onPress={() => router.push(`/tag/${tag.id}`)}
                     />

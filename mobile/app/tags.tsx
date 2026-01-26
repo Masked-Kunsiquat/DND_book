@@ -3,9 +3,10 @@ import { FlatList, StyleSheet, View } from 'react-native';
 import { Button, FAB, Text, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Stack, router } from 'expo-router';
-import { AppCard, EmptyState, FormModal, FormTextInput, Screen } from '../src/components';
+import ColorPicker, { Swatches } from 'reanimated-color-picker';
+import { AppCard, EmptyState, FormModal, FormTextInput, Screen, TagChip } from '../src/components';
 import { useTheme } from '../src/theme/ThemeProvider';
-import { layout, spacing } from '../src/theme';
+import { layout, spacing, tagColors } from '../src/theme';
 import {
   useCreateTag,
   useLocations,
@@ -24,6 +25,8 @@ type TagUsage = {
 };
 
 const EMPTY_USAGE: TagUsage = { notes: 0, npcs: 0, locations: 0, sessions: 0 };
+const TAG_SWATCHES = tagColors.map((tag) => tag.bg);
+const DEFAULT_TAG_COLOR = TAG_SWATCHES[0] ?? '#3b82f6';
 
 function buildUsageLabel(usage: TagUsage): string {
   const parts: string[] = [];
@@ -50,6 +53,7 @@ export default function TagsScreen() {
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [draftName, setDraftName] = useState('');
+  const [draftColor, setDraftColor] = useState(DEFAULT_TAG_COLOR);
 
   const tagUsage = useMemo(() => {
     const map = new Map<string, TagUsage>();
@@ -87,6 +91,7 @@ export default function TagsScreen() {
 
   const openCreateModal = () => {
     setDraftName('');
+    setDraftColor(DEFAULT_TAG_COLOR);
     setCreateError(null);
     setIsCreateOpen(true);
   };
@@ -110,7 +115,7 @@ export default function TagsScreen() {
     setIsCreating(true);
     setCreateError(null);
     try {
-      createTag({ name: trimmed });
+      createTag({ name: trimmed, color: draftColor });
       setIsCreateOpen(false);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to create tag.';
@@ -137,6 +142,24 @@ export default function TagsScreen() {
       }
     >
       <FormTextInput label="Name" value={draftName} onChangeText={setDraftName} />
+      <Text variant="labelMedium" style={{ color: theme.colors.onSurface }}>
+        Color
+      </Text>
+      <View style={styles.colorPreviewRow}>
+        <TagChip
+          id="preview"
+          name={draftName.trim() || 'New tag'}
+          color={draftColor}
+          size="small"
+        />
+      </View>
+      <ColorPicker value={draftColor} onChangeJS={(color) => setDraftColor(color.hex)}>
+        <Swatches
+          colors={TAG_SWATCHES}
+          style={styles.swatches}
+          swatchStyle={styles.swatch}
+        />
+      </ColorPicker>
       {createError && (
         <Text variant="bodySmall" style={{ color: theme.colors.error }}>
           {createError}
@@ -260,6 +283,17 @@ const styles = StyleSheet.create({
   },
   cardWrapper: {
     marginBottom: spacing[3],
+  },
+  colorPreviewRow: {
+    alignItems: 'flex-start',
+  },
+  swatches: {
+    justifyContent: 'flex-start',
+    gap: spacing[2],
+  },
+  swatch: {
+    marginHorizontal: spacing[0.5],
+    marginBottom: spacing[1.5],
   },
   fab: {
     position: 'absolute',

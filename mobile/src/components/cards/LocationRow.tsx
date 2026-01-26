@@ -127,6 +127,7 @@ export function LocationRow({
               key={tag.id}
               id={tag.id}
               name={tag.name}
+              color={tag.color}
               size="small"
               onPress={onTagPress ? () => onTagPress(tag.id) : undefined}
             />

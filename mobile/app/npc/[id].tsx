@@ -323,7 +323,7 @@ export default function NpcDetailScreen() {
                 onChange={setNoteIds}
               />
               <TagInput
-                tags={tags.map((tag) => ({ id: tag.id, name: tag.name }))}
+                tags={tags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color }))}
                 selectedIds={tagIds}
                 onChange={setTagIds}
                 onCreateTag={handleCreateTag}
@@ -380,6 +380,7 @@ export default function NpcDetailScreen() {
                       key={tag.id}
                       id={tag.id}
                       name={tag.name}
+                      color={tag.color}
                       size="small"
                       onPress={() => router.push(`/tag/${tag.id}`)}
                     />
