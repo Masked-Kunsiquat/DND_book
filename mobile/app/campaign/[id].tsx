@@ -37,6 +37,13 @@ function formatDate(value?: string): string {
   return parsed.toLocaleString();
 }
 
+function formatSessionDate(value?: string): string {
+  if (!value) return 'Unknown';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return 'Unknown';
+  return parsed.toLocaleDateString();
+}
+
 export default function CampaignDetailScreen() {
   const { theme } = useTheme();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
@@ -332,7 +339,9 @@ export default function CampaignDetailScreen() {
               <AppCard
                 key={session.id}
                 title={session.title || 'Untitled session'}
-                subtitle={session.summary?.trim() ? session.summary : formatDate(session.date)}
+                subtitle={
+                  session.summary?.trim() ? session.summary : formatSessionDate(session.date)
+                }
                 onPress={() => router.push(`/session/${session.id}`)}
               />
             ))

@@ -21,13 +21,19 @@ import {
   usePullToRefresh,
   useSessionLogsByDate,
 } from '../../../src/hooks';
-import { now } from '../../../src/utils/id';
 
 function formatDate(value?: string): string {
   if (!value) return 'Unknown date';
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return value;
-  return parsed.toLocaleString();
+  return parsed.toLocaleDateString();
+}
+
+function formatDateOnly(value: Date): string {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, '0');
+  const day = String(value.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 export default function CampaignSessionsScreen() {
@@ -66,7 +72,7 @@ export default function CampaignSessionsScreen() {
 
   const openCreateModal = () => {
     setDraftTitle(`Session ${sessions.length + 1}`);
-    setDraftDate(now());
+    setDraftDate(formatDateOnly(new Date()));
     setDraftSummary('');
     setDraftPlayerIds(party.map((pc) => pc.id));
     setCreateError(null);
@@ -92,7 +98,7 @@ export default function CampaignSessionsScreen() {
       setCreateError('Session title is required.');
       return;
     }
-    const dateValue = draftDate.trim() || now();
+    const dateValue = draftDate.trim() || formatDateOnly(new Date());
 
     setIsCreating(true);
     setCreateError(null);
@@ -134,7 +140,8 @@ export default function CampaignSessionsScreen() {
         label="Date"
         value={draftDate}
         onChange={setDraftDate}
-        helperText="Defaults to now."
+        mode="date"
+        helperText="Defaults to today."
       />
       <FormTextInput
         label="Summary"

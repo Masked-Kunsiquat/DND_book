@@ -5,11 +5,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Button, Modal, Portal, Text, TextInput } from 'react-native-paper';
-import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import DateTimePicker, {
+  DateTimePickerAndroid,
+  DateTimePickerEvent,
+} from '@react-native-community/datetimepicker';
 import { useTheme } from '../../theme/ThemeProvider';
 import { spacing } from '../../theme';
 
-type DateTimeMode = 'date' | 'time' | 'datetime';
+type DateTimeMode = 'date' | 'time';
 
 export interface FormDateTimePickerProps {
   /** Field label */
@@ -32,27 +35,33 @@ export interface FormDateTimePickerProps {
   containerStyle?: object;
 }
 
-function formatValue(value?: string, mode: DateTimeMode = 'datetime') {
+function formatValue(value?: string, mode: DateTimeMode = 'date') {
   if (!value) return '';
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return value;
-  if (mode === 'date') return parsed.toLocaleDateString();
   if (mode === 'time') return parsed.toLocaleTimeString();
-  return parsed.toLocaleString();
+  return parsed.toLocaleDateString();
+}
+
+function formatDateOnly(value: Date): string {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, '0');
+  const day = String(value.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 export function FormDateTimePicker({
   label,
   value,
   onChange,
-  mode = 'datetime',
+  mode = 'date',
   placeholder = 'Select date',
   helperText,
   error,
   disabled = false,
   containerStyle,
 }: FormDateTimePickerProps) {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const [visible, setVisible] = useState(false);
   const parsedValue = useMemo(() => {
     const dateValue = value ? new Date(value) : new Date();
@@ -69,9 +78,19 @@ export function FormDateTimePicker({
   }, [parsedValue, visible]);
 
   const openPicker = () => {
-    if (!disabled) {
-      setVisible(true);
+    if (disabled) return;
+    if (Platform.OS === 'android') {
+      DateTimePickerAndroid.open({
+        value: tempDate,
+        onChange: handleChange,
+        mode,
+        display: 'default',
+        is24Hour: false,
+        design: 'material',
+      });
+      return;
     }
+    setVisible(true);
   };
 
   const closePicker = () => setVisible(false);
@@ -83,14 +102,18 @@ export function FormDateTimePicker({
 
     if (Platform.OS === 'android') {
       if (event.type === 'set' && selected) {
-        onChange(selected.toISOString());
+        const nextValue =
+          mode === 'date' ? formatDateOnly(selected) : selected.toISOString();
+        onChange(nextValue);
       }
       closePicker();
     }
   };
 
   const handleConfirm = () => {
-    onChange(tempDate.toISOString());
+    const nextValue =
+      mode === 'date' ? formatDateOnly(tempDate) : tempDate.toISOString();
+    onChange(nextValue);
     closePicker();
   };
 
@@ -113,25 +136,26 @@ export function FormDateTimePicker({
         </View>
       </Pressable>
       <Portal>
-        <Modal
-          visible={visible}
-          onDismiss={closePicker}
-          contentContainerStyle={[
-            styles.modal,
-            { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant },
-          ]}
-        >
-          <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-            {label}
-          </Text>
-          <DateTimePicker
-            value={tempDate}
-            mode={mode}
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-            onChange={handleChange}
-            textColor={theme.colors.onSurface}
-          />
-          {Platform.OS === 'ios' && (
+        {Platform.OS === 'ios' && (
+          <Modal
+            visible={visible}
+            onDismiss={closePicker}
+            contentContainerStyle={[
+              styles.modal,
+              { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant },
+            ]}
+          >
+            <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+              {label}
+            </Text>
+            <DateTimePicker
+              value={tempDate}
+              mode={mode}
+              display="spinner"
+              onChange={handleChange}
+              textColor={theme.colors.onSurface}
+              themeVariant={isDark ? 'dark' : 'light'}
+            />
             <View style={styles.actions}>
               <Button mode="text" onPress={closePicker}>
                 Cancel
@@ -140,8 +164,8 @@ export function FormDateTimePicker({
                 Done
               </Button>
             </View>
-          )}
-        </Modal>
+          </Modal>
+        )}
       </Portal>
       {message ? (
         <Text

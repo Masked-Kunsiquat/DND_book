@@ -32,13 +32,26 @@ import {
   useTags,
   useUpdateSessionLog,
 } from '../../src/hooks';
-import { now } from '../../src/utils/id';
 
 function formatDate(value?: string): string {
   if (!value) return 'Unknown';
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return 'Unknown';
   return parsed.toLocaleString();
+}
+
+function formatSessionDate(value?: string): string {
+  if (!value) return 'Unknown';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return 'Unknown';
+  return parsed.toLocaleDateString();
+}
+
+function formatDateOnly(value: Date): string {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, '0');
+  const day = String(value.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 export default function SessionDetailScreen() {
@@ -282,7 +295,7 @@ export default function SessionDetailScreen() {
       setError('Session title is required.');
       return;
     }
-    const resolvedDate = date.trim() || now();
+    const resolvedDate = date.trim() || formatDateOnly(new Date());
     setError(null);
     try {
       updateSessionLog(session.id, {
@@ -355,6 +368,7 @@ export default function SessionDetailScreen() {
                   label="Date"
                   value={date}
                   onChange={setDate}
+                  mode="date"
                   helperText="Pick the session date."
                 />
               </>
@@ -364,7 +378,7 @@ export default function SessionDetailScreen() {
                   {session.title || 'Untitled session'}
                 </Text>
                 <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                  {formatDate(session.date)}
+                  {formatSessionDate(session.date)}
                 </Text>
               </>
             )}
