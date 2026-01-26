@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { Text } from 'react-native-paper';
-import { AppCard, Screen, Section } from '../../src/components';
+import { AppCard, ComingSoonBadge, Screen, Section } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { spacing } from '../../src/theme';
 
@@ -12,7 +12,11 @@ export default function AppearanceSettingsScreen() {
     <Screen>
       <Stack.Screen options={{ title: 'Appearance' }} />
       <Section title="Theme" icon="palette-outline">
-        <AppCard title="Theme Mode" subtitle="Light, dark, or system (coming soon)." />
+        <AppCard
+          title="Theme Mode"
+          subtitle="Light, dark, or system."
+          right={<ComingSoonBadge />}
+        />
         <View style={styles.note}>
           <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
             Appearance settings will live here.

@@ -58,7 +58,7 @@ export default function LocationsScreen() {
   const currentCampaign = useCurrentCampaign();
   const [onlyCurrent, setOnlyCurrent] = useState(true);
   const [typeFilter, setTypeFilter] = useState<LocationType | 'all'>('all');
-  const [filtersOpen, setFiltersOpen] = useState(true);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
