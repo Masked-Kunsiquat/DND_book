@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, IconButton, Text } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import {
   AppCard,
@@ -8,6 +9,7 @@ import {
   ConfirmDialog,
   EmptyState,
   FormDateTimePicker,
+  FormModal,
   FormMultiSelect,
   FormTextInput,
   LocationCard,
@@ -74,6 +76,7 @@ export default function SessionDetailScreen() {
   const getOrCreateTag = useGetOrCreateTag();
 
   const [isEditing, setIsEditing] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
   const [summary, setSummary] = useState('');
@@ -88,6 +91,9 @@ export default function SessionDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [activeLinkModal, setActiveLinkModal] = useState<
+    'participants' | 'campaigns' | 'locations' | 'npcs' | 'notes' | 'tags' | null
+  >(null);
 
   useEffect(() => {
     if (session && !isEditing) {
@@ -267,6 +273,7 @@ export default function SessionDetailScreen() {
     setPlayerCharacterIds(session.playerCharacterIds);
     setTagIds(session.tagIds);
     setError(null);
+    setShowAdvanced(false);
     setIsEditing(true);
   };
 
@@ -285,6 +292,7 @@ export default function SessionDetailScreen() {
       setTagIds(session.tagIds);
     }
     setError(null);
+    setShowAdvanced(false);
     setIsEditing(false);
   };
 
@@ -326,6 +334,95 @@ export default function SessionDetailScreen() {
   const closeDeleteDialog = () => {
     setIsDeleteOpen(false);
   };
+
+  const openLinkModal = (
+    target: 'participants' | 'campaigns' | 'locations' | 'npcs' | 'notes' | 'tags'
+  ) => {
+    setActiveLinkModal(target);
+  };
+
+  const closeLinkModal = () => setActiveLinkModal(null);
+
+  const linkModalTitle = (() => {
+    switch (activeLinkModal) {
+      case 'participants':
+        return 'Participants';
+      case 'campaigns':
+        return 'Campaigns';
+      case 'locations':
+        return 'Locations';
+      case 'npcs':
+        return 'NPCs';
+      case 'notes':
+        return 'Notes';
+      case 'tags':
+        return 'Tags';
+      default:
+        return '';
+    }
+  })();
+
+  const linkModalBody = (() => {
+    switch (activeLinkModal) {
+      case 'participants':
+        return (
+          <FormMultiSelect
+            label="Player characters"
+            value={playerCharacterIds}
+            options={playerOptions}
+            onChange={setPlayerCharacterIds}
+            helperText="Choose who took part in this session."
+          />
+        );
+      case 'campaigns':
+        return (
+          <FormMultiSelect
+            label="Campaigns"
+            value={campaignIds}
+            options={campaignOptions}
+            onChange={handleCampaignChange}
+          />
+        );
+      case 'locations':
+        return (
+          <FormMultiSelect
+            label="Locations"
+            value={locationIds}
+            options={locationOptions}
+            onChange={setLocationIds}
+          />
+        );
+      case 'npcs':
+        return (
+          <FormMultiSelect
+            label="NPCs"
+            value={npcIds}
+            options={npcOptions}
+            onChange={setNpcIds}
+          />
+        );
+      case 'notes':
+        return (
+          <FormMultiSelect
+            label="Notes"
+            value={noteIds}
+            options={noteOptions}
+            onChange={setNoteIds}
+          />
+        );
+      case 'tags':
+        return (
+          <TagInput
+            tags={tags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color }))}
+            selectedIds={tagIds}
+            onChange={setTagIds}
+            onCreateTag={handleCreateTag}
+          />
+        );
+      default:
+        return null;
+    }
+  })();
 
   const confirmDelete = () => {
     if (!session || isDeleting) return;
@@ -398,20 +495,28 @@ export default function SessionDetailScreen() {
                 multiline
                 style={styles.summaryInput}
               />
-              <FormTextInput
-                label="Key decisions"
-                value={keyDecisions}
-                onChangeText={setKeyDecisions}
-                multiline
-                style={styles.summaryInput}
-              />
-              <FormTextInput
-                label="Outcomes"
-                value={outcomes}
-                onChangeText={setOutcomes}
-                multiline
-                style={styles.summaryInput}
-              />
+              {showAdvanced ? (
+                <>
+                  <FormTextInput
+                    label="Key decisions"
+                    value={keyDecisions}
+                    onChangeText={setKeyDecisions}
+                    multiline
+                    style={styles.summaryInput}
+                  />
+                  <FormTextInput
+                    label="Outcomes"
+                    value={outcomes}
+                    onChangeText={setOutcomes}
+                    multiline
+                    style={styles.summaryInput}
+                  />
+                </>
+              ) : (
+                <Button mode="text" onPress={() => setShowAdvanced(true)}>
+                  Add key decisions + outcomes
+                </Button>
+              )}
             </>
           ) : (
             <View style={styles.summaryBlock}>
@@ -440,12 +545,25 @@ export default function SessionDetailScreen() {
 
         <Section title="Participants" icon="account-group-outline">
           {isEditing ? (
-            <FormMultiSelect
-              label="Player characters"
-              value={playerCharacterIds}
-              options={playerOptions}
-              onChange={setPlayerCharacterIds}
-              helperText="Choose who took part in this session."
+            <AppCard
+              title="Manage participants"
+              subtitle={`${playerCharacterIds.length} selected`}
+              onPress={() => openLinkModal('participants')}
+              right={
+                <View style={styles.editCardRight}>
+                  <MaterialCommunityIcons
+                    name="account-group-outline"
+                    size={18}
+                    color={theme.colors.primary}
+                  />
+                  <MaterialCommunityIcons
+                    name="chevron-right"
+                    size={18}
+                    color={theme.colors.onSurfaceVariant}
+                  />
+                </View>
+              }
+              style={styles.editCard}
             />
           ) : linkedPlayers.length === 0 ? (
             <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
@@ -475,38 +593,108 @@ export default function SessionDetailScreen() {
 
         <Section title="Links" icon="link-variant">
           {isEditing ? (
-            <>
-              <FormMultiSelect
-                label="Campaigns"
-                value={campaignIds}
-                options={campaignOptions}
-                onChange={handleCampaignChange}
+            <View style={styles.linkList}>
+              <AppCard
+                title="Campaigns"
+                subtitle={`${campaignIds.length} selected`}
+                onPress={() => openLinkModal('campaigns')}
+                right={
+                  <View style={styles.editCardRight}>
+                    <MaterialCommunityIcons
+                      name="folder-outline"
+                      size={18}
+                      color={theme.colors.primary}
+                    />
+                    <MaterialCommunityIcons
+                      name="chevron-right"
+                      size={18}
+                      color={theme.colors.onSurfaceVariant}
+                    />
+                  </View>
+                }
+                style={styles.editCard}
               />
-              <FormMultiSelect
-                label="Locations"
-                value={locationIds}
-                options={locationOptions}
-                onChange={setLocationIds}
+              <AppCard
+                title="Locations"
+                subtitle={`${locationIds.length} selected`}
+                onPress={() => openLinkModal('locations')}
+                right={
+                  <View style={styles.editCardRight}>
+                    <MaterialCommunityIcons
+                      name="map-marker-outline"
+                      size={18}
+                      color={theme.colors.primary}
+                    />
+                    <MaterialCommunityIcons
+                      name="chevron-right"
+                      size={18}
+                      color={theme.colors.onSurfaceVariant}
+                    />
+                  </View>
+                }
+                style={styles.editCard}
               />
-              <FormMultiSelect
-                label="NPCs"
-                value={npcIds}
-                options={npcOptions}
-                onChange={setNpcIds}
+              <AppCard
+                title="NPCs"
+                subtitle={`${npcIds.length} selected`}
+                onPress={() => openLinkModal('npcs')}
+                right={
+                  <View style={styles.editCardRight}>
+                    <MaterialCommunityIcons
+                      name="account-group-outline"
+                      size={18}
+                      color={theme.colors.primary}
+                    />
+                    <MaterialCommunityIcons
+                      name="chevron-right"
+                      size={18}
+                      color={theme.colors.onSurfaceVariant}
+                    />
+                  </View>
+                }
+                style={styles.editCard}
               />
-              <FormMultiSelect
-                label="Notes"
-                value={noteIds}
-                options={noteOptions}
-                onChange={setNoteIds}
+              <AppCard
+                title="Notes"
+                subtitle={`${noteIds.length} selected`}
+                onPress={() => openLinkModal('notes')}
+                right={
+                  <View style={styles.editCardRight}>
+                    <MaterialCommunityIcons
+                      name="note-text-outline"
+                      size={18}
+                      color={theme.colors.primary}
+                    />
+                    <MaterialCommunityIcons
+                      name="chevron-right"
+                      size={18}
+                      color={theme.colors.onSurfaceVariant}
+                    />
+                  </View>
+                }
+                style={styles.editCard}
               />
-              <TagInput
-                tags={tags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color }))}
-                selectedIds={tagIds}
-                onChange={setTagIds}
-                onCreateTag={handleCreateTag}
+              <AppCard
+                title="Tags"
+                subtitle={`${tagIds.length} selected`}
+                onPress={() => openLinkModal('tags')}
+                right={
+                  <View style={styles.editCardRight}>
+                    <MaterialCommunityIcons
+                      name="tag-outline"
+                      size={18}
+                      color={theme.colors.primary}
+                    />
+                    <MaterialCommunityIcons
+                      name="chevron-right"
+                      size={18}
+                      color={theme.colors.onSurfaceVariant}
+                    />
+                  </View>
+                }
+                style={styles.editCard}
               />
-            </>
+            </View>
           ) : (
             <>
               {linkedCampaigns.length === 0 ? (
@@ -616,6 +804,20 @@ export default function SessionDetailScreen() {
         confirmLoading={isDeleting}
         destructive
       />
+      {activeLinkModal && (
+        <FormModal
+          title={linkModalTitle}
+          visible={Boolean(activeLinkModal)}
+          onDismiss={closeLinkModal}
+          actions={
+            <Button mode="contained" onPress={closeLinkModal}>
+              Done
+            </Button>
+          }
+        >
+          {linkModalBody}
+        </FormModal>
+      )}
     </>
   );
 }
@@ -639,6 +841,17 @@ const styles = StyleSheet.create({
     gap: spacing[3],
   },
   summarySection: {
+    gap: spacing[1],
+  },
+  linkList: {
+    gap: spacing[2],
+  },
+  editCard: {
+    paddingVertical: spacing[1],
+  },
+  editCardRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing[1],
   },
   participantGroup: {
