@@ -347,6 +347,7 @@ export default function SessionDetailScreen() {
   const [npcIds, setNpcIds] = useState<string[]>([]);
   const [noteIds, setNoteIds] = useState<string[]>([]);
   const [playerCharacterIds, setPlayerCharacterIds] = useState<string[]>([]);
+  const [itemIds, setItemIds] = useState<string[]>([]);
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -409,6 +410,7 @@ export default function SessionDetailScreen() {
       setNpcIds(session.npcIds);
       setNoteIds(session.noteIds);
       setPlayerCharacterIds(session.playerCharacterIds);
+      setItemIds(session.itemIds);
       setTagIds(session.tagIds);
     }
   }, [session, isEditing]);
@@ -427,7 +429,7 @@ export default function SessionDetailScreen() {
           playerCharacterIds,
           mentionDerived.playerCharacterIds
         ),
-        itemIds: mentionDerived.itemIds,
+        itemIds: mergeUnique(itemIds, mentionDerived.itemIds),
         tagIds: mergeUnique(tagIds, mentionDerived.tagIds),
       });
     }, 600);
@@ -436,6 +438,7 @@ export default function SessionDetailScreen() {
   }, [
     content,
     isEditing,
+    itemIds,
     locationIds,
     mentionDerived,
     npcIds,
@@ -632,6 +635,7 @@ export default function SessionDetailScreen() {
     setNpcIds(session.npcIds);
     setNoteIds(session.noteIds);
     setPlayerCharacterIds(session.playerCharacterIds);
+    setItemIds(session.itemIds);
     setTagIds(session.tagIds);
     setError(null);
     setShowAdvanced(false);
@@ -651,6 +655,7 @@ export default function SessionDetailScreen() {
       setNpcIds(session.npcIds);
       setNoteIds(session.noteIds);
       setPlayerCharacterIds(session.playerCharacterIds);
+      setItemIds(session.itemIds);
       setTagIds(session.tagIds);
     }
     setError(null);
@@ -680,7 +685,7 @@ export default function SessionDetailScreen() {
           playerCharacterIds,
           mentionDerived.playerCharacterIds
         ),
-        itemIds: mentionDerived.itemIds,
+        itemIds: mergeUnique(itemIds, mentionDerived.itemIds),
         tagIds: mergeUnique(tagIds, mentionDerived.tagIds),
       });
       setIsEditing(false);

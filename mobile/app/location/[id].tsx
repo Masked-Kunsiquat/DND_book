@@ -427,9 +427,19 @@ export default function LocationDetailScreen() {
     }
   };
 
-  const handleMarkComplete = () => {
+  const handleMarkComplete = async () => {
     if (!location) return;
-    updateLocation(location.id, { status: 'complete' });
+    setError(null);
+    try {
+      await updateLocation(location.id, { status: 'complete' });
+    } catch (err) {
+      const context = `location ${location.id} to status complete`;
+      const message =
+        err instanceof Error
+          ? `${err.message} (while marking ${context})`
+          : `Failed to mark ${context}.`;
+      setError(message);
+    }
   };
 
   const handleDelete = () => {
