@@ -143,7 +143,11 @@ export function LocationMultiSelect({
         onChangeText={setQuery}
         placeholder="Search by name or type"
         disabled={disabled}
-        right={query ? <TextInput.Icon icon="close" onPress={() => setQuery('')} /> : undefined}
+        right={
+          query && !disabled ? (
+            <TextInput.Icon icon="close" onPress={() => setQuery('')} />
+          ) : undefined
+        }
       />
       {showCategories ? (
         <ScrollView

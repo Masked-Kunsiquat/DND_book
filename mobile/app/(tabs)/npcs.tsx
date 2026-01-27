@@ -108,25 +108,6 @@ export default function NpcsScreen() {
     setSelectedTagIds(tagParam ? [tagParam] : []);
   }, [tagParam]);
 
-  if (!currentCampaign) {
-    return (
-      <Screen>
-        <EmptyState
-          title="No campaign selected"
-          description="Select a campaign to view NPCs."
-          icon="account-group-outline"
-          action={{ label: 'Choose campaign', onPress: () => router.push('/campaigns') }}
-        />
-      </Screen>
-    );
-  }
-
-  const toggleTag = (id: string) => {
-    setSelectedTagIds((prev) =>
-      prev.includes(id) ? prev.filter((tagId) => tagId !== id) : [...prev, id]
-    );
-  };
-
   const noteOptions = useMemo(() => {
     return notes.map((note) => ({
       label: note.title || 'Untitled note',
@@ -146,6 +127,25 @@ export default function NpcsScreen() {
       return location.campaignIds.some((id) => draftCampaignIds.includes(id));
     });
   }, [continuityId, draftCampaignIds, draftScope, locations]);
+
+  if (!currentCampaign) {
+    return (
+      <Screen>
+        <EmptyState
+          title="No campaign selected"
+          description="Select a campaign to view NPCs."
+          icon="account-group-outline"
+          action={{ label: 'Choose campaign', onPress: () => router.push('/campaigns') }}
+        />
+      </Screen>
+    );
+  }
+
+  const toggleTag = (id: string) => {
+    setSelectedTagIds((prev) =>
+      prev.includes(id) ? prev.filter((tagId) => tagId !== id) : [...prev, id]
+    );
+  };
 
   const openCreateModal = () => {
     setDraftName(`New NPC ${npcs.length + 1}`);

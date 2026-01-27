@@ -133,6 +133,11 @@ export default function NpcDetailScreen() {
     }));
   }, [notes]);
 
+  const selectableLocations = useMemo(() => {
+    if (!continuityId) return [];
+    return locations.filter((location) => location.continuityId === continuityId);
+  }, [continuityId, locations]);
+
   const linkedCampaigns = useMemo(() => {
     const ids = new Set(campaignIds);
     return continuityCampaigns.filter((campaign) => ids.has(campaign.id));
@@ -208,7 +213,7 @@ export default function NpcDetailScreen() {
       case 'locations':
         return (
           <LocationMultiSelect
-            locations={locations}
+            locations={selectableLocations}
             value={locationIds}
             onChange={setLocationIds}
           />
