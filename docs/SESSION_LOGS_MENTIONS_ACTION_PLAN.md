@@ -522,11 +522,11 @@ sessionLogs: {
 
 #### 3.1 Capture UI
 
-- [ ] Redesign session log create/edit screen
-- [ ] Integrate `MentionInput` component
-- [ ] Remove required fields during capture
-- [ ] Add quick-insert trigger buttons
-- [ ] Implement auto-save
+- [x] Redesign session log create/edit screen
+- [x] Integrate `MentionInput` component
+- [x] Remove required fields during capture
+- [x] Add quick-insert trigger buttons
+- [x] Implement auto-save
 
 #### 3.2 Entity Extraction
 

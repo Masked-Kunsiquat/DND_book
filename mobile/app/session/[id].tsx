@@ -8,12 +8,14 @@ import {
   AvatarGroup,
   ConfirmDialog,
   EmptyState,
+  EntitySuggestions,
   FormDateTimePicker,
   FormModal,
   FormMultiSelect,
   FormTextInput,
   LocationMultiSelect,
   LocationCard,
+  MentionInput,
   NoteCard,
   NPCCard,
   Screen,
@@ -28,6 +30,7 @@ import {
   useDeleteSessionLog,
   useGetOrCreateTag,
   useLocations,
+  useMentionSettings,
   useNotes,
   useNpcs,
   usePlayerCharacters,
@@ -81,6 +84,7 @@ export default function SessionDetailScreen() {
   const [summary, setSummary] = useState('');
   const [keyDecisions, setKeyDecisions] = useState('');
   const [outcomes, setOutcomes] = useState('');
+  const [content, setContent] = useState('');
   const [campaignIds, setCampaignIds] = useState<string[]>([]);
   const [locationIds, setLocationIds] = useState<string[]>([]);
   const [npcIds, setNpcIds] = useState<string[]>([]);
@@ -123,6 +127,7 @@ export default function SessionDetailScreen() {
   const getOrCreateTag = useGetOrCreateTag(
     tagContinuityId ? { continuityId: tagContinuityId, scope: 'continuity' } : undefined
   );
+  const { settings: mentionSettings } = useMentionSettings();
 
   useEffect(() => {
     if (session && !isEditing) {
@@ -131,6 +136,7 @@ export default function SessionDetailScreen() {
       setSummary(session.summary);
       setKeyDecisions(session.keyDecisions);
       setOutcomes(session.outcomes);
+      setContent(session.content || '');
       setCampaignIds(session.campaignIds);
       setLocationIds(session.locationIds);
       setNpcIds(session.npcIds);
@@ -139,6 +145,17 @@ export default function SessionDetailScreen() {
       setTagIds(session.tagIds);
     }
   }, [session, isEditing]);
+
+  useEffect(() => {
+    if (!isEditing || !session) return;
+    if (content === session.content) return;
+
+    const handle = setTimeout(() => {
+      updateSessionLog(session.id, { content });
+    }, 600);
+
+    return () => clearTimeout(handle);
+  }, [content, isEditing, session, updateSessionLog]);
 
   const displayLocationIds = useMemo(
     () => (isEditing ? locationIds : session?.locationIds ?? []),
@@ -321,6 +338,7 @@ export default function SessionDetailScreen() {
     setSummary(session.summary);
     setKeyDecisions(session.keyDecisions);
     setOutcomes(session.outcomes);
+    setContent(session.content || '');
     setCampaignIds(session.campaignIds);
     setLocationIds(session.locationIds);
     setNpcIds(session.npcIds);
@@ -339,6 +357,7 @@ export default function SessionDetailScreen() {
       setSummary(session.summary);
       setKeyDecisions(session.keyDecisions);
       setOutcomes(session.outcomes);
+      setContent(session.content || '');
       setCampaignIds(session.campaignIds);
       setLocationIds(session.locationIds);
       setNpcIds(session.npcIds);
@@ -354,14 +373,6 @@ export default function SessionDetailScreen() {
   const handleSave = () => {
     if (!session) return;
     const trimmedTitle = title.trim();
-    if (!trimmedTitle) {
-      setError('Session title is required.');
-      return;
-    }
-    if (hasContinuityMismatch) {
-      setError('Sessions must belong to a single continuity before saving.');
-      return;
-    }
     const resolvedDate = date.trim() || formatDateOnly(new Date());
     setError(null);
     try {
@@ -371,6 +382,7 @@ export default function SessionDetailScreen() {
         summary: summary.trim(),
         keyDecisions: keyDecisions.trim(),
         outcomes: outcomes.trim(),
+        content,
         campaignIds,
         locationIds,
         npcIds,
@@ -383,6 +395,23 @@ export default function SessionDetailScreen() {
       const message = err instanceof Error ? err.message : 'Failed to update session.';
       setError(message);
     }
+  };
+
+  const quickInsertItems = useMemo(
+    () => [
+      { label: 'Character', trigger: mentionSettings.character, icon: 'account-outline' },
+      { label: 'Location', trigger: mentionSettings.location, icon: 'map-marker-outline' },
+      { label: 'Item', trigger: mentionSettings.item, icon: 'treasure-chest-outline' },
+      { label: 'Tag', trigger: mentionSettings.tag, icon: 'tag-outline' },
+    ],
+    [mentionSettings]
+  );
+
+  const handleInsertTrigger = (trigger: string) => {
+    setContent((prev) => {
+      const next = prev && !prev.endsWith(' ') ? `${prev} ` : prev;
+      return `${next}${trigger}`;
+    });
   };
 
   const handleDelete = () => {
@@ -525,9 +554,14 @@ export default function SessionDetailScreen() {
           <View style={styles.headerText}>
             {isEditing ? (
               <>
-                <FormTextInput label="Title" value={title} onChangeText={setTitle} />
+                <FormTextInput
+                  label="Title (optional)"
+                  value={title}
+                  onChangeText={setTitle}
+                  placeholder="Session title"
+                />
                 <FormDateTimePicker
-                  label="Date"
+                  label="Date (optional)"
                   value={date}
                   onChange={setDate}
                   mode="date"
@@ -549,6 +583,61 @@ export default function SessionDetailScreen() {
             <IconButton icon="pencil" onPress={handleEdit} accessibilityLabel="Edit session" />
           )}
         </View>
+
+        <Section title="Session Log" icon="text-box-outline">
+          {isEditing ? (
+            <>
+              <MentionInput
+                value={content}
+                onChangeText={setContent}
+                placeholder="Capture what happens in the moment..."
+                renderSuggestions={(triggers) => (
+                  <EntitySuggestions
+                    character={triggers.character}
+                    location={triggers.location}
+                    item={triggers.item}
+                    tag={triggers.tag}
+                  />
+                )}
+              />
+              <View style={styles.quickInsertBlock}>
+                <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  Quick insert
+                </Text>
+                <View style={styles.quickInsertRow}>
+                  {quickInsertItems.map((item) => (
+                    <IconButton
+                      key={item.label}
+                      icon={item.icon}
+                      size={18}
+                      mode="outlined"
+                      onPress={() => handleInsertTrigger(item.trigger)}
+                      accessibilityLabel={`Insert ${item.label} trigger`}
+                      iconColor={theme.colors.primary}
+                    />
+                  ))}
+                </View>
+                <View style={styles.quickInsertLabels}>
+                  {quickInsertItems.map((item) => (
+                    <Text
+                      key={`${item.label}-label`}
+                      variant="labelSmall"
+                      style={{ color: theme.colors.onSurfaceVariant }}
+                    >
+                      {item.trigger} {item.label}
+                    </Text>
+                  ))}
+                </View>
+              </View>
+            </>
+          ) : (
+            <View style={styles.summaryBlock}>
+              <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant }}>
+                {session.content?.trim() ? session.content : 'No session log yet.'}
+              </Text>
+            </View>
+          )}
+        </Section>
 
         <Section title="Summary" icon="clipboard-text-outline">
           {isEditing ? (
@@ -901,6 +990,19 @@ const styles = StyleSheet.create({
   },
   summaryInput: {
     minHeight: 120,
+  },
+  quickInsertBlock: {
+    gap: spacing[1],
+  },
+  quickInsertRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[1],
+  },
+  quickInsertLabels: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[2],
   },
   summaryBlock: {
     gap: spacing[3],
