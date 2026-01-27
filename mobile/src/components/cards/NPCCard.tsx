@@ -33,6 +33,12 @@ function buildSubtitle(npc: Npc): string {
   return details.length > 0 ? details.join(' • ') : 'No details yet.';
 }
 
+/**
+ * Render a circular avatar that shows the provided NPC image or a default account icon.
+ *
+ * @param imageUri - Optional URI of the avatar image to display; when omitted or falsy, a default account icon is shown.
+ * @returns A view containing the avatar image or a fallback icon styled as a circular avatar.
+ */
 function NpcAvatar({ imageUri }: { imageUri?: string }) {
   const { theme } = useTheme();
 
@@ -59,7 +65,21 @@ function NpcAvatar({ imageUri }: { imageUri?: string }) {
   );
 }
 
+/**
+ * Render a card displaying an NPC's avatar, name, subtitle, optional "Shadow" status, and tag chips.
+ *
+ * @param npc - NPC data used to derive the title, subtitle, avatar image, and status.
+ * @param tags - Optional resolved tag objects to render as TagChip components.
+ * @param onTagPress - Called with a tag's `id` when a tag chip is pressed.
+ * @param onPress - Called when the card is pressed.
+ * @param style - Additional style applied to the card container.
+ *
+ * @returns The rendered NPC card element.
+ */
 export function NPCCard({ npc, tags = [], onTagPress, onPress, style }: NPCCardProps) {
+  const { theme } = useTheme();
+  const isShadow = npc.status === 'shadow';
+
   return (
     <AppCard
       title={npc.name || 'Unnamed NPC'}
@@ -68,6 +88,18 @@ export function NPCCard({ npc, tags = [], onTagPress, onPress, style }: NPCCardP
       onPress={onPress}
       style={style}
     >
+      {isShadow && (
+        <View style={styles.statusRow}>
+          <MaterialCommunityIcons
+            name="circle-outline"
+            size={iconSizes.sm}
+            color={theme.colors.onSurfaceVariant}
+          />
+          <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+            Shadow
+          </Text>
+        </View>
+      )}
       {tags.length > 0 && (
         <View style={styles.tagsRow}>
           {tags.map((tag) => (
@@ -91,6 +123,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing[2],
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[1],
+    marginBottom: spacing[2],
   },
   avatar: {
     width: spacing[11],

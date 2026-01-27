@@ -26,7 +26,17 @@ function parseJsonArray(value: string): string[] {
 }
 
 /**
- * Converts a TinyBase row to a Location object.
+ * Create a Location object from a TinyBase row.
+ *
+ * Fields are mapped directly from `row`. Missing or falsy values are replaced with sensible defaults:
+ * - `type` defaults to `'Locale'`
+ * - `status` defaults to `'complete'`
+ * - `scope` defaults to `'campaign'`
+ * - `continuityId`, `originId`, `originContinuityId`, and `forkedAt` default to `''`
+ * - `campaignIds`, `tagIds`, and `images` are parsed from JSON and become `[]` if parsing fails or the value is falsy
+ *
+ * @param row - The TinyBase `LocationRow` to convert
+ * @returns A `Location` object with normalized fields and defaults applied
  */
 function rowToLocation(row: LocationRow): Location {
   return {
@@ -34,6 +44,7 @@ function rowToLocation(row: LocationRow): Location {
     name: row.name,
     type: (row.type as LocationType) || 'Locale',
     description: row.description,
+    status: (row.status as Location['status']) || 'complete',
     parentId: row.parentId,
     scope: (row.scope as Location['scope']) || 'campaign',
     continuityId: row.continuityId || '',
@@ -163,6 +174,7 @@ export interface CreateLocationInput {
   name: string;
   type?: LocationType;
   description?: string;
+  status?: Location['status'];
   parentId?: RecordId;
   scope?: Location['scope'];
   continuityId?: RecordId;
@@ -176,7 +188,9 @@ export interface CreateLocationInput {
 }
 
 /**
- * Hook to create a new location.
+ * Provides a callback that creates a new location row.
+ *
+ * @returns A function that accepts a `CreateLocationInput`, creates a new location, and returns the new location's id string.
  */
 export function useCreateLocation(): (data: CreateLocationInput) => string {
   const store = useStore();
@@ -192,6 +206,7 @@ export function useCreateLocation(): (data: CreateLocationInput) => string {
         name: data.name,
         type: data.type || 'Locale',
         description: data.description || '',
+        status: data.status || 'complete',
         parentId: data.parentId || '',
         scope: data.scope || 'campaign',
         continuityId: data.continuityId || '',
@@ -217,6 +232,7 @@ export interface UpdateLocationInput {
   name?: string;
   type?: LocationType;
   description?: string;
+  status?: Location['status'];
   parentId?: RecordId;
   scope?: Location['scope'];
   continuityId?: RecordId;
@@ -230,7 +246,13 @@ export interface UpdateLocationInput {
 }
 
 /**
- * Hook to update an existing location.
+ * Updates an existing location row in the "locations" table.
+ *
+ * Returns a function that applies only the provided fields from `data` to the location with the given `id`.
+ * Array fields (`campaignIds`, `tagIds`, `images`) are persisted as JSON strings and the `updated` timestamp is set.
+ *
+ * @returns A function that takes an `id` and an `UpdateLocationInput` and updates the corresponding location row.
+ * @throws Error when no location exists with the given `id`.
  */
 export function useUpdateLocation(): (id: string, data: UpdateLocationInput) => void {
   const store = useStore();
@@ -248,6 +270,7 @@ export function useUpdateLocation(): (id: string, data: UpdateLocationInput) => 
       if (data.name !== undefined) updates.name = data.name;
       if (data.type !== undefined) updates.type = data.type;
       if (data.description !== undefined) updates.description = data.description;
+      if (data.status !== undefined) updates.status = data.status;
       if (data.parentId !== undefined) updates.parentId = data.parentId;
       if (data.scope !== undefined) updates.scope = data.scope;
       if (data.continuityId !== undefined) updates.continuityId = data.continuityId;

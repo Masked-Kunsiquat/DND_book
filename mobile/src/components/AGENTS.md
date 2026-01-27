@@ -10,6 +10,9 @@ components/
 │   └── AppCard.tsx
 ├── chips/          # Tag/badge components
 │   └── TagChip.tsx
+├── mentions/       # Mention input wrappers
+│   ├── MentionInput.tsx
+│   └── EntitySuggestions.tsx
 ├── layout/         # Screen structure components
 │   ├── Screen.tsx
 │   └── Section.tsx
@@ -49,6 +52,25 @@ components/
 >
   <TagChip id={tag.id} name={tag.name} />
 </AppCard>
+```
+
+**MentionInput** - Mention-aware text input:
+```tsx
+<MentionInput
+  value={value}
+  onChangeText={setValue}
+  renderSuggestions={(triggers) => <EntitySuggestions {...triggers.character} />}
+/>
+```
+
+**EntitySuggestions** - Unified mention picker (characters, locations, items, tags):
+```tsx
+<EntitySuggestions
+  character={triggers.character}
+  location={triggers.location}
+  item={triggers.item}
+  tag={triggers.tag}
+/>
 ```
 
 **TagChip** - Color-coded tags:

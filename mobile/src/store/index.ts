@@ -8,6 +8,7 @@ import { createAppStore, type AppStore } from './schema';
 import { createPersister, type Persister } from './persistence';
 import { generateDeviceId, generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
+import { DEFAULT_MENTION_SETTINGS } from '../utils/mentions';
 
 // Context for the store
 const StoreContext = createContext<AppStore | null>(null);
@@ -27,10 +28,16 @@ export function StoreProvider({ children }: StoreProviderProps) {
   const persisterRef = useRef<Persister | null>(null);
 
   useEffect(() => {
+    /**
+     * Initialize the application store: load persisted data, perform necessary migrations/backfills, and start persistence.
+     *
+     * Ensures a device ID and mention settings exist, creates a default continuity when none are present, backfills continuity and scope metadata for campaigns, locations, NPCs, notes, and tags, and starts the persister's auto-save. If this is a first run or any migrations occurred, triggers an immediate save. On completion the initialized store is placed into component state and readiness is marked; on error a device ID will still be ensured.
+     */
     async function initStore() {
       const appStore = createAppStore();
       let persister: Persister | null = null;
       let didMigrateContinuity = false;
+      let didMigrateMentionSettings = false;
 
       try {
         // Create persister and load existing data
@@ -50,6 +57,13 @@ export function StoreProvider({ children }: StoreProviderProps) {
         const didSetDeviceId = !existingDeviceId;
         if (didSetDeviceId) {
           appStore.setValue('deviceId', generateDeviceId());
+        }
+
+        // Ensure mention settings are initialized
+        const existingMentionSettings = appStore.getValue('mentionSettings');
+        if (!existingMentionSettings) {
+          appStore.setValue('mentionSettings', JSON.stringify(DEFAULT_MENTION_SETTINGS));
+          didMigrateMentionSettings = true;
         }
 
         // Ensure at least one continuity exists
@@ -183,7 +197,7 @@ export function StoreProvider({ children }: StoreProviderProps) {
         persister.startAutoSave();
 
         // Save immediately if this is first run or device ID was newly set
-        if (!hadData || didSetDeviceId || didMigrateContinuity) {
+        if (!hadData || didSetDeviceId || didMigrateContinuity || didMigrateMentionSettings) {
           await persister.save();
         }
       } catch (error) {

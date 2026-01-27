@@ -26,7 +26,14 @@ function parseJsonArray(value: string): string[] {
 }
 
 /**
- * Converts a TinyBase row to an Npc object.
+ * Convert a TinyBase NpcRow into a normalized Npc object.
+ *
+ * Missing or empty fields are normalized: `status` defaults to `"complete"`, `scope` defaults to `"campaign"`,
+ * continuity-related string fields default to `""`, and JSON-array fields (`campaignIds`, `locationIds`, `noteIds`, `tagIds`)
+ * are parsed into arrays.
+ *
+ * @param row - The TinyBase row representing an NPC
+ * @returns The corresponding `Npc` with defaults applied and arrays parsed
  */
 function rowToNpc(row: NpcRow): Npc {
   return {
@@ -35,6 +42,7 @@ function rowToNpc(row: NpcRow): Npc {
     race: row.race,
     role: row.role,
     background: row.background,
+    status: (row.status as Npc['status']) || 'complete',
     image: row.image,
     scope: (row.scope as Npc['scope']) || 'campaign',
     continuityId: row.continuityId || '',
@@ -115,6 +123,7 @@ export interface CreateNpcInput {
   race?: string;
   role?: string;
   background?: string;
+  status?: Npc['status'];
   image?: string;
   scope?: Npc['scope'];
   continuityId?: RecordId;
@@ -128,7 +137,9 @@ export interface CreateNpcInput {
 }
 
 /**
- * Hook to create a new NPC.
+ * Creates a new NPC row in the store and returns its generated ID.
+ *
+ * @returns A function that accepts a CreateNpcInput and returns the created NPC's ID.
  */
 export function useCreateNpc(): (data: CreateNpcInput) => string {
   const store = useStore();
@@ -145,6 +156,7 @@ export function useCreateNpc(): (data: CreateNpcInput) => string {
         race: data.race || '',
         role: data.role || '',
         background: data.background || '',
+        status: data.status || 'complete',
         image: data.image || '',
         scope: data.scope || 'campaign',
         continuityId: data.continuityId || '',
@@ -171,6 +183,7 @@ export interface UpdateNpcInput {
   race?: string;
   role?: string;
   background?: string;
+  status?: Npc['status'];
   image?: string;
   scope?: Npc['scope'];
   continuityId?: RecordId;
@@ -184,7 +197,14 @@ export interface UpdateNpcInput {
 }
 
 /**
- * Hook to update an existing NPC.
+ * Create a function that applies provided field updates to an existing NPC by ID.
+ *
+ * The returned updater sets the `updated` timestamp, JSON-serializes any ID arrays, and only changes fields present on `data`.
+ *
+ * @param id - The ID of the NPC to update
+ * @param data - Partial NPC fields to apply; only properties that are defined will be updated
+ * @returns A function that updates the NPC with the provided fields and persists the changes
+ * @throws Error if no NPC with the given `id` exists
  */
 export function useUpdateNpc(): (id: string, data: UpdateNpcInput) => void {
   const store = useStore();
@@ -203,6 +223,7 @@ export function useUpdateNpc(): (id: string, data: UpdateNpcInput) => void {
       if (data.race !== undefined) updates.race = data.race;
       if (data.role !== undefined) updates.role = data.role;
       if (data.background !== undefined) updates.background = data.background;
+      if (data.status !== undefined) updates.status = data.status;
       if (data.image !== undefined) updates.image = data.image;
       if (data.scope !== undefined) updates.scope = data.scope;
       if (data.continuityId !== undefined) updates.continuityId = data.continuityId;

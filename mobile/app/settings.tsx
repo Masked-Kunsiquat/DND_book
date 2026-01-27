@@ -12,6 +12,11 @@ const SETTINGS_ITEMS = [
     route: '/settings/appearance',
   },
   {
+    title: 'Mentions',
+    subtitle: 'Trigger characters for inline references.',
+    route: '/settings/mentions',
+  },
+  {
     title: 'Sync',
     subtitle: 'Session sync and sharing options.',
   },

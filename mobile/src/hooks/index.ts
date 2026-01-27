@@ -73,6 +73,17 @@ export {
   type UpdateLocationInput,
 } from './useLocations';
 
+// Items
+export {
+  useItems,
+  useItem,
+  useCreateItem,
+  useUpdateItem,
+  useDeleteItem,
+  type CreateItemInput,
+  type UpdateItemInput,
+} from './useItems';
+
 // Tags
 export {
   useTags,
@@ -86,6 +97,16 @@ export {
   type CreateTagInput,
   type UpdateTagInput,
 } from './useTags';
+
+// Mention Settings
+export {
+  useMentionSettings,
+  type MentionSettingKey,
+  type UseMentionSettingsResult,
+} from './useMentionSettings';
+
+// Shadow Entities
+export { useShadowEntities, type ShadowEntityType, type UseShadowEntitiesResult } from './useShadowEntities';
 
 // Session Logs
 export {
