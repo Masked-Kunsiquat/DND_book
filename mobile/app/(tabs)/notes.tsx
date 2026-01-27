@@ -213,6 +213,14 @@ export default function NotesScreen() {
         scope: draftScope,
         continuityId,
         campaignId: draftScope === 'campaign' ? draftCampaignId : '',
+        campaignIds:
+          draftScope === 'campaign'
+            ? draftCampaignId
+              ? [draftCampaignId]
+              : []
+            : currentCampaign?.id
+              ? [currentCampaign.id]
+              : [],
         locationIds: draftLocationIds,
         tagIds: draftTagIds,
       });

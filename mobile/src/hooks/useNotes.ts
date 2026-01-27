@@ -35,6 +35,7 @@ function rowToNote(row: NoteRow): Note {
     scope: (row.scope as Note['scope']) || 'campaign',
     continuityId: row.continuityId || '',
     campaignId: row.campaignId,
+    campaignIds: parseJsonArray(row.campaignIds),
     originId: row.originId || '',
     originContinuityId: row.originContinuityId || '',
     forkedAt: row.forkedAt || '',
@@ -68,7 +69,9 @@ export function useNotes(continuityId?: string, campaignId?: string): Note[] {
 
     return notes.filter((note) => {
       if (note.continuityId !== continuityId) return false;
-      if (note.scope === 'continuity') return true;
+      if (note.scope === 'continuity') {
+        return note.campaignIds.includes(campaignId);
+      }
       if (note.scope === 'campaign') {
         return note.campaignId === campaignId;
       }
@@ -96,7 +99,9 @@ export function useNotesByLocation(
         if (!continuityId) return true;
         if (note.continuityId !== continuityId) return false;
         if (!campaignId) return true;
-        if (note.scope === 'continuity') return true;
+        if (note.scope === 'continuity') {
+          return note.campaignIds.includes(campaignId);
+        }
         if (note.scope === 'campaign') {
           return note.campaignId === campaignId;
         }
@@ -124,7 +129,9 @@ export function useNotesByTag(
         if (!continuityId) return true;
         if (note.continuityId !== continuityId) return false;
         if (!campaignId) return true;
-        if (note.scope === 'continuity') return true;
+        if (note.scope === 'continuity') {
+          return note.campaignIds.includes(campaignId);
+        }
         if (note.scope === 'campaign') {
           return note.campaignId === campaignId;
         }
@@ -152,6 +159,7 @@ export interface CreateNoteInput {
   scope?: Note['scope'];
   continuityId?: string;
   campaignId?: string;
+  campaignIds?: RecordId[];
   originId?: string;
   originContinuityId?: string;
   forkedAt?: string;
@@ -173,6 +181,10 @@ export function useCreateNote(): (data: CreateNoteInput) => string {
 
       const scope = data.scope || 'campaign';
       const continuityId = data.continuityId || '';
+      const campaignId = data.campaignId || '';
+      const campaignIds =
+        data.campaignIds ||
+        (scope === 'campaign' && campaignId ? [campaignId] : []);
 
       store.setRow('notes', id, {
         id,
@@ -180,7 +192,8 @@ export function useCreateNote(): (data: CreateNoteInput) => string {
         content: data.content || '',
         scope,
         continuityId,
-        campaignId: scope === 'campaign' ? data.campaignId || '' : '',
+        campaignId: scope === 'campaign' ? campaignId : '',
+        campaignIds: JSON.stringify(campaignIds),
         originId: data.originId || '',
         originContinuityId: data.originContinuityId || '',
         forkedAt: data.forkedAt || '',
@@ -203,6 +216,7 @@ export interface UpdateNoteInput {
   scope?: Note['scope'];
   continuityId?: string;
   campaignId?: string;
+  campaignIds?: RecordId[];
   originId?: string;
   originContinuityId?: string;
   forkedAt?: string;
@@ -231,6 +245,8 @@ export function useUpdateNote(): (id: string, data: UpdateNoteInput) => void {
       if (data.scope !== undefined) updates.scope = data.scope;
       if (data.continuityId !== undefined) updates.continuityId = data.continuityId;
       if (data.campaignId !== undefined) updates.campaignId = data.campaignId;
+      if (data.campaignIds !== undefined)
+        updates.campaignIds = JSON.stringify(data.campaignIds);
       if (data.originId !== undefined) updates.originId = data.originId;
       if (data.originContinuityId !== undefined)
         updates.originContinuityId = data.originContinuityId;

@@ -61,8 +61,14 @@ export default function CampaignsScreen() {
   const noteCounts = useMemo(() => {
     const counts = new Map<string, number>();
     notes.forEach((note) => {
-      if (!note.campaignId) return;
-      counts.set(note.campaignId, (counts.get(note.campaignId) || 0) + 1);
+      if (note.scope === 'campaign') {
+        if (!note.campaignId) return;
+        counts.set(note.campaignId, (counts.get(note.campaignId) || 0) + 1);
+        return;
+      }
+      note.campaignIds.forEach((id) => {
+        counts.set(id, (counts.get(id) || 0) + 1);
+      });
     });
     return counts;
   }, [notes]);

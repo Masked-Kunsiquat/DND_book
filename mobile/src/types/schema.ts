@@ -36,6 +36,7 @@ export interface Note {
   scope: EntityScope;
   continuityId: RecordId;
   campaignId: RecordId;
+  campaignIds: RecordId[];
   originId: RecordId;
   originContinuityId: RecordId;
   forkedAt: IsoDateString;
@@ -169,6 +170,7 @@ export interface NoteRow {
   scope: string;
   continuityId: string;
   campaignId: string;
+  campaignIds: string; // JSON array
   originId: string;
   originContinuityId: string;
   forkedAt: string;

@@ -135,15 +135,19 @@ export function StoreProvider({ children }: StoreProviderProps) {
         Object.entries(notesTable).forEach(([noteId, row]) => {
           const scope = (row as { scope?: string }).scope;
           const continuityId = (row as { continuityId?: string }).continuityId;
-          if (!scope || !continuityId) {
+          const existingCampaignIds = (row as { campaignIds?: string }).campaignIds;
+          if (!scope || !continuityId || !existingCampaignIds) {
             const campaignId = (row as { campaignId?: string }).campaignId || '';
             const resolvedContinuityId =
               continuityId || campaignContinuityById.get(campaignId) || defaultContinuityId;
+            const campaignIds =
+              existingCampaignIds || JSON.stringify(campaignId ? [campaignId] : []);
             appStore.setRow('notes', noteId, {
               ...row,
               scope: scope || 'campaign',
               continuityId: resolvedContinuityId,
               campaignId,
+              campaignIds,
               originId: (row as { originId?: string }).originId || '',
               originContinuityId:
                 (row as { originContinuityId?: string }).originContinuityId || '',

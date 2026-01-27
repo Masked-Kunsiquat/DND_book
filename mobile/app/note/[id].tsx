@@ -206,6 +206,12 @@ export default function NoteDetailScreen() {
         title,
         content,
         campaignId: note.scope === 'campaign' ? campaignId : '',
+        campaignIds:
+          note.scope === 'campaign'
+            ? campaignId
+              ? [campaignId]
+              : []
+            : note.campaignIds,
         locationIds,
         tagIds,
       });
@@ -282,6 +288,7 @@ export default function NoteDetailScreen() {
         scope: 'campaign',
         continuityId,
         campaignId: currentCampaign.id,
+        campaignIds: [currentCampaign.id],
         originId: note.id,
         originContinuityId: continuityId,
         forkedAt: now(),

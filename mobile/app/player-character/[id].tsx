@@ -96,16 +96,6 @@ export default function PlayerCharacterDetailScreen() {
     const firstCampaignId = displayCampaignIds[0];
     return campaigns.find((campaign) => campaign.id === firstCampaignId)?.continuityId || '';
   }, [campaigns, currentCampaign, displayCampaignIds]);
-  const continuityIdSet = useMemo(() => {
-    const ids = new Set<string>();
-    displayCampaignIds.forEach((id) => {
-      const continuityId = campaigns.find((campaign) => campaign.id === id)?.continuityId;
-      if (continuityId) {
-        ids.add(continuityId);
-      }
-    });
-    return ids;
-  }, [campaigns, displayCampaignIds]);
 
   const campaignOptions = useMemo(() => {
     return campaigns.map((campaign) => ({
@@ -123,7 +113,7 @@ export default function PlayerCharacterDetailScreen() {
               return campaignIdSet.has(note.campaignId);
             }
             if (note.scope === 'continuity') {
-              return continuityIdSet.has(note.continuityId);
+              return note.campaignIds.some((id) => campaignIdSet.has(id));
             }
             return false;
           });
@@ -131,7 +121,7 @@ export default function PlayerCharacterDetailScreen() {
       label: note.title || 'Untitled note',
       value: note.id,
     }));
-  }, [campaignIdSet, continuityIdSet, notes]);
+  }, [campaignIdSet, notes]);
 
   const linkedCampaigns = useMemo(() => {
     const ids = new Set(displayCampaignIds);
@@ -194,12 +184,6 @@ export default function PlayerCharacterDetailScreen() {
     setCampaignIds(value);
     if (value.length === 0) return;
     const allowed = new Set(value);
-    const allowedContinuities = new Set(
-      campaigns
-        .filter((campaign) => allowed.has(campaign.id))
-        .map((campaign) => campaign.continuityId)
-        .filter(Boolean)
-    );
     const allowedNotes = new Set(
       notes
         .filter((note) => {
@@ -207,7 +191,7 @@ export default function PlayerCharacterDetailScreen() {
             return allowed.has(note.campaignId);
           }
           if (note.scope === 'continuity') {
-            return allowedContinuities.has(note.continuityId);
+            return note.campaignIds.some((id) => allowed.has(id));
           }
           return false;
         })

@@ -32,6 +32,7 @@ export const tablesSchema = {
     scope: { type: 'string' },
     continuityId: { type: 'string' },
     campaignId: { type: 'string' },
+    campaignIds: { type: 'string' }, // JSON array
     originId: { type: 'string' },
     originContinuityId: { type: 'string' },
     forkedAt: { type: 'string' },

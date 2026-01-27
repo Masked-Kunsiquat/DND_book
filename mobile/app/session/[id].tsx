@@ -150,16 +150,6 @@ export default function SessionDetailScreen() {
     () => new Set(displayCampaignIds),
     [displayCampaignIds]
   );
-  const continuityIdSet = useMemo(() => {
-    const ids = new Set<string>();
-    displayCampaignIds.forEach((id) => {
-      const continuityId = campaigns.find((campaign) => campaign.id === id)?.continuityId;
-      if (continuityId) {
-        ids.add(continuityId);
-      }
-    });
-    return ids;
-  }, [campaigns, displayCampaignIds]);
 
   const campaignOptions = useMemo(() => {
     return campaigns.map((campaign) => ({
@@ -171,45 +161,60 @@ export default function SessionDetailScreen() {
   const locationOptions = useMemo(() => {
     const filtered =
       campaignIdSet.size === 0
-        ? locations
+        ? continuityId
+          ? locations.filter((location) => location.continuityId === continuityId)
+          : locations
         : locations.filter((location) =>
             location.campaignIds.some((id) => campaignIdSet.has(id))
           );
     return filtered.map((location) => ({
-      label: location.name || 'Unnamed location',
+      label:
+        location.scope === 'continuity'
+          ? `${location.name || 'Unnamed location'} (Shared)`
+          : location.name || 'Unnamed location',
       value: location.id,
     }));
-  }, [campaignIdSet, locations]);
+  }, [campaignIdSet, continuityId, locations]);
 
   const npcOptions = useMemo(() => {
     const filtered =
       campaignIdSet.size === 0
-        ? npcs
+        ? continuityId
+          ? npcs.filter((npc) => npc.continuityId === continuityId)
+          : npcs
         : npcs.filter((npc) => npc.campaignIds.some((id) => campaignIdSet.has(id)));
     return filtered.map((npc) => ({
-      label: npc.name || 'Unnamed NPC',
+      label:
+        npc.scope === 'continuity'
+          ? `${npc.name || 'Unnamed NPC'} (Shared)`
+          : npc.name || 'Unnamed NPC',
       value: npc.id,
     }));
-  }, [campaignIdSet, npcs]);
+  }, [campaignIdSet, continuityId, npcs]);
 
   const noteOptions = useMemo(() => {
     const filtered =
       campaignIdSet.size === 0
-        ? notes
+        ? continuityId
+          ? notes.filter((note) => note.continuityId === continuityId)
+          : notes
         : notes.filter((note) => {
             if (note.scope === 'campaign') {
               return campaignIdSet.has(note.campaignId);
             }
             if (note.scope === 'continuity') {
-              return continuityIdSet.has(note.continuityId);
+              return note.campaignIds.some((id) => campaignIdSet.has(id));
             }
             return false;
           });
     return filtered.map((note) => ({
-      label: note.title || 'Untitled note',
+      label:
+        note.scope === 'continuity'
+          ? `${note.title || 'Untitled note'} (Shared)`
+          : note.title || 'Untitled note',
       value: note.id,
     }));
-  }, [campaignIdSet, continuityIdSet, notes]);
+  }, [campaignIdSet, continuityId, notes]);
 
   const playerOptions = useMemo(() => {
     const filtered =
@@ -263,12 +268,6 @@ export default function SessionDetailScreen() {
     setCampaignIds(value);
     if (value.length === 0) return;
     const allowedCampaigns = new Set(value);
-    const allowedContinuities = new Set(
-      campaigns
-        .filter((campaign) => allowedCampaigns.has(campaign.id))
-        .map((campaign) => campaign.continuityId)
-        .filter(Boolean)
-    );
     const allowedLocations = new Set(
       locations
         .filter((location) => location.campaignIds.some((id) => allowedCampaigns.has(id)))
@@ -286,7 +285,7 @@ export default function SessionDetailScreen() {
             return allowedCampaigns.has(note.campaignId);
           }
           if (note.scope === 'continuity') {
-            return allowedContinuities.has(note.continuityId);
+            return note.campaignIds.some((id) => allowedCampaigns.has(id));
           }
           return false;
         })
