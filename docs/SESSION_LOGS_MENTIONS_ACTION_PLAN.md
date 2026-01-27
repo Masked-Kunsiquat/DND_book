@@ -507,10 +507,10 @@ sessionLogs: {
 
 #### 2.2 Suggestion Pickers
 
-- [ ] Create unified `EntitySuggestions` component
-- [ ] Implement fuzzy search across entity types
-- [ ] Add "Create new" option for shadow entities
-- [ ] Handle multiple trigger types (`@`, `$`, `!`, `#`)
+- [x] Create unified `EntitySuggestions` component
+- [x] Implement fuzzy search across entity types
+- [x] Add "Create new" option for shadow entities
+- [x] Handle multiple trigger types (`@`, `$`, `!`, `#`)
 
 #### 2.3 Shadow Entity Creation
 

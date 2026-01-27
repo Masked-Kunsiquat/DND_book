@@ -11,7 +11,8 @@ components/
 ├── chips/          # Tag/badge components
 │   └── TagChip.tsx
 ├── mentions/       # Mention input wrappers
-│   └── MentionInput.tsx
+│   ├── MentionInput.tsx
+│   └── EntitySuggestions.tsx
 ├── layout/         # Screen structure components
 │   ├── Screen.tsx
 │   └── Section.tsx
@@ -59,6 +60,16 @@ components/
   value={value}
   onChangeText={setValue}
   renderSuggestions={(triggers) => <EntitySuggestions {...triggers.character} />}
+/>
+```
+
+**EntitySuggestions** - Unified mention picker (characters, locations, items, tags):
+```tsx
+<EntitySuggestions
+  character={triggers.character}
+  location={triggers.location}
+  item={triggers.item}
+  tag={triggers.tag}
 />
 ```
 
