@@ -29,6 +29,7 @@ export function useDeleteEntity(): (id: string) => void
 | `useNotes.ts` | Note | Filter by campaignId |
 | `useNpcs.ts` | NPC | Filter by campaignId, tag |
 | `useLocations.ts` | Location | Hierarchy: `useChildLocations()`, `useRootLocations()`, `useLocationPath()` |
+| `useItems.ts` | Item | - |
 | `useTags.ts` | Tag | `useGetOrCreateTag()`, `useTagByName()` |
 | `useSessionLogs.ts` | SessionLog | Filter by campaignId |
 | `usePlayerCharacters.ts` | PlayerCharacter | `usePlayerCharactersByPlayer()` |

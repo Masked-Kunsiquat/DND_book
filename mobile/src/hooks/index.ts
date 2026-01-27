@@ -73,6 +73,17 @@ export {
   type UpdateLocationInput,
 } from './useLocations';
 
+// Items
+export {
+  useItems,
+  useItem,
+  useCreateItem,
+  useUpdateItem,
+  useDeleteItem,
+  type CreateItemInput,
+  type UpdateItemInput,
+} from './useItems';
+
 // Tags
 export {
   useTags,

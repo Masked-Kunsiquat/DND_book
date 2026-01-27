@@ -7,14 +7,14 @@ import { useRow, useTable } from 'tinybase/ui-react';
 import { useStore } from '../store';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
-import type { SessionLog, SessionLogRow, RecordId } from '../types/schema';
+import type { Mention, RecordId, SessionLog, SessionLogRow } from '../types/schema';
 
 const log = createLogger('session-logs');
 
 /**
  * Safely parses a JSON array string, returning empty array on failure.
  */
-function parseJsonArray(value: string): string[] {
+function parseJsonArray<T = string>(value?: string): T[] {
   if (!value) return [];
   try {
     const parsed = JSON.parse(value);
@@ -32,6 +32,8 @@ function rowToSessionLog(row: SessionLogRow): SessionLog {
     id: row.id,
     title: row.title,
     date: row.date,
+    content: row.content || '',
+    mentions: parseJsonArray<Mention>(row.mentions),
     summary: row.summary,
     keyDecisions: row.keyDecisions,
     outcomes: row.outcomes,
@@ -40,6 +42,7 @@ function rowToSessionLog(row: SessionLogRow): SessionLog {
     npcIds: parseJsonArray(row.npcIds),
     noteIds: parseJsonArray(row.noteIds),
     playerCharacterIds: parseJsonArray(row.playerCharacterIds),
+    itemIds: parseJsonArray(row.itemIds),
     tagIds: parseJsonArray(row.tagIds),
     created: row.created,
     updated: row.updated,
@@ -97,6 +100,8 @@ export function useSessionLog(id: string): SessionLog | null {
 export interface CreateSessionLogInput {
   title: string;
   date: string;
+  content?: string;
+  mentions?: Mention[];
   summary?: string;
   keyDecisions?: string;
   outcomes?: string;
@@ -105,6 +110,7 @@ export interface CreateSessionLogInput {
   npcIds?: RecordId[];
   noteIds?: RecordId[];
   playerCharacterIds?: RecordId[];
+  itemIds?: RecordId[];
   tagIds?: RecordId[];
 }
 
@@ -124,6 +130,8 @@ export function useCreateSessionLog(): (data: CreateSessionLogInput) => string {
         id,
         title: data.title,
         date: data.date,
+        content: data.content || '',
+        mentions: JSON.stringify(data.mentions || []),
         summary: data.summary || '',
         keyDecisions: data.keyDecisions || '',
         outcomes: data.outcomes || '',
@@ -132,6 +140,7 @@ export function useCreateSessionLog(): (data: CreateSessionLogInput) => string {
         npcIds: JSON.stringify(data.npcIds || []),
         noteIds: JSON.stringify(data.noteIds || []),
         playerCharacterIds: JSON.stringify(data.playerCharacterIds || []),
+        itemIds: JSON.stringify(data.itemIds || []),
         tagIds: JSON.stringify(data.tagIds || []),
         created: timestamp,
         updated: timestamp,
@@ -147,6 +156,8 @@ export function useCreateSessionLog(): (data: CreateSessionLogInput) => string {
 export interface UpdateSessionLogInput {
   title?: string;
   date?: string;
+  content?: string;
+  mentions?: Mention[];
   summary?: string;
   keyDecisions?: string;
   outcomes?: string;
@@ -155,6 +166,7 @@ export interface UpdateSessionLogInput {
   npcIds?: RecordId[];
   noteIds?: RecordId[];
   playerCharacterIds?: RecordId[];
+  itemIds?: RecordId[];
   tagIds?: RecordId[];
 }
 
@@ -176,6 +188,8 @@ export function useUpdateSessionLog(): (id: string, data: UpdateSessionLogInput)
 
       if (data.title !== undefined) updates.title = data.title;
       if (data.date !== undefined) updates.date = data.date;
+      if (data.content !== undefined) updates.content = data.content;
+      if (data.mentions !== undefined) updates.mentions = JSON.stringify(data.mentions);
       if (data.summary !== undefined) updates.summary = data.summary;
       if (data.keyDecisions !== undefined) updates.keyDecisions = data.keyDecisions;
       if (data.outcomes !== undefined) updates.outcomes = data.outcomes;
@@ -185,6 +199,7 @@ export function useUpdateSessionLog(): (id: string, data: UpdateSessionLogInput)
       if (data.noteIds !== undefined) updates.noteIds = JSON.stringify(data.noteIds);
       if (data.playerCharacterIds !== undefined)
         updates.playerCharacterIds = JSON.stringify(data.playerCharacterIds);
+      if (data.itemIds !== undefined) updates.itemIds = JSON.stringify(data.itemIds);
       if (data.tagIds !== undefined) updates.tagIds = JSON.stringify(data.tagIds);
 
       store.setRow('sessionLogs', id, {

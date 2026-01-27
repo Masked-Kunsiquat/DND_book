@@ -8,6 +8,20 @@ export type IsoDateString = string;
 export type RecordId = string;
 
 export type EntityScope = 'campaign' | 'continuity';
+export type EntityStatus = 'complete' | 'shadow';
+
+export type MentionEntityType = 'npc' | 'pc' | 'location' | 'item' | 'tag';
+export type MentionStatus = 'resolved' | 'shadow';
+
+export interface Mention {
+  id: string;
+  trigger: string;
+  entityType: MentionEntityType;
+  entityId: RecordId | null;
+  displayLabel: string;
+  position: { start: number; end: number };
+  status: MentionStatus;
+}
 
 // Location hierarchy types
 export type LocationType =
@@ -52,6 +66,7 @@ export interface Npc {
   race: string;
   role: string;
   background: string;
+  status: EntityStatus;
   image: string; // local file path
   scope: EntityScope;
   continuityId: RecordId;
@@ -71,6 +86,7 @@ export interface Location {
   name: string;
   type: LocationType;
   description: string;
+  status: EntityStatus;
   parentId: RecordId; // for hierarchy
   scope: EntityScope;
   continuityId: RecordId;
@@ -107,10 +123,29 @@ export interface Tag {
   updated: IsoDateString;
 }
 
+export interface Item {
+  id: RecordId;
+  name: string;
+  description: string;
+  status: EntityStatus;
+  scope: EntityScope;
+  continuityId: RecordId;
+  campaignIds: RecordId[];
+  ownerId: RecordId;
+  ownerType: 'npc' | 'pc' | null;
+  locationId: RecordId;
+  value: string;
+  tagIds: RecordId[];
+  created: IsoDateString;
+  updated: IsoDateString;
+}
+
 export interface SessionLog {
   id: RecordId;
   title: string;
   date: IsoDateString;
+  content: string;
+  mentions: Mention[];
   summary: string;
   keyDecisions: string;
   outcomes: string;
@@ -119,6 +154,7 @@ export interface SessionLog {
   npcIds: RecordId[];
   noteIds: RecordId[];
   playerCharacterIds: RecordId[];
+  itemIds: RecordId[];
   tagIds: RecordId[];
   created: IsoDateString;
   updated: IsoDateString;
@@ -186,6 +222,7 @@ export interface NpcRow {
   race: string;
   role: string;
   background: string;
+  status: string;
   image: string;
   scope: string;
   continuityId: string;
@@ -205,6 +242,7 @@ export interface LocationRow {
   name: string;
   type: string;
   description: string;
+  status: string;
   parentId: string;
   scope: string;
   continuityId: string;
@@ -241,10 +279,29 @@ export interface TagRow {
   updated: string;
 }
 
+export interface ItemRow {
+  id: string;
+  name: string;
+  description: string;
+  status: string;
+  scope: string;
+  continuityId: string;
+  campaignIds: string; // JSON array
+  ownerId: string;
+  ownerType: string;
+  locationId: string;
+  value: string;
+  tagIds: string; // JSON array
+  created: string;
+  updated: string;
+}
+
 export interface SessionLogRow {
   id: string;
   title: string;
   date: string;
+  content: string;
+  mentions: string;
   summary: string;
   keyDecisions: string;
   outcomes: string;
@@ -253,6 +310,7 @@ export interface SessionLogRow {
   npcIds: string;
   noteIds: string;
   playerCharacterIds: string;
+  itemIds: string;
   tagIds: string;
   created: string;
   updated: string;
@@ -295,6 +353,7 @@ export const Tables = {
   notes: 'notes',
   npcs: 'npcs',
   locations: 'locations',
+  items: 'items',
   tags: 'tags',
   sessionLogs: 'sessionLogs',
   playerCharacters: 'playerCharacters',

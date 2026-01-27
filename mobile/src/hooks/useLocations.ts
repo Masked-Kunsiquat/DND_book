@@ -34,6 +34,7 @@ function rowToLocation(row: LocationRow): Location {
     name: row.name,
     type: (row.type as LocationType) || 'Locale',
     description: row.description,
+    status: (row.status as Location['status']) || 'complete',
     parentId: row.parentId,
     scope: (row.scope as Location['scope']) || 'campaign',
     continuityId: row.continuityId || '',
@@ -163,6 +164,7 @@ export interface CreateLocationInput {
   name: string;
   type?: LocationType;
   description?: string;
+  status?: Location['status'];
   parentId?: RecordId;
   scope?: Location['scope'];
   continuityId?: RecordId;
@@ -192,6 +194,7 @@ export function useCreateLocation(): (data: CreateLocationInput) => string {
         name: data.name,
         type: data.type || 'Locale',
         description: data.description || '',
+        status: data.status || 'complete',
         parentId: data.parentId || '',
         scope: data.scope || 'campaign',
         continuityId: data.continuityId || '',
@@ -217,6 +220,7 @@ export interface UpdateLocationInput {
   name?: string;
   type?: LocationType;
   description?: string;
+  status?: Location['status'];
   parentId?: RecordId;
   scope?: Location['scope'];
   continuityId?: RecordId;
@@ -248,6 +252,7 @@ export function useUpdateLocation(): (id: string, data: UpdateLocationInput) => 
       if (data.name !== undefined) updates.name = data.name;
       if (data.type !== undefined) updates.type = data.type;
       if (data.description !== undefined) updates.description = data.description;
+      if (data.status !== undefined) updates.status = data.status;
       if (data.parentId !== undefined) updates.parentId = data.parentId;
       if (data.scope !== undefined) updates.scope = data.scope;
       if (data.continuityId !== undefined) updates.continuityId = data.continuityId;

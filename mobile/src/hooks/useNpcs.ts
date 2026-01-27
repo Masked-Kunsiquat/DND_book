@@ -35,6 +35,7 @@ function rowToNpc(row: NpcRow): Npc {
     race: row.race,
     role: row.role,
     background: row.background,
+    status: (row.status as Npc['status']) || 'complete',
     image: row.image,
     scope: (row.scope as Npc['scope']) || 'campaign',
     continuityId: row.continuityId || '',
@@ -115,6 +116,7 @@ export interface CreateNpcInput {
   race?: string;
   role?: string;
   background?: string;
+  status?: Npc['status'];
   image?: string;
   scope?: Npc['scope'];
   continuityId?: RecordId;
@@ -145,6 +147,7 @@ export function useCreateNpc(): (data: CreateNpcInput) => string {
         race: data.race || '',
         role: data.role || '',
         background: data.background || '',
+        status: data.status || 'complete',
         image: data.image || '',
         scope: data.scope || 'campaign',
         continuityId: data.continuityId || '',
@@ -171,6 +174,7 @@ export interface UpdateNpcInput {
   race?: string;
   role?: string;
   background?: string;
+  status?: Npc['status'];
   image?: string;
   scope?: Npc['scope'];
   continuityId?: RecordId;
@@ -203,6 +207,7 @@ export function useUpdateNpc(): (id: string, data: UpdateNpcInput) => void {
       if (data.race !== undefined) updates.race = data.race;
       if (data.role !== undefined) updates.role = data.role;
       if (data.background !== undefined) updates.background = data.background;
+      if (data.status !== undefined) updates.status = data.status;
       if (data.image !== undefined) updates.image = data.image;
       if (data.scope !== undefined) updates.scope = data.scope;
       if (data.continuityId !== undefined) updates.continuityId = data.continuityId;
