@@ -45,8 +45,11 @@ export default function NotesScreen() {
   const [draftLocationIds, setDraftLocationIds] = useState<string[]>([]);
   const [draftTagIds, setDraftTagIds] = useState<string[]>([]);
   const createNote = useCreateNote();
-  const tags = useTags();
-  const getOrCreateTag = useGetOrCreateTag();
+  const tags = useTags(currentCampaign?.continuityId, currentCampaign?.id);
+  const getOrCreateTag = useGetOrCreateTag({
+    continuityId: currentCampaign?.continuityId,
+    scope: 'continuity',
+  });
   const { refreshing, onRefresh } = usePullToRefresh();
 
   const effectiveCampaignId = currentCampaign?.id;

@@ -70,10 +70,8 @@ export default function SessionDetailScreen() {
   const npcs = useNpcs();
   const notes = useNotes();
   const playerCharacters = usePlayerCharacters();
-  const tags = useTags();
   const updateSessionLog = useUpdateSessionLog();
   const deleteSessionLog = useDeleteSessionLog();
-  const getOrCreateTag = useGetOrCreateTag();
 
   const [isEditing, setIsEditing] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -94,6 +92,18 @@ export default function SessionDetailScreen() {
   const [activeLinkModal, setActiveLinkModal] = useState<
     'participants' | 'campaigns' | 'locations' | 'npcs' | 'notes' | 'tags' | null
   >(null);
+
+  const activeCampaignId = (isEditing ? campaignIds : session?.campaignIds ?? [])[0] || '';
+  const continuityId = useMemo(() => {
+    if (!activeCampaignId) return '';
+    const campaign = campaigns.find((item) => item.id === activeCampaignId);
+    return campaign?.continuityId ?? '';
+  }, [activeCampaignId, campaigns]);
+  const tags = useTags(continuityId, activeCampaignId);
+  const getOrCreateTag = useGetOrCreateTag({
+    continuityId,
+    scope: 'continuity',
+  });
 
   useEffect(() => {
     if (session && !isEditing) {

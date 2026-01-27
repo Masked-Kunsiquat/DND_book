@@ -354,6 +354,30 @@ export default function ContinuitiesScreen() {
               />
             }
           />
+          <AppCard
+            title="Tags Library"
+            subtitle={
+              currentContinuity
+                ? `Shared tags in ${currentContinuity.name || 'this continuity'}`
+                : 'Select a continuity to view shared tags.'
+            }
+            onPress={
+              currentContinuity
+                ? () =>
+                    router.push({
+                      pathname: '/tags',
+                      params: { continuityId: currentContinuity.id },
+                    })
+                : undefined
+            }
+            right={
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={18}
+                color={theme.colors.onSurfaceVariant}
+              />
+            }
+          />
         </Section>
 
         <Section title="All Continuities" icon="infinity" action={{ label: 'New', onPress: openCreateModal }}>

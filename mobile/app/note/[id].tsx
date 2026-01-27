@@ -48,10 +48,14 @@ export default function NoteDetailScreen() {
   const campaigns = useCampaigns();
   const currentCampaign = useCurrentCampaign();
   const locations = useLocations();
-  const tags = useTags();
+  const tagContinuityId = campaign?.continuityId || currentCampaign?.continuityId;
+  const tags = useTags(tagContinuityId, currentCampaign?.id);
   const updateNote = useUpdateNote();
   const deleteNote = useDeleteNote();
-  const getOrCreateTag = useGetOrCreateTag();
+  const getOrCreateTag = useGetOrCreateTag({
+    continuityId: tagContinuityId,
+    scope: 'continuity',
+  });
 
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState('');

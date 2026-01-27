@@ -76,7 +76,7 @@ export default function LocationsScreen() {
   const [draftDescription, setDraftDescription] = useState('');
   const createLocation = useCreateLocation();
   const allLocations = useLocations();
-  const tags = useTags();
+  const tags = useTags(currentCampaign?.continuityId, currentCampaign?.id);
   const { refreshing, onRefresh } = usePullToRefresh();
   const effectiveCampaignId = currentCampaign?.id;
   const locations = useLocations(effectiveCampaignId);

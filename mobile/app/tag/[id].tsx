@@ -23,8 +23,11 @@ import {
   useSessionLogs,
   useTag,
   useTags,
+  useCreateTag,
+  useCurrentCampaign,
   useUpdateTag,
 } from '../../src/hooks';
+import { now } from '../../src/utils/id';
 
 export default function TagDetailScreen() {
   const { theme } = useTheme();
@@ -34,21 +37,26 @@ export default function TagDetailScreen() {
     return Array.isArray(raw) ? raw[0] : raw ?? '';
   }, [params.id]);
   const tag = useTag(tagId);
-  const tags = useTags();
+  const currentCampaign = useCurrentCampaign();
+  const tags = useTags(tag?.continuityId, currentCampaign?.id);
   const notes = useNotesByTag(tagId);
   const npcs = useNpcsByTag(tagId);
   const locations = useLocationsByTag(tagId);
   const sessionLogs = useSessionLogs();
   const updateTag = useUpdateTag();
   const deleteTag = useDeleteTag();
+  const createTag = useCreateTag();
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [isForking, setIsForking] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [draftName, setDraftName] = useState('');
-  const defaultTagColor: string = tagColors[0]?.bg ?? '#3b82f6';
+  const defaultTagColor: string = tagColors[0]?.bg ?? theme.colors.primary;
   const [draftColor, setDraftColor] = useState(defaultTagColor);
 
   const sessionsForTag = useMemo(() => {
@@ -119,6 +127,56 @@ export default function TagDetailScreen() {
     }
   };
 
+  const handleShare = () => {
+    if (!tag || isSharing) return;
+    setIsShareOpen(true);
+  };
+
+  const closeShareDialog = () => {
+    setIsShareOpen(false);
+  };
+
+  const confirmShare = () => {
+    if (!tag || isSharing) return;
+    setIsSharing(true);
+    try {
+      updateTag(tag.id, {
+        scope: 'continuity',
+        continuityId: tag.continuityId,
+        campaignId: '',
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to share tag.';
+      setEditError(message);
+    } finally {
+      setIsSharing(false);
+      setIsShareOpen(false);
+    }
+  };
+
+  const handleFork = () => {
+    if (!tag || !currentCampaign || isForking) return;
+    setIsForking(true);
+    try {
+      const id = createTag({
+        name: tag.name,
+        color: tag.color,
+        scope: 'campaign',
+        continuityId: tag.continuityId,
+        campaignId: currentCampaign.id,
+        originId: tag.id,
+        originContinuityId: tag.continuityId,
+        forkedAt: now(),
+      });
+      router.push(`/tag/${id}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to fork tag.';
+      setEditError(message);
+    } finally {
+      setIsForking(false);
+    }
+  };
+
   const editModal = (
     <FormModal
       title="Edit Tag"
@@ -178,6 +236,16 @@ export default function TagDetailScreen() {
         <Section title="Tag" icon="tag-outline">
           <View style={styles.tagRow}>
             <TagChip id={tag.id} name={tag.name} color={tag.color} />
+            {tag.scope === 'continuity' && (
+              <Text variant="labelSmall" style={{ color: theme.colors.primary }}>
+                Shared in continuity
+              </Text>
+            )}
+            {tag.scope === 'campaign' && (
+              <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                Campaign only
+              </Text>
+            )}
           </View>
         </Section>
 
@@ -228,6 +296,18 @@ export default function TagDetailScreen() {
               Delete
             </Button>
           </View>
+          <View style={styles.shareRow}>
+            {tag.scope === 'campaign' && (
+              <Button mode="outlined" icon="share-variant" onPress={handleShare} disabled={isSharing}>
+                Share to Continuity
+              </Button>
+            )}
+            {tag.scope === 'continuity' && currentCampaign && (
+              <Button mode="outlined" icon="source-fork" onPress={handleFork} disabled={isForking}>
+                Fork to Campaign
+              </Button>
+            )}
+          </View>
           {editError && (
             <Text variant="bodySmall" style={{ color: theme.colors.error }}>
               {editError}
@@ -238,12 +318,25 @@ export default function TagDetailScreen() {
       <ConfirmDialog
         visible={isDeleteOpen}
         title="Delete tag?"
-        description="This tag will be removed from all linked content."
+        description={
+          tag.scope === 'continuity'
+            ? 'This tag will be removed from all campaigns in this continuity.'
+            : 'This tag will be removed from all linked content.'
+        }
         confirmLabel="Delete"
         onCancel={closeDeleteDialog}
         onConfirm={confirmDelete}
         confirmLoading={isDeleting}
         destructive
+      />
+      <ConfirmDialog
+        visible={isShareOpen}
+        title="Share to continuity?"
+        description="Shared tags are available to every campaign in this continuity."
+        confirmLabel="Share"
+        onCancel={closeShareDialog}
+        onConfirm={confirmShare}
+        confirmLoading={isSharing}
       />
       {editModal}
     </>
@@ -262,6 +355,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing[2],
+  },
+  shareRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[2],
+    marginTop: spacing[2],
   },
   colorPreviewRow: {
     alignItems: 'flex-start',

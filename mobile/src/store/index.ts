@@ -122,6 +122,27 @@ export function StoreProvider({ children }: StoreProviderProps) {
           }
         });
 
+        // Backfill tag scope metadata
+        const tagsTable = appStore.getTable('tags');
+        Object.entries(tagsTable).forEach(([tagId, row]) => {
+          const scope = (row as { scope?: string }).scope;
+          const continuityId = (row as { continuityId?: string }).continuityId;
+          if (!scope || !continuityId) {
+            appStore.setRow('tags', tagId, {
+              ...row,
+              scope: scope || 'continuity',
+              continuityId: continuityId || defaultContinuityId,
+              campaignId: (row as { campaignId?: string }).campaignId || '',
+              originId: (row as { originId?: string }).originId || '',
+              originContinuityId:
+                (row as { originContinuityId?: string }).originContinuityId || '',
+              forkedAt: (row as { forkedAt?: string }).forkedAt || '',
+              updated: now(),
+            });
+            didMigrateContinuity = true;
+          }
+        });
+
         // Start auto-saving changes
         persister.startAutoSave();
 

@@ -89,10 +89,14 @@ export default function LocationDetailScreen() {
   const allLocations = useLocations();
   const childLocations = useChildLocations(scopedLocationId);
   const path = useLocationPath(scopedLocationId);
-  const tags = useTags();
-  const getOrCreateTag = useGetOrCreateTag();
   const campaigns = useCampaigns();
   const currentCampaign = useCurrentCampaign();
+  const tagContinuityId = location?.continuityId || currentCampaign?.continuityId;
+  const tags = useTags(tagContinuityId, currentCampaign?.id);
+  const getOrCreateTag = useGetOrCreateTag({
+    continuityId: tagContinuityId,
+    scope: 'continuity',
+  });
 
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState('');

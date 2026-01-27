@@ -91,6 +91,12 @@ export interface Tag {
   id: RecordId;
   name: string;
   color: string;
+  scope: EntityScope;
+  continuityId: RecordId;
+  campaignId: RecordId;
+  originId: RecordId;
+  originContinuityId: RecordId;
+  forkedAt: IsoDateString;
   created: IsoDateString;
   updated: IsoDateString;
 }
@@ -197,6 +203,12 @@ export interface TagRow {
   id: string;
   name: string;
   color: string;
+  scope: string;
+  continuityId: string;
+  campaignId: string;
+  originId: string;
+  originContinuityId: string;
+  forkedAt: string;
   created: string;
   updated: string;
 }

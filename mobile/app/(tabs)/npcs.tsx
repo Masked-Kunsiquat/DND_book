@@ -50,11 +50,14 @@ export default function NpcsScreen() {
   const [draftNoteIds, setDraftNoteIds] = useState<string[]>([]);
   const [draftTagIds, setDraftTagIds] = useState<string[]>([]);
   const createNpc = useCreateNpc();
-  const getOrCreateTag = useGetOrCreateTag();
+  const getOrCreateTag = useGetOrCreateTag({
+    continuityId: currentCampaign?.continuityId,
+    scope: 'continuity',
+  });
   const campaigns = useCampaigns();
   const locations = useLocations();
   const notes = useNotes();
-  const tags = useTags();
+  const tags = useTags(currentCampaign?.continuityId, currentCampaign?.id);
   const { refreshing, onRefresh } = usePullToRefresh();
   const effectiveCampaignId = currentCampaign?.id;
   const npcs = useNpcs(effectiveCampaignId);

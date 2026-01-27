@@ -51,12 +51,10 @@ export default function NpcDetailScreen() {
   const createNpc = useCreateNpc();
   const updateNpc = useUpdateNpc();
   const deleteNpc = useDeleteNpc();
-  const getOrCreateTag = useGetOrCreateTag();
   const campaigns = useCampaigns();
   const currentCampaign = useCurrentCampaign();
   const locations = useLocations();
   const notes = useNotes();
-  const tags = useTags();
 
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState('');
@@ -102,6 +100,12 @@ export default function NpcDetailScreen() {
     if (!continuityId) return campaigns;
     return campaigns.filter((campaign) => campaign.continuityId === continuityId);
   }, [campaigns, continuityId]);
+
+  const tags = useTags(continuityId, currentCampaign?.id);
+  const getOrCreateTag = useGetOrCreateTag({
+    continuityId,
+    scope: 'continuity',
+  });
 
   const canRemoveFromCampaign =
     npc?.scope === 'continuity' &&

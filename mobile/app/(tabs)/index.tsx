@@ -18,7 +18,7 @@ export default function Home() {
   const notes = useNotes(currentCampaign?.id);
   const npcs = useNpcs(currentCampaign?.id);
   const locations = useLocations(currentCampaign?.id);
-  const tags = useTags();
+  const tags = useTags(currentCampaign?.continuityId, currentCampaign?.id);
 
   const recentNotes = useMemo(() => {
     return [...notes]

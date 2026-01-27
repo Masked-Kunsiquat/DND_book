@@ -20,6 +20,12 @@ function rowToTag(row: TagRow): Tag {
     id: row.id,
     name: row.name,
     color: row.color || getTagColor(row.id).bg,
+    scope: (row.scope as Tag['scope']) || 'continuity',
+    continuityId: row.continuityId || '',
+    campaignId: row.campaignId || '',
+    originId: row.originId || '',
+    originContinuityId: row.originContinuityId || '',
+    forkedAt: row.forkedAt || '',
     created: row.created,
     updated: row.updated,
   };
@@ -41,13 +47,22 @@ function parseJsonArray(value: string): string[] {
 /**
  * Hook to get all tags.
  */
-export function useTags(): Tag[] {
+export function useTags(continuityId?: string, campaignId?: string): Tag[] {
   const store = useStore();
   const table = useTable('tags', store);
 
   return useMemo(() => {
-    return Object.values(table).map((row) => rowToTag(row as unknown as TagRow));
-  }, [table]);
+    const tags = Object.values(table).map((row) => rowToTag(row as unknown as TagRow));
+    if (!continuityId) return tags;
+    return tags.filter((tag) => {
+      if (tag.continuityId !== continuityId) return false;
+      if (tag.scope === 'continuity') return true;
+      if (tag.scope === 'campaign') {
+        return Boolean(campaignId) && tag.campaignId === campaignId;
+      }
+      return false;
+    });
+  }, [table, continuityId, campaignId]);
 }
 
 /**
@@ -101,6 +116,12 @@ export function useTagByName(name: string): Tag | null {
 export interface CreateTagInput {
   name: string;
   color?: string;
+  scope?: Tag['scope'];
+  continuityId?: string;
+  campaignId?: string;
+  originId?: string;
+  originContinuityId?: string;
+  forkedAt?: string;
 }
 
 /**
@@ -120,6 +141,12 @@ export function useCreateTag(): (data: CreateTagInput) => string {
         id,
         name: data.name,
         color,
+        scope: data.scope || 'continuity',
+        continuityId: data.continuityId || '',
+        campaignId: data.campaignId || '',
+        originId: data.originId || '',
+        originContinuityId: data.originContinuityId || '',
+        forkedAt: data.forkedAt || '',
         created: timestamp,
         updated: timestamp,
       });
@@ -135,7 +162,13 @@ export function useCreateTag(): (data: CreateTagInput) => string {
  * Hook to create a tag if it doesn't exist, or return existing one.
  * Returns the tag ID.
  */
-export function useGetOrCreateTag(): (name: string) => string {
+export interface TagScopeOptions {
+  continuityId?: string;
+  campaignId?: string;
+  scope?: Tag['scope'];
+}
+
+export function useGetOrCreateTag(options?: TagScopeOptions): (name: string) => string {
   const store = useStore();
 
   return useCallback(
@@ -143,13 +176,22 @@ export function useGetOrCreateTag(): (name: string) => string {
       const lowerName = name.toLowerCase();
       let resolvedId = '';
       let didCreate = false;
+      const continuityId = options?.continuityId || '';
+      const campaignId = options?.campaignId || '';
+      const scope = options?.scope || 'continuity';
 
       store.transaction(() => {
         const table = store.getTable('tags');
 
-        const existing = Object.values(table).find(
-          (r) => (r as unknown as TagRow).name.toLowerCase() === lowerName
-        ) as unknown as TagRow | undefined;
+        const existing = Object.values(table).find((r) => {
+          const row = r as unknown as TagRow;
+          if (row.name.toLowerCase() !== lowerName) return false;
+          if (continuityId && row.continuityId !== continuityId) return false;
+          if (scope === 'campaign') {
+            return row.scope === 'campaign' && row.campaignId === campaignId;
+          }
+          return row.scope === 'continuity';
+        }) as unknown as TagRow | undefined;
 
         if (existing) {
           resolvedId = existing.id;
@@ -164,6 +206,12 @@ export function useGetOrCreateTag(): (name: string) => string {
           id,
           name,
           color,
+          scope,
+          continuityId,
+          campaignId: scope === 'campaign' ? campaignId : '',
+          originId: '',
+          originContinuityId: '',
+          forkedAt: '',
           created: timestamp,
           updated: timestamp,
         });
@@ -187,6 +235,12 @@ export function useGetOrCreateTag(): (name: string) => string {
 export interface UpdateTagInput {
   name?: string;
   color?: string;
+  scope?: Tag['scope'];
+  continuityId?: string;
+  campaignId?: string;
+  originId?: string;
+  originContinuityId?: string;
+  forkedAt?: string;
 }
 
 /**
@@ -206,6 +260,13 @@ export function useUpdateTag(): (id: string, data: UpdateTagInput) => void {
       const updates: Record<string, string> = { updated: now() };
       if (data.name !== undefined) updates.name = data.name;
       if (data.color !== undefined) updates.color = data.color;
+      if (data.scope !== undefined) updates.scope = data.scope;
+      if (data.continuityId !== undefined) updates.continuityId = data.continuityId;
+      if (data.campaignId !== undefined) updates.campaignId = data.campaignId;
+      if (data.originId !== undefined) updates.originId = data.originId;
+      if (data.originContinuityId !== undefined)
+        updates.originContinuityId = data.originContinuityId;
+      if (data.forkedAt !== undefined) updates.forkedAt = data.forkedAt;
 
       store.setRow('tags', id, {
         ...existing,
