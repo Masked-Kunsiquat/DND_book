@@ -233,10 +233,6 @@ export function EntitySuggestions({
     [baseSuggestions, keyword, maxSuggestions]
   );
 
-  if (!activeEntry || !activeData) {
-    return null;
-  }
-
   const hasExactMatch = useMemo(() => {
     if (!trimmedKeyword) return false;
     const normalizedKeyword = normalize(trimmedKeyword);
@@ -244,6 +240,10 @@ export function EntitySuggestions({
   }, [baseSuggestions, trimmedKeyword]);
 
   const showCreate = Boolean(trimmedKeyword) && !hasExactMatch;
+
+  if (!activeEntry || !activeData) {
+    return null;
+  }
 
   return (
     <Surface
