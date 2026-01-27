@@ -120,6 +120,7 @@ export default function LocationDetailScreen() {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [isForking, setIsForking] = useState(false);
+  const [activeLinkModal, setActiveLinkModal] = useState<'campaigns' | 'tags' | null>(null);
 
   const linkedCampaigns = useMemo(() => {
     if (!location) return [];
@@ -279,6 +280,31 @@ export default function LocationDetailScreen() {
     setError(null);
     setIsEditing(true);
   };
+
+  const openLinkModal = (target: 'campaigns' | 'tags') => {
+    setActiveLinkModal(target);
+  };
+
+  const closeLinkModal = () => setActiveLinkModal(null);
+
+  const linkModalTitle = activeLinkModal === 'tags' ? 'Tags' : 'Campaigns';
+
+  const linkModalBody =
+    activeLinkModal === 'tags' ? (
+      <TagInput
+        tags={tags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color }))}
+        selectedIds={tagIds}
+        onChange={setTagIds}
+        onCreateTag={handleCreateTag}
+      />
+    ) : (
+      <FormMultiSelect
+        label="Campaigns"
+        value={campaignIds}
+        options={campaignOptions}
+        onChange={setCampaignIds}
+      />
+    );
 
   const handleCancel = () => {
     if (location) {
@@ -541,6 +567,21 @@ export default function LocationDetailScreen() {
     </FormModal>
   );
 
+  const linkModal = (
+    <FormModal
+      title={linkModalTitle}
+      visible={Boolean(activeLinkModal)}
+      onDismiss={closeLinkModal}
+      actions={
+        <Button mode="contained" onPress={closeLinkModal}>
+          Done
+        </Button>
+      }
+    >
+      {linkModalBody}
+    </FormModal>
+  );
+
   if (!hasLocationId) {
     return (
       <Screen>
@@ -731,11 +772,25 @@ export default function LocationDetailScreen() {
 
         <Section title="Campaigns" icon="folder-outline">
           {isEditing ? (
-            <FormMultiSelect
-              label="Campaigns"
-              value={campaignIds}
-              options={campaignOptions}
-              onChange={setCampaignIds}
+            <AppCard
+              title="Campaigns"
+              subtitle={`${campaignIds.length} selected`}
+              onPress={() => openLinkModal('campaigns')}
+              right={
+                <View style={styles.editCardRight}>
+                  <MaterialCommunityIcons
+                    name="folder-outline"
+                    size={18}
+                    color={theme.colors.primary}
+                  />
+                  <MaterialCommunityIcons
+                    name="chevron-right"
+                    size={18}
+                    color={theme.colors.onSurfaceVariant}
+                  />
+                </View>
+              }
+              style={styles.editCard}
             />
           ) : linkedCampaigns.length === 0 ? (
             <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
@@ -750,11 +805,21 @@ export default function LocationDetailScreen() {
 
         {isEditing ? (
           <Section title="Tags" icon="tag-outline">
-            <TagInput
-              tags={tags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color }))}
-              selectedIds={tagIds}
-              onChange={setTagIds}
-              onCreateTag={handleCreateTag}
+            <AppCard
+              title="Tags"
+              subtitle={`${tagIds.length} selected`}
+              onPress={() => openLinkModal('tags')}
+              right={
+                <View style={styles.editCardRight}>
+                  <MaterialCommunityIcons name="tag-outline" size={18} color={theme.colors.primary} />
+                  <MaterialCommunityIcons
+                    name="chevron-right"
+                    size={18}
+                    color={theme.colors.onSurfaceVariant}
+                  />
+                </View>
+              }
+              style={styles.editCard}
             />
           </Section>
         ) : (
@@ -914,6 +979,7 @@ export default function LocationDetailScreen() {
         confirmLoading={isSharing}
       />
       {moveModal}
+      {linkModal}
     </>
   );
 }
@@ -963,6 +1029,14 @@ const styles = StyleSheet.create({
   },
   descriptionInput: {
     minHeight: 160,
+  },
+  editCard: {
+    paddingVertical: spacing[1],
+  },
+  editCardRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[1],
   },
   metaRow: {
     marginTop: spacing[3],

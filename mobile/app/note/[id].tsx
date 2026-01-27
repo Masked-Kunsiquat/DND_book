@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, IconButton, Text } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import {
   AppCard,
   ConfirmDialog,
   EmptyState,
+  FormModal,
   FormMultiSelect,
   FormSelect,
   FormTextInput,
@@ -73,6 +75,9 @@ export default function NoteDetailScreen() {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [isForking, setIsForking] = useState(false);
+  const [activeLinkModal, setActiveLinkModal] = useState<'campaign' | 'locations' | 'tags' | null>(
+    null
+  );
 
   useEffect(() => {
     if (note && !isEditing) {
@@ -136,6 +141,11 @@ export default function NoteDetailScreen() {
     return note?.tagIds ?? [];
   }, [isEditing, note?.tagIds, tagIds]);
 
+  const selectedCampaignLabel = useMemo(() => {
+    if (!campaignId) return 'Not linked';
+    return campaignOptions.find((option) => option.value === campaignId)?.label ?? 'Linked campaign';
+  }, [campaignId, campaignOptions]);
+
   const linkedLocations = useMemo(() => {
     const ids = new Set(displayLocationIds);
     return locations.filter((location) => ids.has(location.id));
@@ -150,6 +160,64 @@ export default function NoteDetailScreen() {
 
   const showShareActions =
     note?.scope === 'campaign' || (note?.scope === 'continuity' && Boolean(currentCampaign));
+
+  const openLinkModal = (target: 'campaign' | 'locations' | 'tags') => {
+    setActiveLinkModal(target);
+  };
+
+  const closeLinkModal = () => setActiveLinkModal(null);
+
+  const linkModalTitle = (() => {
+    switch (activeLinkModal) {
+      case 'campaign':
+        return 'Campaign';
+      case 'locations':
+        return 'Locations';
+      case 'tags':
+        return 'Tags';
+      default:
+        return '';
+    }
+  })();
+
+  const linkModalBody = (() => {
+    switch (activeLinkModal) {
+      case 'campaign':
+        return (
+          <FormSelect
+            label="Campaign"
+            value={campaignId}
+            options={campaignOptions}
+            onChange={handleCampaignChange}
+          />
+        );
+      case 'locations':
+        return (
+          <FormMultiSelect
+            label="Locations"
+            value={locationIds}
+            options={locationOptions}
+            onChange={setLocationIds}
+            helperText={
+              note?.scope === 'continuity'
+                ? 'Optional: link this note to shared locations.'
+                : 'Optional: link this note to locations.'
+            }
+          />
+        );
+      case 'tags':
+        return (
+          <TagInput
+            tags={availableTags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color }))}
+            selectedIds={tagIds}
+            onChange={setTagIds}
+            onCreateTag={handleCreateTag}
+          />
+        );
+      default:
+        return null;
+    }
+  })();
 
   const appendContent = (snippet: string) => {
     setContent((prev) => {
@@ -421,34 +489,117 @@ export default function NoteDetailScreen() {
           {isEditing ? (
             <>
               {note.scope === 'campaign' ? (
-                <FormSelect
-                  label="Campaign"
-                  value={campaignId}
-                  options={campaignOptions}
-                  onChange={handleCampaignChange}
-                />
+                <View style={styles.linkList}>
+                  <AppCard
+                    title="Campaign"
+                    subtitle={selectedCampaignLabel}
+                    onPress={() => openLinkModal('campaign')}
+                    right={
+                      <View style={styles.editCardRight}>
+                        <MaterialCommunityIcons
+                          name="folder-outline"
+                          size={18}
+                          color={theme.colors.primary}
+                        />
+                        <MaterialCommunityIcons
+                          name="chevron-right"
+                          size={18}
+                          color={theme.colors.onSurfaceVariant}
+                        />
+                      </View>
+                    }
+                    style={styles.editCard}
+                  />
+                  <AppCard
+                    title="Locations"
+                    subtitle={`${locationIds.length} selected`}
+                    onPress={() => openLinkModal('locations')}
+                    right={
+                      <View style={styles.editCardRight}>
+                        <MaterialCommunityIcons
+                          name="map-marker-outline"
+                          size={18}
+                          color={theme.colors.primary}
+                        />
+                        <MaterialCommunityIcons
+                          name="chevron-right"
+                          size={18}
+                          color={theme.colors.onSurfaceVariant}
+                        />
+                      </View>
+                    }
+                    style={styles.editCard}
+                  />
+                  <AppCard
+                    title="Tags"
+                    subtitle={`${tagIds.length} selected`}
+                    onPress={() => openLinkModal('tags')}
+                    right={
+                      <View style={styles.editCardRight}>
+                        <MaterialCommunityIcons
+                          name="tag-outline"
+                          size={18}
+                          color={theme.colors.primary}
+                        />
+                        <MaterialCommunityIcons
+                          name="chevron-right"
+                          size={18}
+                          color={theme.colors.onSurfaceVariant}
+                        />
+                      </View>
+                    }
+                    style={styles.editCard}
+                  />
+                </View>
               ) : (
-                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                  Shared notes are available to every campaign in this continuity.
-                </Text>
+                <>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Shared notes are available to every campaign in this continuity.
+                  </Text>
+                  <View style={styles.linkList}>
+                    <AppCard
+                      title="Locations"
+                      subtitle={`${locationIds.length} selected`}
+                      onPress={() => openLinkModal('locations')}
+                      right={
+                        <View style={styles.editCardRight}>
+                          <MaterialCommunityIcons
+                            name="map-marker-outline"
+                            size={18}
+                            color={theme.colors.primary}
+                          />
+                          <MaterialCommunityIcons
+                            name="chevron-right"
+                            size={18}
+                            color={theme.colors.onSurfaceVariant}
+                          />
+                        </View>
+                      }
+                      style={styles.editCard}
+                    />
+                    <AppCard
+                      title="Tags"
+                      subtitle={`${tagIds.length} selected`}
+                      onPress={() => openLinkModal('tags')}
+                      right={
+                        <View style={styles.editCardRight}>
+                          <MaterialCommunityIcons
+                            name="tag-outline"
+                            size={18}
+                            color={theme.colors.primary}
+                          />
+                          <MaterialCommunityIcons
+                            name="chevron-right"
+                            size={18}
+                            color={theme.colors.onSurfaceVariant}
+                          />
+                        </View>
+                      }
+                      style={styles.editCard}
+                    />
+                  </View>
+                </>
               )}
-              <FormMultiSelect
-                label="Locations"
-                value={locationIds}
-                options={locationOptions}
-                onChange={setLocationIds}
-                helperText="Optional: link this note to locations."
-              />
-              <TagInput
-                tags={availableTags.map((tag) => ({
-                  id: tag.id,
-                  name: tag.name,
-                  color: tag.color,
-                }))}
-                selectedIds={tagIds}
-                onChange={setTagIds}
-                onCreateTag={handleCreateTag}
-              />
             </>
           ) : (
             <>
@@ -575,6 +726,20 @@ export default function NoteDetailScreen() {
         onConfirm={confirmShare}
         confirmLoading={isSharing}
       />
+      {activeLinkModal && (
+        <FormModal
+          title={linkModalTitle}
+          visible={Boolean(activeLinkModal)}
+          onDismiss={closeLinkModal}
+          actions={
+            <Button mode="contained" onPress={closeLinkModal}>
+              Done
+            </Button>
+          }
+        >
+          {linkModalBody}
+        </FormModal>
+      )}
     </>
   );
 }
@@ -602,6 +767,17 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing[2],
     marginTop: spacing[2],
+  },
+  linkList: {
+    gap: spacing[2],
+  },
+  editCard: {
+    paddingVertical: spacing[1],
+  },
+  editCardRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[1],
   },
   tagsRow: {
     flexDirection: 'row',

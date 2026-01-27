@@ -8,6 +8,7 @@ import {
   ConfirmDialog,
   EmptyState,
   FormImagePicker,
+  FormModal,
   FormMultiSelect,
   FormTextInput,
   Screen,
@@ -78,6 +79,9 @@ export default function NpcDetailScreen() {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [isForking, setIsForking] = useState(false);
+  const [activeLinkModal, setActiveLinkModal] = useState<
+    'campaigns' | 'locations' | 'notes' | 'tags' | null
+  >(null);
 
   useEffect(() => {
     if (npc && !isEditing) {
@@ -173,6 +177,70 @@ export default function NpcDetailScreen() {
     setError(null);
     setIsEditing(true);
   };
+
+  const openLinkModal = (target: 'campaigns' | 'locations' | 'notes' | 'tags') => {
+    setActiveLinkModal(target);
+  };
+
+  const closeLinkModal = () => setActiveLinkModal(null);
+
+  const linkModalTitle = (() => {
+    switch (activeLinkModal) {
+      case 'campaigns':
+        return 'Campaigns';
+      case 'locations':
+        return 'Locations';
+      case 'notes':
+        return 'Notes';
+      case 'tags':
+        return 'Tags';
+      default:
+        return '';
+    }
+  })();
+
+  const linkModalBody = (() => {
+    switch (activeLinkModal) {
+      case 'campaigns':
+        return (
+          <FormMultiSelect
+            label="Campaigns"
+            value={campaignIds}
+            options={campaignOptions}
+            onChange={setCampaignIds}
+          />
+        );
+      case 'locations':
+        return (
+          <FormMultiSelect
+            label="Locations"
+            value={locationIds}
+            options={locationOptions}
+            onChange={setLocationIds}
+          />
+        );
+      case 'notes':
+        return (
+          <FormMultiSelect
+            label="Notes"
+            value={noteIds}
+            options={noteOptions}
+            onChange={setNoteIds}
+          />
+        );
+      case 'tags':
+        return (
+          <TagInput
+            tags={tags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color }))}
+            selectedIds={tagIds}
+            onChange={setTagIds}
+            onCreateTag={handleCreateTag}
+          />
+        );
+      default:
+        return null;
+    }
+  })();
 
   const handleCancel = () => {
     if (npc) {
@@ -425,32 +493,88 @@ export default function NpcDetailScreen() {
 
         <Section title="Links" icon="link-variant">
           {isEditing ? (
-            <>
-              <FormMultiSelect
-                label="Campaigns"
-                value={campaignIds}
-                options={campaignOptions}
-                onChange={setCampaignIds}
+            <View style={styles.linkList}>
+              <AppCard
+                title="Campaigns"
+                subtitle={`${campaignIds.length} selected`}
+                onPress={() => openLinkModal('campaigns')}
+                right={
+                  <View style={styles.editCardRight}>
+                    <MaterialCommunityIcons
+                      name="folder-outline"
+                      size={18}
+                      color={theme.colors.primary}
+                    />
+                    <MaterialCommunityIcons
+                      name="chevron-right"
+                      size={18}
+                      color={theme.colors.onSurfaceVariant}
+                    />
+                  </View>
+                }
+                style={styles.editCard}
               />
-              <FormMultiSelect
-                label="Locations"
-                value={locationIds}
-                options={locationOptions}
-                onChange={setLocationIds}
+              <AppCard
+                title="Locations"
+                subtitle={`${locationIds.length} selected`}
+                onPress={() => openLinkModal('locations')}
+                right={
+                  <View style={styles.editCardRight}>
+                    <MaterialCommunityIcons
+                      name="map-marker-outline"
+                      size={18}
+                      color={theme.colors.primary}
+                    />
+                    <MaterialCommunityIcons
+                      name="chevron-right"
+                      size={18}
+                      color={theme.colors.onSurfaceVariant}
+                    />
+                  </View>
+                }
+                style={styles.editCard}
               />
-              <FormMultiSelect
-                label="Notes"
-                value={noteIds}
-                options={noteOptions}
-                onChange={setNoteIds}
+              <AppCard
+                title="Notes"
+                subtitle={`${noteIds.length} selected`}
+                onPress={() => openLinkModal('notes')}
+                right={
+                  <View style={styles.editCardRight}>
+                    <MaterialCommunityIcons
+                      name="note-text-outline"
+                      size={18}
+                      color={theme.colors.primary}
+                    />
+                    <MaterialCommunityIcons
+                      name="chevron-right"
+                      size={18}
+                      color={theme.colors.onSurfaceVariant}
+                    />
+                  </View>
+                }
+                style={styles.editCard}
               />
-              <TagInput
-                tags={tags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color }))}
-                selectedIds={tagIds}
-                onChange={setTagIds}
-                onCreateTag={handleCreateTag}
+              <AppCard
+                title="Tags"
+                subtitle={`${tagIds.length} selected`}
+                onPress={() => openLinkModal('tags')}
+                right={
+                  <View style={styles.editCardRight}>
+                    <MaterialCommunityIcons
+                      name="tag-outline"
+                      size={18}
+                      color={theme.colors.primary}
+                    />
+                    <MaterialCommunityIcons
+                      name="chevron-right"
+                      size={18}
+                      color={theme.colors.onSurfaceVariant}
+                    />
+                  </View>
+                }
+                style={styles.editCard}
               />
-            </>
+            </View>
           ) : (
             <>
               {linkedCampaigns.length === 0 ? (
@@ -625,6 +749,20 @@ export default function NpcDetailScreen() {
         onConfirm={confirmShare}
         confirmLoading={isSharing}
       />
+      {activeLinkModal && (
+        <FormModal
+          title={linkModalTitle}
+          visible={Boolean(activeLinkModal)}
+          onDismiss={closeLinkModal}
+          actions={
+            <Button mode="contained" onPress={closeLinkModal}>
+              Done
+            </Button>
+          }
+        >
+          {linkModalBody}
+        </FormModal>
+      )}
     </>
   );
 }
@@ -646,6 +784,17 @@ const styles = StyleSheet.create({
   },
   contentInput: {
     minHeight: 140,
+  },
+  linkList: {
+    gap: spacing[2],
+  },
+  editCard: {
+    paddingVertical: spacing[1],
+  },
+  editCardRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[1],
   },
   imageRow: {
     flexDirection: 'row',

@@ -3,6 +3,7 @@ import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { Button, FAB, Text, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
+  AppCard,
   FormModal,
   FormMultiSelect,
   FormSelect,
@@ -39,6 +40,7 @@ export default function NotesScreen() {
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [activeLinkModal, setActiveLinkModal] = useState<'locations' | 'tags' | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState('');
   const [draftContent, setDraftContent] = useState('');
@@ -186,6 +188,7 @@ export default function NotesScreen() {
   const closeCreateModal = () => {
     setIsCreateOpen(false);
     setCreateError(null);
+    setActiveLinkModal(null);
   };
 
   const handleCampaignChange = (value: string) => {
@@ -217,6 +220,33 @@ export default function NotesScreen() {
     const id = getOrCreateTag(tagName);
     return id || undefined;
   };
+
+  const openLinkModal = (target: 'locations' | 'tags') => setActiveLinkModal(target);
+  const closeLinkModal = () => setActiveLinkModal(null);
+
+  const linkModalTitle = activeLinkModal === 'tags' ? 'Tags' : 'Locations';
+
+  const linkModalBody =
+    activeLinkModal === 'tags' ? (
+      <TagInput
+        tags={availableTags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color }))}
+        selectedIds={draftTagIds}
+        onChange={setDraftTagIds}
+        onCreateTag={handleCreateTag}
+      />
+    ) : (
+      <FormMultiSelect
+        label="Locations"
+        value={draftLocationIds}
+        options={locationOptions}
+        onChange={setDraftLocationIds}
+        helperText={
+          draftScope === 'continuity'
+            ? 'Optional: link this note to shared locations.'
+            : 'Optional: link this note to locations.'
+        }
+      />
+    );
 
   const handleCreate = () => {
     if (isCreating) return;
@@ -323,28 +353,67 @@ export default function NotesScreen() {
       <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
         Tip: use @Name for people/places and #tags to make details easier to scan later.
       </Text>
-      <FormMultiSelect
-        label="Locations"
-        value={draftLocationIds}
-        options={locationOptions}
-        onChange={setDraftLocationIds}
-        helperText={
-          draftScope === 'continuity'
-            ? 'Optional: link this note to shared locations.'
-            : 'Optional: link this note to locations.'
-        }
-      />
-      <TagInput
-        tags={availableTags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color }))}
-        selectedIds={draftTagIds}
-        onChange={setDraftTagIds}
-        onCreateTag={handleCreateTag}
-      />
+      <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+        Links
+      </Text>
+      <View style={styles.linkList}>
+        <AppCard
+          title="Locations"
+          subtitle={`${draftLocationIds.length} selected`}
+          onPress={() => openLinkModal('locations')}
+          right={
+            <View style={styles.editCardRight}>
+              <MaterialCommunityIcons
+                name="map-marker-outline"
+                size={18}
+                color={theme.colors.primary}
+              />
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={18}
+                color={theme.colors.onSurfaceVariant}
+              />
+            </View>
+          }
+          style={styles.editCard}
+        />
+        <AppCard
+          title="Tags"
+          subtitle={`${draftTagIds.length} selected`}
+          onPress={() => openLinkModal('tags')}
+          right={
+            <View style={styles.editCardRight}>
+              <MaterialCommunityIcons name="tag-outline" size={18} color={theme.colors.primary} />
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={18}
+                color={theme.colors.onSurfaceVariant}
+              />
+            </View>
+          }
+          style={styles.editCard}
+        />
+      </View>
       {createError && (
         <Text variant="bodySmall" style={{ color: theme.colors.error }}>
           {createError}
         </Text>
       )}
+    </FormModal>
+  );
+
+  const linkModal = (
+    <FormModal
+      title={linkModalTitle}
+      visible={Boolean(activeLinkModal)}
+      onDismiss={closeLinkModal}
+      actions={
+        <Button mode="contained" onPress={closeLinkModal}>
+          Done
+        </Button>
+      }
+    >
+      {linkModalBody}
     </FormModal>
   );
 
@@ -368,6 +437,7 @@ export default function NotesScreen() {
           />
         </Screen>
         {createModal}
+        {linkModal}
       </>
     );
   }
@@ -390,6 +460,7 @@ export default function NotesScreen() {
           />
         </Screen>
         {createModal}
+        {linkModal}
       </>
     );
   }
@@ -528,6 +599,7 @@ export default function NotesScreen() {
         />
       </Screen>
       {createModal}
+      {linkModal}
     </>
   );
 }
@@ -594,5 +666,16 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing[2],
     marginBottom: spacing[2],
+  },
+  linkList: {
+    gap: spacing[2],
+  },
+  editCard: {
+    paddingVertical: spacing[1],
+  },
+  editCardRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[1],
   },
 });

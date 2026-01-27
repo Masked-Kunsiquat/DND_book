@@ -8,6 +8,7 @@ import {
   ConfirmDialog,
   EmptyState,
   FormImagePicker,
+  FormModal,
   FormMultiSelect,
   FormTextInput,
   NoteCard,
@@ -65,6 +66,7 @@ export default function PlayerCharacterDetailScreen() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isTemplateOpen, setIsTemplateOpen] = useState(false);
   const [isTemplateSaving, setIsTemplateSaving] = useState(false);
+  const [activeLinkModal, setActiveLinkModal] = useState<'campaigns' | 'notes' | null>(null);
 
   useEffect(() => {
     if (character && !isEditing) {
@@ -213,6 +215,31 @@ export default function PlayerCharacterDetailScreen() {
     setError(null);
     setIsEditing(true);
   };
+
+  const openLinkModal = (target: 'campaigns' | 'notes') => {
+    setActiveLinkModal(target);
+  };
+
+  const closeLinkModal = () => setActiveLinkModal(null);
+
+  const linkModalTitle = activeLinkModal === 'notes' ? 'Notes' : 'Campaigns';
+
+  const linkModalBody =
+    activeLinkModal === 'notes' ? (
+      <FormMultiSelect
+        label="Linked notes"
+        value={noteIds}
+        options={noteOptions}
+        onChange={setNoteIds}
+      />
+    ) : (
+      <FormMultiSelect
+        label="Campaigns"
+        value={campaignIds}
+        options={campaignOptions}
+        onChange={handleCampaignChange}
+      />
+    );
 
   const handleCancel = () => {
     if (character) {
@@ -375,20 +402,48 @@ export default function PlayerCharacterDetailScreen() {
 
         <Section title="Links" icon="link-variant">
           {isEditing ? (
-            <>
-              <FormMultiSelect
-                label="Campaigns"
-                value={campaignIds}
-                options={campaignOptions}
-                onChange={handleCampaignChange}
+            <View style={styles.linkList}>
+              <AppCard
+                title="Campaigns"
+                subtitle={`${campaignIds.length} selected`}
+                onPress={() => openLinkModal('campaigns')}
+                right={
+                  <View style={styles.editCardRight}>
+                    <MaterialCommunityIcons
+                      name="folder-outline"
+                      size={18}
+                      color={theme.colors.primary}
+                    />
+                    <MaterialCommunityIcons
+                      name="chevron-right"
+                      size={18}
+                      color={theme.colors.onSurfaceVariant}
+                    />
+                  </View>
+                }
+                style={styles.editCard}
               />
-              <FormMultiSelect
-                label="Linked notes"
-                value={noteIds}
-                options={noteOptions}
-                onChange={setNoteIds}
+              <AppCard
+                title="Notes"
+                subtitle={`${noteIds.length} selected`}
+                onPress={() => openLinkModal('notes')}
+                right={
+                  <View style={styles.editCardRight}>
+                    <MaterialCommunityIcons
+                      name="note-text-outline"
+                      size={18}
+                      color={theme.colors.primary}
+                    />
+                    <MaterialCommunityIcons
+                      name="chevron-right"
+                      size={18}
+                      color={theme.colors.onSurfaceVariant}
+                    />
+                  </View>
+                }
+                style={styles.editCard}
               />
-            </>
+            </View>
           ) : (
             <>
               {linkedCampaigns.length === 0 ? (
@@ -510,6 +565,20 @@ export default function PlayerCharacterDetailScreen() {
         onConfirm={confirmTemplate}
         confirmLoading={isTemplateSaving}
       />
+      {activeLinkModal && (
+        <FormModal
+          title={linkModalTitle}
+          visible={Boolean(activeLinkModal)}
+          onDismiss={closeLinkModal}
+          actions={
+            <Button mode="contained" onPress={closeLinkModal}>
+              Done
+            </Button>
+          }
+        >
+          {linkModalBody}
+        </FormModal>
+      )}
     </>
   );
 }
@@ -550,6 +619,17 @@ const styles = StyleSheet.create({
   },
   backgroundInput: {
     minHeight: 120,
+  },
+  linkList: {
+    gap: spacing[2],
+  },
+  editCard: {
+    paddingVertical: spacing[1],
+  },
+  editCardRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[1],
   },
   inlineCard: {
     marginBottom: spacing[2],

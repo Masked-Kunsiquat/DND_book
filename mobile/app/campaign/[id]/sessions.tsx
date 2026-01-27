@@ -61,6 +61,7 @@ export default function CampaignSessionsScreen() {
   const [draftDate, setDraftDate] = useState('');
   const [draftSummary, setDraftSummary] = useState('');
   const [draftPlayerIds, setDraftPlayerIds] = useState<string[]>([]);
+  const [activeLinkModal, setActiveLinkModal] = useState<'participants' | null>(null);
   const [openedFromParam, setOpenedFromParam] = useState(false);
 
   const participantOptions = useMemo(() => {
@@ -89,7 +90,11 @@ export default function CampaignSessionsScreen() {
   const closeCreateModal = () => {
     setIsCreateOpen(false);
     setCreateError(null);
+    setActiveLinkModal(null);
   };
+
+  const openLinkModal = () => setActiveLinkModal('participants');
+  const closeLinkModal = () => setActiveLinkModal(null);
 
   const handleCreate = () => {
     if (!hasCampaignId || isCreating) return;
@@ -150,6 +155,32 @@ export default function CampaignSessionsScreen() {
         multiline
         style={styles.summaryInput}
       />
+      <AppCard
+        title="Participants"
+        subtitle={`${draftPlayerIds.length} selected`}
+        onPress={openLinkModal}
+        right={<Text variant="labelSmall">Select</Text>}
+        style={styles.editCard}
+      />
+      {createError && (
+        <Text variant="bodySmall" style={{ color: theme.colors.error }}>
+          {createError}
+        </Text>
+      )}
+    </FormModal>
+  );
+
+  const linkModal = (
+    <FormModal
+      title="Participants"
+      visible={Boolean(activeLinkModal)}
+      onDismiss={closeLinkModal}
+      actions={
+        <Button mode="contained" onPress={closeLinkModal}>
+          Done
+        </Button>
+      }
+    >
       <FormMultiSelect
         label="Participants"
         value={draftPlayerIds}
@@ -157,11 +188,6 @@ export default function CampaignSessionsScreen() {
         onChange={setDraftPlayerIds}
         helperText="Defaults to the current party."
       />
-      {createError && (
-        <Text variant="bodySmall" style={{ color: theme.colors.error }}>
-          {createError}
-        </Text>
-      )}
     </FormModal>
   );
 
@@ -212,6 +238,7 @@ export default function CampaignSessionsScreen() {
           </Section>
         </Screen>
         {createModal}
+        {linkModal}
       </>
     );
   }
@@ -254,6 +281,7 @@ export default function CampaignSessionsScreen() {
         />
       </Screen>
       {createModal}
+      {linkModal}
     </>
   );
 }
@@ -275,5 +303,8 @@ const styles = StyleSheet.create({
   },
   summaryInput: {
     minHeight: 120,
+  },
+  editCard: {
+    paddingVertical: spacing[1],
   },
 });

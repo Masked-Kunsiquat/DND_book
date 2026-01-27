@@ -4,6 +4,7 @@ import { Button, FAB, Text, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
+  AppCard,
   FormModal,
   FormImagePicker,
   FormMultiSelect,
@@ -38,6 +39,9 @@ export default function NpcsScreen() {
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [activeLinkModal, setActiveLinkModal] = useState<
+    'campaigns' | 'locations' | 'notes' | 'tags' | null
+  >(null);
   const [createError, setCreateError] = useState<string | null>(null);
   const [draftName, setDraftName] = useState('');
   const [draftRace, setDraftRace] = useState('');
@@ -154,6 +158,7 @@ export default function NpcsScreen() {
   const closeCreateModal = () => {
     setIsCreateOpen(false);
     setCreateError(null);
+    setActiveLinkModal(null);
   };
 
   const openLibrary = () => {
@@ -207,6 +212,76 @@ export default function NpcsScreen() {
     const id = getOrCreateTag(name);
     return id || undefined;
   };
+
+  const openLinkModal = (target: 'campaigns' | 'locations' | 'notes' | 'tags') => {
+    setActiveLinkModal(target);
+  };
+
+  const closeLinkModal = () => setActiveLinkModal(null);
+
+  const linkModalTitle = (() => {
+    switch (activeLinkModal) {
+      case 'campaigns':
+        return 'Campaigns';
+      case 'locations':
+        return 'Locations';
+      case 'notes':
+        return 'Notes';
+      case 'tags':
+        return 'Tags';
+      default:
+        return '';
+    }
+  })();
+
+  const linkModalBody = (() => {
+    switch (activeLinkModal) {
+      case 'campaigns':
+        return (
+          <FormMultiSelect
+            label="Campaigns"
+            value={draftCampaignIds}
+            options={campaignOptions}
+            onChange={setDraftCampaignIds}
+            helperText={
+              draftScope === 'continuity'
+                ? 'Automatically linked to all campaigns in this continuity.'
+                : undefined
+            }
+            disabled={draftScope === 'continuity'}
+          />
+        );
+      case 'locations':
+        return (
+          <FormMultiSelect
+            label="Locations"
+            value={draftLocationIds}
+            options={locationOptions}
+            onChange={setDraftLocationIds}
+          />
+        );
+      case 'notes':
+        return (
+          <FormMultiSelect
+            label="Notes"
+            value={draftNoteIds}
+            options={noteOptions}
+            onChange={setDraftNoteIds}
+          />
+        );
+      case 'tags':
+        return (
+          <TagInput
+            tags={tags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color }))}
+            selectedIds={draftTagIds}
+            onChange={setDraftTagIds}
+            onCreateTag={handleCreateTag}
+          />
+        );
+      default:
+        return null;
+    }
+  })();
 
   const createModal = (
     <FormModal
@@ -267,41 +342,104 @@ export default function NpcsScreen() {
         }}
         helperText="Shared NPCs appear in every campaign in this continuity."
       />
-      <FormMultiSelect
-        label="Campaigns"
-        value={draftCampaignIds}
-        options={campaignOptions}
-        onChange={setDraftCampaignIds}
-        helperText={
-          draftScope === 'continuity'
-            ? 'Automatically linked to all campaigns in this continuity.'
-            : undefined
-        }
-        disabled={draftScope === 'continuity'}
-      />
-      <FormMultiSelect
-        label="Locations"
-        value={draftLocationIds}
-        options={locationOptions}
-        onChange={setDraftLocationIds}
-      />
-      <FormMultiSelect
-        label="Notes"
-        value={draftNoteIds}
-        options={noteOptions}
-        onChange={setDraftNoteIds}
-      />
-      <TagInput
-        tags={tags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color }))}
-        selectedIds={draftTagIds}
-        onChange={setDraftTagIds}
-        onCreateTag={handleCreateTag}
-      />
+      <View style={styles.linkList}>
+        <AppCard
+          title="Campaigns"
+          subtitle={`${draftCampaignIds.length} selected`}
+          onPress={() => openLinkModal('campaigns')}
+          right={
+            <View style={styles.editCardRight}>
+              <MaterialCommunityIcons
+                name="folder-outline"
+                size={18}
+                color={theme.colors.primary}
+              />
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={18}
+                color={theme.colors.onSurfaceVariant}
+              />
+            </View>
+          }
+          style={styles.editCard}
+        />
+        <AppCard
+          title="Locations"
+          subtitle={`${draftLocationIds.length} selected`}
+          onPress={() => openLinkModal('locations')}
+          right={
+            <View style={styles.editCardRight}>
+              <MaterialCommunityIcons
+                name="map-marker-outline"
+                size={18}
+                color={theme.colors.primary}
+              />
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={18}
+                color={theme.colors.onSurfaceVariant}
+              />
+            </View>
+          }
+          style={styles.editCard}
+        />
+        <AppCard
+          title="Notes"
+          subtitle={`${draftNoteIds.length} selected`}
+          onPress={() => openLinkModal('notes')}
+          right={
+            <View style={styles.editCardRight}>
+              <MaterialCommunityIcons
+                name="note-text-outline"
+                size={18}
+                color={theme.colors.primary}
+              />
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={18}
+                color={theme.colors.onSurfaceVariant}
+              />
+            </View>
+          }
+          style={styles.editCard}
+        />
+        <AppCard
+          title="Tags"
+          subtitle={`${draftTagIds.length} selected`}
+          onPress={() => openLinkModal('tags')}
+          right={
+            <View style={styles.editCardRight}>
+              <MaterialCommunityIcons name="tag-outline" size={18} color={theme.colors.primary} />
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={18}
+                color={theme.colors.onSurfaceVariant}
+              />
+            </View>
+          }
+          style={styles.editCard}
+        />
+      </View>
       {createError && (
         <Text variant="bodySmall" style={{ color: theme.colors.error }}>
           {createError}
         </Text>
       )}
+    </FormModal>
+  );
+
+  const linkModal = (
+    <FormModal
+      title={linkModalTitle}
+      visible={Boolean(activeLinkModal)}
+      onDismiss={closeLinkModal}
+      actions={
+        <Button mode="contained" onPress={closeLinkModal}>
+          Done
+        </Button>
+      }
+    >
+      {linkModalBody}
     </FormModal>
   );
 
@@ -321,6 +459,7 @@ export default function NpcsScreen() {
           />
         </Screen>
         {createModal}
+        {linkModal}
       </>
     );
   }
@@ -343,6 +482,7 @@ export default function NpcsScreen() {
           />
         </Screen>
         {createModal}
+        {linkModal}
       </>
     );
   }
@@ -488,6 +628,7 @@ export default function NpcsScreen() {
         />
       </Screen>
       {createModal}
+      {linkModal}
     </>
   );
 }
@@ -557,5 +698,16 @@ const styles = StyleSheet.create({
   },
   modalContentInput: {
     minHeight: 120,
+  },
+  linkList: {
+    gap: spacing[2],
+  },
+  editCard: {
+    paddingVertical: spacing[1],
+  },
+  editCardRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[1],
   },
 });
