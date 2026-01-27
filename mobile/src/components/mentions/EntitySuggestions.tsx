@@ -13,6 +13,7 @@ import {
   useLocations,
   useNpcs,
   usePlayerCharacters,
+  useShadowEntities,
   useTags,
 } from '../../hooks';
 import type { EntityStatus } from '../../types/schema';
@@ -102,10 +103,6 @@ function filterSuggestions(items: SuggestionItem[], query: string, max: number):
   return scored.slice(0, max).map((entry) => entry.item);
 }
 
-function buildShadowId(trigger: SuggestionTriggerKey, name: string): string {
-  return `shadow:${trigger}:${name}`;
-}
-
 export function EntitySuggestions({
   character,
   location,
@@ -124,6 +121,7 @@ export function EntitySuggestions({
   const locations = useLocations(campaignId);
   const items = useItems(campaignId);
   const tags = useTags(continuityId, campaignId);
+  const { createShadowEntity } = useShadowEntities();
 
   const triggerEntries = useMemo(
     () =>
@@ -258,12 +256,14 @@ export function EntitySuggestions({
       {showCreate ? (
         <Pressable
           style={[styles.row, styles.createRow, { borderTopColor: theme.colors.outlineVariant }]}
-          onPress={() =>
+          onPress={() => {
+            const createdId = createShadowEntity(activeKey, trimmedKeyword);
+            if (!createdId) return;
             activeData.onSelect({
-              id: buildShadowId(activeKey, trimmedKeyword),
+              id: createdId,
               name: trimmedKeyword,
-            })
-          }
+            });
+          }}
         >
           <MaterialCommunityIcons
             name="plus-circle-outline"

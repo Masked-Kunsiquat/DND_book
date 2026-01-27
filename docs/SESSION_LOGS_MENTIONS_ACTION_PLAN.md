@@ -514,9 +514,9 @@ sessionLogs: {
 
 #### 2.3 Shadow Entity Creation
 
-- [ ] Implement `createShadowEntity` function
-- [ ] Update entity hooks to handle shadow status
-- [ ] Add visual distinction for shadow entities in lists
+- [x] Implement `createShadowEntity` function
+- [x] Update entity hooks to handle shadow status
+- [x] Add visual distinction for shadow entities in lists
 
 ### Phase 3: Session Log Refactor (Week 3)
 

@@ -60,6 +60,9 @@ function NpcAvatar({ imageUri }: { imageUri?: string }) {
 }
 
 export function NPCCard({ npc, tags = [], onTagPress, onPress, style }: NPCCardProps) {
+  const { theme } = useTheme();
+  const isShadow = npc.status === 'shadow';
+
   return (
     <AppCard
       title={npc.name || 'Unnamed NPC'}
@@ -68,6 +71,18 @@ export function NPCCard({ npc, tags = [], onTagPress, onPress, style }: NPCCardP
       onPress={onPress}
       style={style}
     >
+      {isShadow && (
+        <View style={styles.statusRow}>
+          <MaterialCommunityIcons
+            name="circle-outline"
+            size={iconSizes.sm}
+            color={theme.colors.onSurfaceVariant}
+          />
+          <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+            Shadow
+          </Text>
+        </View>
+      )}
       {tags.length > 0 && (
         <View style={styles.tagsRow}>
           {tags.map((tag) => (
@@ -91,6 +106,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing[2],
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[1],
+    marginBottom: spacing[2],
   },
   avatar: {
     width: spacing[11],

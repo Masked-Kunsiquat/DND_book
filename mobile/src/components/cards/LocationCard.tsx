@@ -55,6 +55,26 @@ function TypeBadge({ label }: TypeBadgeProps) {
   );
 }
 
+function ShadowBadge() {
+  const { theme } = useTheme();
+
+  return (
+    <View
+      style={[
+        styles.shadowBadge,
+        {
+          borderColor: theme.colors.outlineVariant,
+          backgroundColor: theme.colors.surfaceVariant,
+        },
+      ]}
+    >
+      <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+        Shadow
+      </Text>
+    </View>
+  );
+}
+
 export function LocationCard({
   location,
   parentName,
@@ -68,12 +88,18 @@ export function LocationCard({
   const subtitle = parentName ? `Parent: ${parentName}` : undefined;
   const statusColor =
     statusTone === 'error' ? semanticColors.error.main : semanticColors.warning.main;
+  const rightContent = (
+    <View style={styles.rightBadges}>
+      {location.status === 'shadow' && <ShadowBadge />}
+      <TypeBadge label={location.type} />
+    </View>
+  );
 
   return (
     <AppCard
       title={location.name || 'Unnamed location'}
       subtitle={subtitle}
-      right={<TypeBadge label={location.type} />}
+      right={rightContent}
       onPress={onPress}
       style={style}
     >
@@ -125,5 +151,16 @@ const styles = StyleSheet.create({
     borderRadius: layout.cardBorderRadius,
     borderWidth: 1,
     alignSelf: 'flex-start',
+  },
+  shadowBadge: {
+    paddingHorizontal: spacing[2],
+    paddingVertical: spacing[0.5],
+    borderRadius: layout.cardBorderRadius,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+  },
+  rightBadges: {
+    alignItems: 'flex-end',
+    gap: spacing[1],
   },
 });

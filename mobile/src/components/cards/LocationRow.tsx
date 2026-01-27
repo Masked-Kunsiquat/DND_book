@@ -64,6 +64,26 @@ function TypeBadge({ label, variant = 'default' }: TypeBadgeProps) {
   );
 }
 
+function ShadowBadge() {
+  const { theme } = useTheme();
+
+  return (
+    <View
+      style={[
+        styles.shadowBadge,
+        {
+          borderColor: theme.colors.outlineVariant,
+          backgroundColor: theme.colors.surfaceVariant,
+        },
+      ]}
+    >
+      <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+        Shadow
+      </Text>
+    </View>
+  );
+}
+
 const MAX_TAGS = 2;
 
 export function LocationRow({
@@ -111,6 +131,7 @@ export function LocationRow({
         </View>
         <View style={styles.headerRight}>
           {location.scope === 'continuity' && <TypeBadge label="Shared" variant="shared" />}
+          {location.status === 'shadow' && <ShadowBadge />}
           <TypeBadge label={location.type} />
           <MaterialCommunityIcons
             name="chevron-right"
@@ -191,6 +212,13 @@ const styles = StyleSheet.create({
     paddingVertical: spacing[0.5],
     borderRadius: layout.cardBorderRadius,
     borderWidth: 1,
+  },
+  shadowBadge: {
+    paddingHorizontal: spacing[1.5],
+    paddingVertical: spacing[0.5],
+    borderRadius: layout.cardBorderRadius,
+    borderWidth: 1,
+    borderStyle: 'dashed',
   },
   pressed: {
     opacity: 0.7,

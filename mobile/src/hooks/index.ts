@@ -105,6 +105,9 @@ export {
   type UseMentionSettingsResult,
 } from './useMentionSettings';
 
+// Shadow Entities
+export { useShadowEntities, type ShadowEntityType, type UseShadowEntitiesResult } from './useShadowEntities';
+
 // Session Logs
 export {
   useSessionLogs,
