@@ -38,6 +38,7 @@ export default function NpcsScreen() {
   const [query, setQuery] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [showShadowOnly, setShowShadowOnly] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [activeLinkModal, setActiveLinkModal] = useState<
@@ -95,14 +96,15 @@ export default function NpcsScreen() {
     const scoped = selectedTagIds.length
       ? npcs.filter((npc) => npc.tagIds.some((id) => selectedTagIds.includes(id)))
       : npcs;
-    if (!normalized) return scoped;
-    return scoped.filter((npc) => {
+    const shadowFiltered = showShadowOnly ? scoped.filter((npc) => npc.status === 'shadow') : scoped;
+    if (!normalized) return shadowFiltered;
+    return shadowFiltered.filter((npc) => {
       const name = npc.name?.toLowerCase() ?? '';
       const race = npc.race?.toLowerCase() ?? '';
       const role = npc.role?.toLowerCase() ?? '';
       return name.includes(normalized) || race.includes(normalized) || role.includes(normalized);
     });
-  }, [npcs, query, selectedTagIds]);
+  }, [npcs, query, selectedTagIds, showShadowOnly]);
 
   useEffect(() => {
     setSelectedTagIds(tagParam ? [tagParam] : []);
@@ -483,6 +485,7 @@ export default function NpcsScreen() {
               onPress: () => {
                 setQuery('');
                 setSelectedTagIds([]);
+                setShowShadowOnly(false);
               },
             }}
           />
@@ -578,6 +581,26 @@ export default function NpcsScreen() {
                         No tags yet.
                       </Text>
                     )}
+                    <View style={styles.statusHeader}>
+                      <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                        Status
+                      </Text>
+                      {showShadowOnly && (
+                        <Button mode="text" onPress={() => setShowShadowOnly(false)} compact>
+                          Clear
+                        </Button>
+                      )}
+                    </View>
+                    <View style={styles.statusRow}>
+                      <Button
+                        mode={showShadowOnly ? 'contained' : 'outlined'}
+                        onPress={() => setShowShadowOnly((prev) => !prev)}
+                        icon="circle-outline"
+                        compact
+                      >
+                        Shadow only
+                      </Button>
+                    </View>
                   </>
                 )}
               </View>
@@ -673,6 +696,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: spacing[1],
+  },
+  statusHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing[1],
+    marginTop: spacing[2],
+  },
+  statusRow: {
+    flexDirection: 'row',
+    gap: spacing[2],
   },
   tagScroll: {
     paddingBottom: spacing[2],

@@ -407,6 +407,7 @@ export default function LocationDetailScreen() {
         type: type as LocationType,
         description,
         parentId: parentId || '',
+        status: location.status === 'shadow' ? 'complete' : location.status,
         campaignIds,
         tagIds,
         map: mapImage ?? '',
@@ -417,6 +418,11 @@ export default function LocationDetailScreen() {
       const message = err instanceof Error ? err.message : 'Failed to update location.';
       setError(message);
     }
+  };
+
+  const handleMarkComplete = () => {
+    if (!location) return;
+    updateLocation(location.id, { status: 'complete' });
   };
 
   const handleDelete = () => {
@@ -689,16 +695,28 @@ export default function LocationDetailScreen() {
                 </Pressable>
               )}
             </View>
-            {!isEditing && (
-              <IconButton
-                icon="pencil"
-                onPress={handleEdit}
-                accessibilityLabel="Edit location"
-              />
-            )}
-          </View>
+          {!isEditing && (
+            <IconButton
+              icon="pencil"
+              onPress={handleEdit}
+              accessibilityLabel="Edit location"
+            />
+          )}
+        </View>
 
-          <Section title="Details" icon="map-marker-outline">
+        {!isEditing && location.status === 'shadow' && (
+          <AppCard
+            title="Shadow location"
+            subtitle="Created from a mention. Fill in details to complete."
+            style={styles.shadowCard}
+          >
+            <Button mode="contained" onPress={handleMarkComplete}>
+              Mark Complete
+            </Button>
+          </AppCard>
+        )}
+
+        <Section title="Details" icon="map-marker-outline">
             {isEditing ? (
               <>
                 <FormSelect
@@ -1012,6 +1030,9 @@ const styles = StyleSheet.create({
   },
   titleInput: {
     marginBottom: spacing[1],
+  },
+  shadowCard: {
+    marginBottom: spacing[3],
   },
   breadcrumbHeader: {
     paddingBottom: spacing[3],

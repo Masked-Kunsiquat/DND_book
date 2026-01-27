@@ -73,6 +73,13 @@ interface MentionExtractionResult {
   tagIds: string[];
 }
 
+interface ShadowPromptItem {
+  id: string | null;
+  label: string;
+  entityType: Mention['entityType'];
+  route?: string;
+}
+
 function mergeUnique(base: string[], extra: string[]): string[] {
   return Array.from(new Set([...base, ...extra]));
 }
@@ -213,6 +220,47 @@ function extractMentions(
   };
 }
 
+function buildShadowPromptItems(mentions: Mention[]): ShadowPromptItem[] {
+  const items: ShadowPromptItem[] = [];
+  const seen = new Set<string>();
+
+  mentions.forEach((mention) => {
+    if (mention.status !== 'shadow') return;
+    const key = `${mention.entityType}:${mention.entityId ?? mention.displayLabel.toLowerCase()}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+
+    let route: string | undefined;
+    if (mention.entityId) {
+      switch (mention.entityType) {
+        case 'npc':
+          route = `/npc/${mention.entityId}`;
+          break;
+        case 'pc':
+          route = `/player-character/${mention.entityId}`;
+          break;
+        case 'location':
+          route = `/location/${mention.entityId}`;
+          break;
+        case 'tag':
+          route = `/tag/${mention.entityId}`;
+          break;
+        default:
+          route = undefined;
+      }
+    }
+
+    items.push({
+      id: mention.entityId,
+      label: mention.displayLabel || 'Unnamed',
+      entityType: mention.entityType,
+      route,
+    });
+  });
+
+  return items;
+}
+
 export default function SessionDetailScreen() {
   const { theme } = useTheme();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
@@ -239,6 +287,7 @@ export default function SessionDetailScreen() {
   const [keyDecisions, setKeyDecisions] = useState('');
   const [outcomes, setOutcomes] = useState('');
   const [content, setContent] = useState('');
+  const [shadowPromptOpen, setShadowPromptOpen] = useState(false);
   const [campaignIds, setCampaignIds] = useState<string[]>([]);
   const [locationIds, setLocationIds] = useState<string[]>([]);
   const [npcIds, setNpcIds] = useState<string[]>([]);
@@ -286,6 +335,11 @@ export default function SessionDetailScreen() {
   const mentionDerived = useMemo(
     () => extractMentions(content, mentionSettings, npcs, playerCharacters, locations, items),
     [content, mentionSettings, npcs, playerCharacters, locations, items]
+  );
+
+  const shadowPromptItems = useMemo(
+    () => buildShadowPromptItems(mentionDerived.mentions),
+    [mentionDerived.mentions]
   );
 
   useEffect(() => {
@@ -576,6 +630,9 @@ export default function SessionDetailScreen() {
         tagIds: mergeUnique(tagIds, mentionDerived.tagIds),
       });
       setIsEditing(false);
+      if (shadowPromptItems.length > 0) {
+        setShadowPromptOpen(true);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update session.';
       setError(message);
@@ -597,6 +654,16 @@ export default function SessionDetailScreen() {
       const next = prev && !prev.endsWith(' ') ? `${prev} ` : prev;
       return `${next}${trigger}`;
     });
+  };
+
+  const closeShadowPrompt = () => setShadowPromptOpen(false);
+
+  const handleCompleteAll = () => {
+    const firstRoute = shadowPromptItems.find((item) => item.route)?.route;
+    setShadowPromptOpen(false);
+    if (firstRoute) {
+      router.push(firstRoute);
+    }
   };
 
   const handleDelete = () => {
@@ -1143,6 +1210,50 @@ export default function SessionDetailScreen() {
         confirmLoading={isDeleting}
         destructive
       />
+      {shadowPromptOpen && (
+        <FormModal
+          title="Incomplete entities"
+          visible={shadowPromptOpen}
+          onDismiss={closeShadowPrompt}
+          actions={
+            <View style={styles.shadowActions}>
+              <Button mode="contained" onPress={handleCompleteAll}>
+                Complete All Now
+              </Button>
+              <Button mode="text" onPress={closeShadowPrompt}>
+                Remind Me Later
+              </Button>
+            </View>
+          }
+        >
+          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+            You mentioned new entities during this session. Tap any to fill in details.
+          </Text>
+          <View style={styles.shadowList}>
+            {shadowPromptItems.map((item) => (
+              <AppCard
+                key={`${item.entityType}-${item.id ?? item.label}`}
+                title={item.label}
+                subtitle={item.entityType.toUpperCase()}
+                onPress={item.route ? () => router.push(item.route!) : undefined}
+                right={
+                  item.route ? (
+                    <MaterialCommunityIcons
+                      name="chevron-right"
+                      size={18}
+                      color={theme.colors.onSurfaceVariant}
+                    />
+                  ) : (
+                    <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                      Coming soon
+                    </Text>
+                  )
+                }
+              />
+            ))}
+          </View>
+        </FormModal>
+      )}
       {activeLinkModal && (
         <FormModal
           title={linkModalTitle}
@@ -1187,6 +1298,13 @@ const styles = StyleSheet.create({
   quickInsertLabels: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: spacing[2],
+  },
+  shadowActions: {
+    gap: spacing[2],
+  },
+  shadowList: {
+    marginTop: spacing[2],
     gap: spacing[2],
   },
   summaryBlock: {

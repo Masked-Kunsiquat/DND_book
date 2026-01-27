@@ -536,9 +536,9 @@ sessionLogs: {
 
 #### 3.3 Post-Session Flow
 
-- [ ] Create "Incomplete Entities" prompt
-- [ ] Add filter for shadow entities in lists
-- [ ] Implement shadow → complete transition
+- [x] Create "Incomplete Entities" prompt
+- [x] Add filter for shadow entities in lists
+- [x] Implement shadow → complete transition
 
 ### Phase 4: Polish (Week 4)
 

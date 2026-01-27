@@ -178,6 +178,11 @@ export default function NpcDetailScreen() {
     setIsEditing(true);
   };
 
+  const handleMarkComplete = () => {
+    if (!npc) return;
+    updateNpc(npc.id, { status: 'complete' });
+  };
+
   const openLinkModal = (target: 'campaigns' | 'locations' | 'notes' | 'tags') => {
     setActiveLinkModal(target);
   };
@@ -272,6 +277,7 @@ export default function NpcDetailScreen() {
         role,
         background,
         image: image ?? '',
+        status: npc.status === 'shadow' ? 'complete' : npc.status,
         campaignIds,
         locationIds,
         noteIds,
@@ -437,16 +443,28 @@ export default function NpcDetailScreen() {
               </Text>
             )}
           </View>
-          {!isEditing && (
-            <IconButton
-              icon="pencil"
-              onPress={handleEdit}
-              accessibilityLabel="Edit NPC"
-            />
-          )}
-        </View>
+        {!isEditing && (
+          <IconButton
+            icon="pencil"
+            onPress={handleEdit}
+            accessibilityLabel="Edit NPC"
+          />
+        )}
+      </View>
 
-        <Section title="Profile" icon="account-outline">
+      {!isEditing && npc.status === 'shadow' && (
+        <AppCard
+          title="Shadow NPC"
+          subtitle="Created from a mention. Fill in details to complete."
+          style={styles.shadowCard}
+        >
+          <Button mode="contained" onPress={handleMarkComplete}>
+            Mark Complete
+          </Button>
+        </AppCard>
+      )}
+
+      <Section title="Profile" icon="account-outline">
           {isEditing ? (
             <>
               <FormImagePicker label="Portrait" value={image} onChange={setImage} />
@@ -785,6 +803,9 @@ const styles = StyleSheet.create({
   },
   titleInput: {
     marginBottom: spacing[1],
+  },
+  shadowCard: {
+    marginBottom: spacing[3],
   },
   contentInput: {
     minHeight: 140,

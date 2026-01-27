@@ -67,6 +67,7 @@ export default function LocationsScreen() {
   const [typeFilter, setTypeFilter] = useState<LocationType | 'all'>('all');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [showShadowOnly, setShowShadowOnly] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
@@ -100,9 +101,12 @@ export default function LocationsScreen() {
     const scoped = selectedTagIds.length
       ? locations.filter((location) => location.tagIds.some((id) => selectedTagIds.includes(id)))
       : locations;
-    if (typeFilter === 'all') return scoped;
-    return scoped.filter((location) => location.type === typeFilter);
-  }, [locations, selectedTagIds, typeFilter]);
+    const shadowFiltered = showShadowOnly
+      ? scoped.filter((location) => location.status === 'shadow')
+      : scoped;
+    if (typeFilter === 'all') return shadowFiltered;
+    return shadowFiltered.filter((location) => location.type === typeFilter);
+  }, [locations, selectedTagIds, showShadowOnly, typeFilter]);
 
   const { locationById, depthById } = useMemo(() => {
     const locationMap = new Map<string, Location>();
@@ -478,6 +482,7 @@ export default function LocationsScreen() {
               onPress: () => {
                 setTypeFilter('all');
                 setSelectedTagIds([]);
+                setShowShadowOnly(false);
               },
             }}
           />
@@ -679,6 +684,26 @@ export default function LocationsScreen() {
                         No tags yet.
                       </Text>
                     )}
+                    <View style={styles.statusHeader}>
+                      <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                        Status
+                      </Text>
+                      {showShadowOnly && (
+                        <Button mode="text" onPress={() => setShowShadowOnly(false)} compact>
+                          Clear
+                        </Button>
+                      )}
+                    </View>
+                    <View style={styles.statusRow}>
+                      <Button
+                        mode={showShadowOnly ? 'contained' : 'outlined'}
+                        onPress={() => setShowShadowOnly((prev) => !prev)}
+                        icon="circle-outline"
+                        compact
+                      >
+                        Shadow only
+                      </Button>
+                    </View>
                   </>
                 )}
               </View>
@@ -853,6 +878,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  statusHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing[2],
+  },
+  statusRow: {
+    flexDirection: 'row',
+    gap: spacing[2],
   },
   tagScroll: {
     paddingBottom: spacing[2],
