@@ -7,8 +7,8 @@ import {
   AppCard,
   ConfirmDialog,
   EmptyState,
+  LocationMultiSelect,
   FormModal,
-  FormMultiSelect,
   FormSelect,
   FormTextInput,
   Screen,
@@ -108,20 +108,13 @@ export default function NoteDetailScreen() {
     }));
   }, [continuityCampaigns]);
 
-  const locationOptions = useMemo(() => {
+  const selectableLocations = useMemo(() => {
     if (note?.scope === 'continuity') {
-      return continuityLocations.map((location) => ({
-        label: location.name || 'Unnamed location',
-        value: location.id,
-      }));
+      return continuityLocations;
     }
-    const filtered = campaignId
+    return campaignId
       ? locations.filter((location) => location.campaignIds.includes(campaignId))
       : locations;
-    return filtered.map((location) => ({
-      label: location.name || 'Unnamed location',
-      value: location.id,
-    }));
   }, [campaignId, continuityLocations, locations, note?.scope]);
 
   const availableTags = useMemo(() => {
@@ -193,10 +186,9 @@ export default function NoteDetailScreen() {
         );
       case 'locations':
         return (
-          <FormMultiSelect
-            label="Locations"
+          <LocationMultiSelect
+            locations={selectableLocations}
             value={locationIds}
-            options={locationOptions}
             onChange={setLocationIds}
             helperText={
               note?.scope === 'continuity'

@@ -9,6 +9,7 @@ import {
   EmptyState,
   FormImagePicker,
   FormModal,
+  LocationMultiSelect,
   FormMultiSelect,
   FormTextInput,
   Screen,
@@ -124,13 +125,6 @@ export default function NpcDetailScreen() {
     }));
   }, [continuityCampaigns]);
 
-  const locationOptions = useMemo(() => {
-    return locations.map((location) => ({
-      label: location.name || 'Unnamed location',
-      value: location.id,
-    }));
-  }, [locations]);
-
   const noteOptions = useMemo(() => {
     return notes.map((note) => ({
       label: note.title || 'Untitled note',
@@ -212,10 +206,9 @@ export default function NpcDetailScreen() {
         );
       case 'locations':
         return (
-          <FormMultiSelect
-            label="Locations"
+          <LocationMultiSelect
+            locations={locations}
             value={locationIds}
-            options={locationOptions}
             onChange={setLocationIds}
           />
         );

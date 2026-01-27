@@ -5,7 +5,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   AppCard,
   FormModal,
-  FormMultiSelect,
+  LocationMultiSelect,
   FormSelect,
   FormTextInput,
   Screen,
@@ -94,20 +94,13 @@ export default function NotesScreen() {
     );
   }, [continuityId, locations]);
 
-  const locationOptions = useMemo(() => {
+  const selectableLocations = useMemo(() => {
     if (draftScope === 'continuity') {
-      return continuityLocations.map((location) => ({
-        label: location.name || 'Unnamed location',
-        value: location.id,
-      }));
+      return continuityLocations;
     }
-    const filtered = draftCampaignId
+    return draftCampaignId
       ? locations.filter((location) => location.campaignIds.includes(draftCampaignId))
       : locations;
-    return filtered.map((location) => ({
-      label: location.name || 'Unnamed location',
-      value: location.id,
-    }));
   }, [continuityLocations, draftCampaignId, draftScope, locations]);
 
   const filteredNotes = useMemo(() => {
@@ -235,10 +228,9 @@ export default function NotesScreen() {
         onCreateTag={handleCreateTag}
       />
     ) : (
-      <FormMultiSelect
-        label="Locations"
+      <LocationMultiSelect
+        locations={selectableLocations}
         value={draftLocationIds}
-        options={locationOptions}
         onChange={setDraftLocationIds}
         helperText={
           draftScope === 'continuity'

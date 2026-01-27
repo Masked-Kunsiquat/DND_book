@@ -11,6 +11,7 @@ import {
   FormModal,
   FormImageGallery,
   FormImagePicker,
+  LocationMultiSelect,
   FormMultiSelect,
   FormSelect,
   FormTextInput,
@@ -155,18 +156,22 @@ export default function LocationDetailScreen() {
     return campaigns.filter((campaign) => campaign.continuityId === continuityId);
   }, [campaigns, continuityId]);
 
-  const parentOptions = useMemo(() => {
+  const parentCandidates = useMemo(() => {
     const effectiveType =
       (isEditing ? (type as LocationType) : location?.type) ?? 'Locale';
     const allowed = new Set(getAllowedParentTypes(effectiveType));
-    const options = [
-      { label: 'No parent', value: '' },
-      ...continuityLocations
-        .filter((item) => item.id !== locationId && allowed.has(item.type))
-        .map((item) => ({ label: item.name || 'Untitled location', value: item.id })),
-    ];
-    return options;
+    return continuityLocations.filter(
+      (item) => item.id !== locationId && allowed.has(item.type)
+    );
   }, [continuityLocations, isEditing, location?.type, locationId, type]);
+
+  const moveParentCandidates = useMemo(() => {
+    if (!location) return [];
+    const allowed = new Set(getAllowedParentTypes(location.type));
+    return continuityLocations.filter(
+      (item) => item.id !== locationId && allowed.has(item.type)
+    );
+  }, [continuityLocations, location, locationId]);
 
   const parentHelper = useMemo(() => {
     const effectiveType =
@@ -552,12 +557,12 @@ export default function LocationDetailScreen() {
         </>
       }
     >
-      <FormSelect
-        label="Parent location"
-        value={moveParentId}
-        options={parentOptions}
-        onChange={setMoveParentId}
+      <LocationMultiSelect
+        locations={moveParentCandidates}
+        value={moveParentId ? [moveParentId] : []}
+        onChange={(next) => setMoveParentId(next[next.length - 1] ?? '')}
         helperText={parentHelper}
+        disabled={moveParentCandidates.length === 0}
       />
       {moveError && (
         <Text variant="bodySmall" style={{ color: theme.colors.error }}>
@@ -703,13 +708,12 @@ export default function LocationDetailScreen() {
                   onChange={handleTypeChange}
                   containerStyle={styles.fieldInput}
                 />
-                <FormSelect
-                  label="Parent location"
-                  value={parentId}
-                  options={parentOptions}
-                  onChange={setParentId}
+                <LocationMultiSelect
+                  locations={parentCandidates}
+                  value={parentId ? [parentId] : []}
+                  onChange={(next) => setParentId(next[next.length - 1] ?? '')}
                   helperText={parentHelper}
-                  containerStyle={styles.fieldInput}
+                  disabled={parentCandidates.length === 0}
                 />
                 <FormTextInput
                   label="Description"

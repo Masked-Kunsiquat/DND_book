@@ -7,6 +7,7 @@ import {
   FormModal,
   FormSelect,
   FormTextInput,
+  LocationMultiSelect,
   Screen,
   EmptyState,
   LocationRow,
@@ -223,17 +224,9 @@ export default function LocationsScreen() {
     );
   }, [continuityLocations, allowedParentTypes]);
 
-  const parentOptions = useMemo(() => {
+  const parentCandidates = useMemo(() => {
     const allowed = new Set(allowedParentTypes);
-    return [
-      { label: 'No parent', value: '' },
-      ...continuityLocations
-        .filter((location) => allowed.has(location.type))
-        .map((location) => ({
-          label: location.name || 'Untitled location',
-          value: location.id,
-        })),
-    ];
+    return continuityLocations.filter((location) => allowed.has(location.type));
   }, [continuityLocations, allowedParentTypes]);
 
   const parentHelper = useMemo(() => {
@@ -430,12 +423,12 @@ export default function LocationsScreen() {
         onChange={(value) => setDraftScope(value as EntityScope)}
         helperText="Shared locations appear in every campaign in this continuity."
       />
-      <FormSelect
-        label="Parent location"
-        value={draftParentId}
-        options={parentOptions}
-        onChange={setDraftParentId}
+      <LocationMultiSelect
+        locations={parentCandidates}
+        value={draftParentId ? [draftParentId] : []}
+        onChange={(next) => setDraftParentId(next[next.length - 1] ?? '')}
         helperText={parentHelper}
+        disabled={parentCandidates.length === 0}
       />
       <FormTextInput
         label="Description"

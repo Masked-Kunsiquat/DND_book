@@ -12,6 +12,7 @@ import {
   FormModal,
   FormMultiSelect,
   FormTextInput,
+  LocationMultiSelect,
   LocationCard,
   NoteCard,
   NPCCard,
@@ -158,22 +159,13 @@ export default function SessionDetailScreen() {
     }));
   }, [campaigns]);
 
-  const locationOptions = useMemo(() => {
-    const filtered =
-      campaignIdSet.size === 0
-        ? continuityId
-          ? locations.filter((location) => location.continuityId === continuityId)
-          : locations
-        : locations.filter((location) =>
-            location.campaignIds.some((id) => campaignIdSet.has(id))
-          );
-    return filtered.map((location) => ({
-      label:
-        location.scope === 'continuity'
-          ? `${location.name || 'Unnamed location'} (Shared)`
-          : location.name || 'Unnamed location',
-      value: location.id,
-    }));
+  const selectableLocations = useMemo(() => {
+    if (campaignIdSet.size === 0) {
+      return continuityId
+        ? locations.filter((location) => location.continuityId === continuityId)
+        : locations;
+    }
+    return locations.filter((location) => location.campaignIds.some((id) => campaignIdSet.has(id)));
   }, [campaignIdSet, continuityId, locations]);
 
   const npcOptions = useMemo(() => {
@@ -428,10 +420,9 @@ export default function SessionDetailScreen() {
         );
       case 'locations':
         return (
-          <FormMultiSelect
-            label="Locations"
+          <LocationMultiSelect
+            locations={selectableLocations}
             value={locationIds}
-            options={locationOptions}
             onChange={setLocationIds}
           />
         );
