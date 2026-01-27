@@ -154,6 +154,26 @@ export default function NoteDetailScreen() {
   const showShareActions =
     note?.scope === 'campaign' || (note?.scope === 'continuity' && Boolean(currentCampaign));
 
+  const handleCampaignChange = (value: string) => {
+    if (note?.scope === 'continuity') return;
+    setCampaignId(value);
+    if (!value) {
+      setLocationIds([]);
+      return;
+    }
+    const allowed = new Set(
+      locations
+        .filter((location) => location.campaignIds.includes(value))
+        .map((location) => location.id)
+    );
+    setLocationIds((prev) => prev.filter((id) => allowed.has(id)));
+  };
+
+  const handleCreateTag = (tagName: string) => {
+    const id = getOrCreateTag(tagName);
+    return id || undefined;
+  };
+
   const openLinkModal = (target: 'campaign' | 'locations' | 'tags') => {
     setActiveLinkModal(target);
   };
@@ -232,26 +252,6 @@ export default function NoteDetailScreen() {
     { label: 'Items / Loot', content: '### Items & Loot\n- ' },
     { label: 'Highlights', content: '### Highlights\n- ' },
   ];
-
-  const handleCampaignChange = (value: string) => {
-    if (note?.scope === 'continuity') return;
-    setCampaignId(value);
-    if (!value) {
-      setLocationIds([]);
-      return;
-    }
-    const allowed = new Set(
-      locations
-        .filter((location) => location.campaignIds.includes(value))
-        .map((location) => location.id)
-    );
-    setLocationIds((prev) => prev.filter((id) => allowed.has(id)));
-  };
-
-  const handleCreateTag = (tagName: string) => {
-    const id = getOrCreateTag(tagName);
-    return id || undefined;
-  };
 
   const handleEdit = () => {
     if (!note) return;
