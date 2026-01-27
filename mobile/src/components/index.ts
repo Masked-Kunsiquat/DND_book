@@ -24,6 +24,7 @@ export { Breadcrumb, type BreadcrumbProps, type BreadcrumbItem } from './layout/
 export { FormTextInput, type FormTextInputProps } from './forms/FormTextInput';
 export { FormSelect, type FormSelectProps } from './forms/FormSelect';
 export { FormMultiSelect, type FormMultiSelectProps } from './forms/FormMultiSelect';
+export { LocationMultiSelect, type LocationMultiSelectProps } from './forms/LocationMultiSelect';
 export { FormImagePicker, type FormImagePickerProps } from './forms/FormImagePicker';
 export { FormImageGallery, type FormImageGalleryProps } from './forms/FormImageGallery';
 export { FormDateTimePicker, type FormDateTimePickerProps } from './forms/FormDateTimePicker';

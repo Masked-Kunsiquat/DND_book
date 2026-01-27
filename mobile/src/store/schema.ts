@@ -11,9 +11,17 @@ import type { TablesSchema, ValuesSchema } from 'tinybase';
 // Arrays are stored as JSON strings
 
 export const tablesSchema = {
+  continuities: {
+    id: { type: 'string' },
+    name: { type: 'string' },
+    description: { type: 'string' },
+    created: { type: 'string' },
+    updated: { type: 'string' },
+  },
   campaigns: {
     id: { type: 'string' },
     name: { type: 'string' },
+    continuityId: { type: 'string' },
     created: { type: 'string' },
     updated: { type: 'string' },
   },
@@ -21,7 +29,13 @@ export const tablesSchema = {
     id: { type: 'string' },
     title: { type: 'string' },
     content: { type: 'string' },
+    scope: { type: 'string' },
+    continuityId: { type: 'string' },
     campaignId: { type: 'string' },
+    campaignIds: { type: 'string' }, // JSON array
+    originId: { type: 'string' },
+    originContinuityId: { type: 'string' },
+    forkedAt: { type: 'string' },
     locationIds: { type: 'string' }, // JSON array
     tagIds: { type: 'string' }, // JSON array
     created: { type: 'string' },
@@ -34,6 +48,11 @@ export const tablesSchema = {
     role: { type: 'string' },
     background: { type: 'string' },
     image: { type: 'string' },
+    scope: { type: 'string' },
+    continuityId: { type: 'string' },
+    originId: { type: 'string' },
+    originContinuityId: { type: 'string' },
+    forkedAt: { type: 'string' },
     campaignIds: { type: 'string' }, // JSON array
     locationIds: { type: 'string' },
     noteIds: { type: 'string' },
@@ -47,6 +66,11 @@ export const tablesSchema = {
     type: { type: 'string' },
     description: { type: 'string' },
     parentId: { type: 'string' },
+    scope: { type: 'string' },
+    continuityId: { type: 'string' },
+    originId: { type: 'string' },
+    originContinuityId: { type: 'string' },
+    forkedAt: { type: 'string' },
     campaignIds: { type: 'string' }, // JSON array
     tagIds: { type: 'string' },
     map: { type: 'string' },
@@ -58,6 +82,12 @@ export const tablesSchema = {
     id: { type: 'string' },
     name: { type: 'string' },
     color: { type: 'string' },
+    scope: { type: 'string' },
+    continuityId: { type: 'string' },
+    campaignId: { type: 'string' },
+    originId: { type: 'string' },
+    originContinuityId: { type: 'string' },
+    forkedAt: { type: 'string' },
     created: { type: 'string' },
     updated: { type: 'string' },
   },
@@ -87,6 +117,21 @@ export const tablesSchema = {
     image: { type: 'string' },
     campaignIds: { type: 'string' }, // JSON array
     noteIds: { type: 'string' },
+    created: { type: 'string' },
+    updated: { type: 'string' },
+  },
+  playerCharacterTemplates: {
+    id: { type: 'string' },
+    name: { type: 'string' },
+    player: { type: 'string' },
+    race: { type: 'string' },
+    class: { type: 'string' },
+    background: { type: 'string' },
+    image: { type: 'string' },
+    continuityId: { type: 'string' },
+    originId: { type: 'string' },
+    originContinuityId: { type: 'string' },
+    forkedAt: { type: 'string' },
     created: { type: 'string' },
     updated: { type: 'string' },
   },

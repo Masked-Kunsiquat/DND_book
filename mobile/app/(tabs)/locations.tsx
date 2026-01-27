@@ -7,6 +7,7 @@ import {
   FormModal,
   FormSelect,
   FormTextInput,
+  LocationMultiSelect,
   Screen,
   EmptyState,
   LocationRow,
@@ -18,12 +19,13 @@ import { useTheme } from '../../src/theme/ThemeProvider';
 import { iconSizes, layout, semanticColors, spacing } from '../../src/theme';
 import {
   useCreateLocation,
+  useCampaigns,
   useCurrentCampaign,
   useLocations,
   usePullToRefresh,
   useTags,
 } from '../../src/hooks';
-import type { Location, LocationType, Tag } from '../../src/types/schema';
+import type { EntityScope, Location, LocationType, Tag } from '../../src/types/schema';
 
 const LOCATION_TYPE_OPTIONS: { label: string; value: LocationType }[] = [
   { label: 'Plane', value: 'Plane' },
@@ -35,6 +37,11 @@ const LOCATION_TYPE_OPTIONS: { label: string; value: LocationType }[] = [
   { label: 'Landmark', value: 'Landmark' },
 ];
 const LOCATION_TYPE_ORDER = LOCATION_TYPE_OPTIONS.map((option) => option.value);
+
+const LOCATION_SCOPE_OPTIONS: { label: string; value: EntityScope }[] = [
+  { label: 'Campaign only', value: 'campaign' },
+  { label: 'Shared in continuity', value: 'continuity' },
+];
 
 const getAllowedParentTypes = (type: LocationType): LocationType[] => {
   const index = LOCATION_TYPE_ORDER.indexOf(type);
@@ -56,6 +63,7 @@ const pluralizeLocationType = (type: LocationType, count: number) => {
 export default function LocationsScreen() {
   const { theme } = useTheme();
   const currentCampaign = useCurrentCampaign();
+  const campaigns = useCampaigns();
   const [typeFilter, setTypeFilter] = useState<LocationType | 'all'>('all');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
@@ -64,15 +72,24 @@ export default function LocationsScreen() {
   const [createError, setCreateError] = useState<string | null>(null);
   const [draftName, setDraftName] = useState('');
   const [draftType, setDraftType] = useState<LocationType>('Locale');
+  const [draftScope, setDraftScope] = useState<EntityScope>('campaign');
   const [draftParentId, setDraftParentId] = useState('');
   const [draftDescription, setDraftDescription] = useState('');
   const createLocation = useCreateLocation();
   const allLocations = useLocations();
-  const tags = useTags();
+  const tags = useTags(currentCampaign?.continuityId, currentCampaign?.id);
   const { refreshing, onRefresh } = usePullToRefresh();
   const effectiveCampaignId = currentCampaign?.id;
   const locations = useLocations(effectiveCampaignId);
   const params = useLocalSearchParams<{ tagId?: string | string[] }>();
+  const continuityId = currentCampaign?.continuityId ?? '';
+
+  const continuityLocations = useMemo(() => {
+    if (!currentCampaign) return [];
+    return allLocations.filter(
+      (location) => location.continuityId === currentCampaign.continuityId
+    );
+  }, [allLocations, currentCampaign]);
 
   const tagParam = useMemo(() => {
     const raw = params.tagId;
@@ -89,7 +106,7 @@ export default function LocationsScreen() {
 
   const { locationById, depthById } = useMemo(() => {
     const locationMap = new Map<string, Location>();
-    allLocations.forEach((location) => {
+    continuityLocations.forEach((location) => {
       locationMap.set(location.id, location);
     });
 
@@ -115,10 +132,10 @@ export default function LocationsScreen() {
       return depth;
     };
 
-    allLocations.forEach((location) => resolveDepth(location));
+    continuityLocations.forEach((location) => resolveDepth(location));
 
     return { locationById: locationMap, depthById: depthMap };
-  }, [allLocations]);
+  }, [continuityLocations]);
 
   const tagById = useMemo(() => {
     return new Map(tags.map((tag) => [tag.id, tag]));
@@ -201,22 +218,16 @@ export default function LocationsScreen() {
   const allowedParentIds = useMemo(() => {
     const allowed = new Set(allowedParentTypes);
     return new Set(
-      allLocations.filter((location) => allowed.has(location.type)).map((location) => location.id)
-    );
-  }, [allLocations, allowedParentTypes]);
-
-  const parentOptions = useMemo(() => {
-    const allowed = new Set(allowedParentTypes);
-    return [
-      { label: 'No parent', value: '' },
-      ...allLocations
+      continuityLocations
         .filter((location) => allowed.has(location.type))
-        .map((location) => ({
-          label: location.name || 'Untitled location',
-          value: location.id,
-        })),
-    ];
-  }, [allLocations, allowedParentTypes]);
+        .map((location) => location.id)
+    );
+  }, [continuityLocations, allowedParentTypes]);
+
+  const parentCandidates = useMemo(() => {
+    const allowed = new Set(allowedParentTypes);
+    return continuityLocations.filter((location) => allowed.has(location.type));
+  }, [continuityLocations, allowedParentTypes]);
 
   const parentHelper = useMemo(() => {
     if (allowedParentTypes.length === 0) {
@@ -291,12 +302,24 @@ export default function LocationsScreen() {
   };
 
   const openCreateModal = () => {
-    setDraftName(`New Location ${allLocations.length + 1}`);
+    setDraftName(`New Location ${continuityLocations.length + 1}`);
     setDraftType('Locale');
+    setDraftScope('campaign');
     setDraftParentId('');
     setDraftDescription('');
     setCreateError(null);
     setIsCreateOpen(true);
+  };
+
+  const openLibrary = () => {
+    if (isCreateOpen) {
+      setIsCreateOpen(false);
+      setCreateError(null);
+    }
+    router.push({
+      pathname: '/library/locations',
+      params: continuityId ? { continuityId } : undefined,
+    });
   };
 
   const closeCreateModal = () => {
@@ -308,7 +331,7 @@ export default function LocationsScreen() {
     const nextType = value as LocationType;
     setDraftType(nextType);
     if (!draftParentId) return;
-    const parent = allLocations.find((location) => location.id === draftParentId);
+    const parent = continuityLocations.find((location) => location.id === draftParentId);
     const allowed = new Set(getAllowedParentTypes(nextType));
     if (!parent || !allowed.has(parent.type)) {
       setDraftParentId('');
@@ -329,13 +352,24 @@ export default function LocationsScreen() {
     setIsCreating(true);
     setCreateError(null);
     try {
+      const continuityId = currentCampaign?.continuityId ?? '';
+      const sharedCampaignIds =
+        draftScope === 'continuity'
+          ? campaigns
+              .filter((campaign) => campaign.continuityId === continuityId)
+              .map((campaign) => campaign.id)
+          : currentCampaign
+            ? [currentCampaign.id]
+            : [];
       await Promise.resolve(
         createLocation({
           name: trimmed,
           type: draftType,
           description: draftDescription,
           parentId: draftParentId || '',
-          campaignIds: currentCampaign ? [currentCampaign.id] : [],
+          scope: draftScope,
+          continuityId,
+          campaignIds: sharedCampaignIds,
         })
       );
       setIsCreateOpen(false);
@@ -372,6 +406,9 @@ export default function LocationsScreen() {
         </>
       }
     >
+      <Button mode="outlined" icon="book-outline" onPress={openLibrary}>
+        Add from Continuity
+      </Button>
       <FormTextInput label="Name" value={draftName} onChangeText={setDraftName} />
       <FormSelect
         label="Type"
@@ -380,11 +417,18 @@ export default function LocationsScreen() {
         onChange={handleDraftTypeChange}
       />
       <FormSelect
-        label="Parent location"
-        value={draftParentId}
-        options={parentOptions}
-        onChange={setDraftParentId}
+        label="Scope"
+        value={draftScope}
+        options={LOCATION_SCOPE_OPTIONS}
+        onChange={(value) => setDraftScope(value as EntityScope)}
+        helperText="Shared locations appear in every campaign in this continuity."
+      />
+      <LocationMultiSelect
+        locations={parentCandidates}
+        value={draftParentId ? [draftParentId] : []}
+        onChange={(next) => setDraftParentId(next[next.length - 1] ?? '')}
         helperText={parentHelper}
+        disabled={parentCandidates.length === 0}
       />
       <FormTextInput
         label="Description"
@@ -650,9 +694,23 @@ export default function LocationsScreen() {
                     {listTitle}
                   </Text>
                 </View>
-                <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                  {listCountLabel}
-                </Text>
+                <View style={styles.listHeaderMeta}>
+                  <View style={styles.listHeaderActions}>
+                    <Pressable onPress={openLibrary} hitSlop={8}>
+                      <Text variant="labelMedium" style={{ color: theme.colors.primary }}>
+                        Library
+                      </Text>
+                    </Pressable>
+                    <Pressable onPress={openCreateModal} hitSlop={8}>
+                      <Text variant="labelMedium" style={{ color: theme.colors.primary }}>
+                        New
+                      </Text>
+                    </Pressable>
+                  </View>
+                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                    {listCountLabel}
+                  </Text>
+                </View>
               </View>
             </View>
           }
@@ -804,6 +862,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  listHeaderMeta: {
+    alignItems: 'flex-end',
+    gap: spacing[0.5],
+  },
+  listHeaderActions: {
+    flexDirection: 'row',
+    gap: spacing[2],
   },
   listHeaderRow: {
     flexDirection: 'row',

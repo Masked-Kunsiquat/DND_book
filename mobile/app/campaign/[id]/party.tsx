@@ -31,6 +31,7 @@ export default function CampaignPartyScreen() {
   const scopedCampaignId = hasCampaignId ? campaignId : '__missing__';
 
   const campaign = useCampaign(scopedCampaignId);
+  const continuityId = campaign?.continuityId || '';
   const party = usePlayerCharacters(scopedCampaignId);
   const { refreshing, onRefresh } = usePullToRefresh();
   const createPlayerCharacter = useCreatePlayerCharacter();
@@ -53,6 +54,11 @@ export default function CampaignPartyScreen() {
     setDraftBackground('');
     setError(null);
     setIsModalOpen(true);
+  };
+
+  const openTemplates = () => {
+    if (!continuityId) return;
+    router.push({ pathname: '/library/player-characters', params: { continuityId } });
   };
 
   const closeModal = () => {
@@ -170,6 +176,15 @@ export default function CampaignPartyScreen() {
             icon="account-group-outline"
             action={{ label: 'Add Character', onPress: openCreateModal }}
           />
+          <Button
+            mode="outlined"
+            icon="account-multiple-plus"
+            onPress={openTemplates}
+            style={styles.secondaryAction}
+            disabled={!continuityId}
+          >
+            Browse Templates
+          </Button>
         </Screen>
         {modal}
       </>
@@ -198,6 +213,16 @@ export default function CampaignPartyScreen() {
                 <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
                   {campaign.name ? `${campaign.name} Party` : 'Party'}
                 </Text>
+              </View>
+              <View style={styles.headerActions}>
+                <Button
+                  mode="outlined"
+                  icon="account-multiple-plus"
+                  onPress={openTemplates}
+                  disabled={!continuityId}
+                >
+                  Templates
+                </Button>
               </View>
               <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
                 {party.length} character{party.length === 1 ? '' : 's'}
@@ -232,6 +257,14 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: spacing[3],
     gap: spacing[1],
+  },
+  headerActions: {
+    marginTop: spacing[2],
+    alignSelf: 'flex-start',
+  },
+  secondaryAction: {
+    marginTop: spacing[3],
+    alignSelf: 'center',
   },
   listHeader: {
     flexDirection: 'row',

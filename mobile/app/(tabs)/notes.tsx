@@ -3,8 +3,9 @@ import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { Button, FAB, Text, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
+  AppCard,
   FormModal,
-  FormMultiSelect,
+  LocationMultiSelect,
   FormSelect,
   FormTextInput,
   Screen,
@@ -16,7 +17,7 @@ import {
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { iconSizes, layout, spacing } from '../../src/theme';
 import { router, useLocalSearchParams } from 'expo-router';
-import type { Tag } from '../../src/types/schema';
+import type { EntityScope, Tag } from '../../src/types/schema';
 import {
   useCampaigns,
   useCreateNote,
@@ -32,25 +33,31 @@ export default function NotesScreen() {
   const { theme } = useTheme();
   const campaigns = useCampaigns();
   const currentCampaign = useCurrentCampaign();
+  const continuityId = currentCampaign?.continuityId ?? '';
   const locations = useLocations();
   const [query, setQuery] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [activeLinkModal, setActiveLinkModal] = useState<'locations' | 'tags' | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState('');
   const [draftContent, setDraftContent] = useState('');
+  const [draftScope, setDraftScope] = useState<EntityScope>('campaign');
   const [draftCampaignId, setDraftCampaignId] = useState('');
   const [draftLocationIds, setDraftLocationIds] = useState<string[]>([]);
   const [draftTagIds, setDraftTagIds] = useState<string[]>([]);
   const createNote = useCreateNote();
-  const tags = useTags();
-  const getOrCreateTag = useGetOrCreateTag();
+  const tags = useTags(continuityId, currentCampaign?.id);
+  const getOrCreateTag = useGetOrCreateTag({
+    continuityId: currentCampaign?.continuityId,
+    scope: 'continuity',
+  });
   const { refreshing, onRefresh } = usePullToRefresh();
 
   const effectiveCampaignId = currentCampaign?.id;
-  const notes = useNotes(effectiveCampaignId);
+  const notes = useNotes(continuityId, effectiveCampaignId);
   const params = useLocalSearchParams<{ tagId?: string | string[] }>();
 
   const tagParam = useMemo(() => {
@@ -61,6 +68,13 @@ export default function NotesScreen() {
   const tagById = useMemo(() => {
     return new Map(tags.map((tag) => [tag.id, tag]));
   }, [tags]);
+
+  const availableTags = useMemo(() => {
+    if (draftScope === 'continuity') {
+      return tags.filter((tag) => tag.scope === 'continuity');
+    }
+    return tags;
+  }, [draftScope, tags]);
 
   const campaignById = useMemo(() => {
     return new Map(campaigns.map((campaign) => [campaign.id, campaign]));
@@ -73,28 +87,62 @@ export default function NotesScreen() {
     }));
   }, [campaigns]);
 
-  const locationOptions = useMemo(() => {
-    const filtered = draftCampaignId
+  const continuityLocations = useMemo(() => {
+    if (!continuityId) return [];
+    return locations.filter(
+      (location) => location.scope === 'continuity' && location.continuityId === continuityId
+    );
+  }, [continuityId, locations]);
+
+  const selectableLocations = useMemo(() => {
+    if (draftScope === 'continuity') {
+      return continuityLocations;
+    }
+    return draftCampaignId
       ? locations.filter((location) => location.campaignIds.includes(draftCampaignId))
       : locations;
-    return filtered.map((location) => ({
-      label: location.name || 'Unnamed location',
-      value: location.id,
-    }));
-  }, [draftCampaignId, locations]);
+  }, [continuityLocations, draftCampaignId, draftScope, locations]);
 
   const filteredNotes = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     const scoped = selectedTagIds.length
       ? notes.filter((note) => note.tagIds.some((id) => selectedTagIds.includes(id)))
       : notes;
-    if (!normalized) return scoped;
-    return scoped.filter((note) => {
-      const title = note.title?.toLowerCase() ?? '';
-      const content = note.content?.toLowerCase() ?? '';
-      return title.includes(normalized) || content.includes(normalized);
+    const filtered = normalized
+      ? scoped.filter((note) => {
+          const title = note.title?.toLowerCase() ?? '';
+          const content = note.content?.toLowerCase() ?? '';
+          return title.includes(normalized) || content.includes(normalized);
+        })
+      : scoped;
+    return [...filtered].sort((a, b) => {
+      const aDate = a.updated || a.created;
+      const bDate = b.updated || b.created;
+      return bDate.localeCompare(aDate);
     });
   }, [notes, query, selectedTagIds]);
+
+  const appendDraftContent = (snippet: string) => {
+    setDraftContent((prev) => {
+      const trimmed = prev.trimEnd();
+      return trimmed ? `${trimmed}\n\n${snippet}` : snippet;
+    });
+  };
+
+  const buildDateHeading = () => {
+    const label = new Date().toLocaleDateString();
+    return `### Session Date — ${label}\n- `;
+  };
+
+  const quickInserts = [
+    { label: 'Date Heading', content: buildDateHeading() },
+    { label: 'Chronological Log', content: '### Session Log\n- ' },
+    { label: 'Leads / Questions', content: '### Leads & Questions\n- ' },
+    { label: 'NPCs', content: '### NPCs\n- ' },
+    { label: 'Locations', content: '### Locations\n- ' },
+    { label: 'Items / Loot', content: '### Items & Loot\n- ' },
+    { label: 'Highlights', content: '### Highlights\n- ' },
+  ];
 
   useEffect(() => {
     setSelectedTagIds(tagParam ? [tagParam] : []);
@@ -122,6 +170,7 @@ export default function NotesScreen() {
   const openCreateModal = () => {
     setDraftTitle(`New Note ${notes.length + 1}`);
     setDraftContent('');
+    setDraftScope('campaign');
     setDraftCampaignId(currentCampaign?.id ?? campaigns[0]?.id ?? '');
     setDraftLocationIds([]);
     setDraftTagIds([]);
@@ -132,6 +181,7 @@ export default function NotesScreen() {
   const closeCreateModal = () => {
     setIsCreateOpen(false);
     setCreateError(null);
+    setActiveLinkModal(null);
   };
 
   const handleCampaignChange = (value: string) => {
@@ -148,20 +198,61 @@ export default function NotesScreen() {
     setDraftLocationIds((prev) => prev.filter((id) => allowed.has(id)));
   };
 
+  const handleScopeChange = (value: EntityScope) => {
+    setDraftScope(value);
+    setDraftLocationIds([]);
+    setDraftTagIds([]);
+    if (value === 'campaign') {
+      setDraftCampaignId(currentCampaign?.id ?? campaigns[0]?.id ?? '');
+      return;
+    }
+    setDraftCampaignId('');
+  };
+
   const handleCreateTag = (tagName: string) => {
     const id = getOrCreateTag(tagName);
     return id || undefined;
   };
 
+  const openLinkModal = (target: 'locations' | 'tags') => setActiveLinkModal(target);
+  const closeLinkModal = () => setActiveLinkModal(null);
+
+  const linkModalTitle = activeLinkModal === 'tags' ? 'Tags' : 'Locations';
+
+  const linkModalBody =
+    activeLinkModal === 'tags' ? (
+      <TagInput
+        tags={availableTags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color }))}
+        selectedIds={draftTagIds}
+        onChange={setDraftTagIds}
+        onCreateTag={handleCreateTag}
+      />
+    ) : (
+      <LocationMultiSelect
+        locations={selectableLocations}
+        value={draftLocationIds}
+        onChange={setDraftLocationIds}
+        helperText={
+          draftScope === 'continuity'
+            ? 'Optional: link this note to shared locations.'
+            : 'Optional: link this note to locations.'
+        }
+      />
+    );
+
   const handleCreate = () => {
     if (isCreating) return;
     const trimmedTitle = draftTitle.trim();
-    if (!draftCampaignId) {
+    if (!trimmedTitle) {
+      setCreateError('Note title is required.');
+      return;
+    }
+    if (draftScope === 'campaign' && !draftCampaignId) {
       setCreateError('Select a campaign before creating a note.');
       return;
     }
-    if (!trimmedTitle) {
-      setCreateError('Note title is required.');
+    if (draftScope === 'continuity' && !continuityId) {
+      setCreateError('Select a continuity before creating a shared note.');
       return;
     }
     setIsCreating(true);
@@ -169,7 +260,17 @@ export default function NotesScreen() {
       createNote({
         title: trimmedTitle,
         content: draftContent,
-        campaignId: draftCampaignId,
+        scope: draftScope,
+        continuityId,
+        campaignId: draftScope === 'campaign' ? draftCampaignId : '',
+        campaignIds:
+          draftScope === 'campaign'
+            ? draftCampaignId
+              ? [draftCampaignId]
+              : []
+            : currentCampaign?.id
+              ? [currentCampaign.id]
+              : [],
         locationIds: draftLocationIds,
         tagIds: draftTagIds,
       });
@@ -204,11 +305,23 @@ export default function NotesScreen() {
       }
     >
       <FormSelect
-        label="Campaign"
-        value={draftCampaignId}
-        options={campaignOptions}
-        onChange={handleCampaignChange}
+        label="Scope"
+        value={draftScope}
+        options={[
+          { label: 'Campaign note', value: 'campaign' },
+          { label: 'Shared in continuity', value: 'continuity' },
+        ]}
+        onChange={(value) => handleScopeChange(value as EntityScope)}
+        helperText="Shared notes are visible to every campaign in this continuity."
       />
+      {draftScope === 'campaign' && (
+        <FormSelect
+          label="Campaign"
+          value={draftCampaignId}
+          options={campaignOptions}
+          onChange={handleCampaignChange}
+        />
+      )}
       <FormTextInput label="Title" value={draftTitle} onChangeText={setDraftTitle} />
       <FormTextInput
         label="Content"
@@ -217,24 +330,82 @@ export default function NotesScreen() {
         multiline
         style={styles.modalContentInput}
       />
-      <FormMultiSelect
-        label="Locations"
-        value={draftLocationIds}
-        options={locationOptions}
-        onChange={setDraftLocationIds}
-        helperText="Optional: link this note to locations."
-      />
-      <TagInput
-        tags={tags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color }))}
-        selectedIds={draftTagIds}
-        onChange={setDraftTagIds}
-        onCreateTag={handleCreateTag}
-      />
+      <View style={styles.quickInsertRow}>
+        {quickInserts.map((insert) => (
+          <Button
+            key={insert.label}
+            mode="outlined"
+            compact
+            onPress={() => appendDraftContent(insert.content)}
+          >
+            {insert.label}
+          </Button>
+        ))}
+      </View>
+      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+        Tip: use @Name for people/places and #tags to make details easier to scan later.
+      </Text>
+      <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+        Links
+      </Text>
+      <View style={styles.linkList}>
+        <AppCard
+          title="Locations"
+          subtitle={`${draftLocationIds.length} selected`}
+          onPress={() => openLinkModal('locations')}
+          right={
+            <View style={styles.editCardRight}>
+              <MaterialCommunityIcons
+                name="map-marker-outline"
+                size={18}
+                color={theme.colors.primary}
+              />
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={18}
+                color={theme.colors.onSurfaceVariant}
+              />
+            </View>
+          }
+          style={styles.editCard}
+        />
+        <AppCard
+          title="Tags"
+          subtitle={`${draftTagIds.length} selected`}
+          onPress={() => openLinkModal('tags')}
+          right={
+            <View style={styles.editCardRight}>
+              <MaterialCommunityIcons name="tag-outline" size={18} color={theme.colors.primary} />
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={18}
+                color={theme.colors.onSurfaceVariant}
+              />
+            </View>
+          }
+          style={styles.editCard}
+        />
+      </View>
       {createError && (
         <Text variant="bodySmall" style={{ color: theme.colors.error }}>
           {createError}
         </Text>
       )}
+    </FormModal>
+  );
+
+  const linkModal = (
+    <FormModal
+      title={linkModalTitle}
+      visible={Boolean(activeLinkModal)}
+      onDismiss={closeLinkModal}
+      actions={
+        <Button mode="contained" onPress={closeLinkModal}>
+          Done
+        </Button>
+      }
+    >
+      {linkModalBody}
     </FormModal>
   );
 
@@ -258,6 +429,7 @@ export default function NotesScreen() {
           />
         </Screen>
         {createModal}
+        {linkModal}
       </>
     );
   }
@@ -280,6 +452,7 @@ export default function NotesScreen() {
           />
         </Screen>
         {createModal}
+        {linkModal}
       </>
     );
   }
@@ -386,9 +559,12 @@ export default function NotesScreen() {
             </View>
           }
           renderItem={({ item }) => {
-            const campaignName = item.campaignId
-              ? campaignById.get(item.campaignId)?.name
-              : undefined;
+            const campaignName =
+              item.scope === 'continuity'
+                ? 'Shared'
+                : item.campaignId
+                  ? campaignById.get(item.campaignId)?.name
+                  : undefined;
             const resolvedTags = item.tagIds
               .map((tagId) => tagById.get(tagId))
               .filter((tag): tag is Tag => tag !== undefined);
@@ -415,6 +591,7 @@ export default function NotesScreen() {
         />
       </Screen>
       {createModal}
+      {linkModal}
     </>
   );
 }
@@ -475,5 +652,22 @@ const styles = StyleSheet.create({
   },
   modalContentInput: {
     minHeight: 120,
+  },
+  quickInsertRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[2],
+    marginBottom: spacing[2],
+  },
+  linkList: {
+    gap: spacing[2],
+  },
+  editCard: {
+    paddingVertical: spacing[1],
+  },
+  editCardRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[1],
   },
 });

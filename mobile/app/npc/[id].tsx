@@ -8,6 +8,8 @@ import {
   ConfirmDialog,
   EmptyState,
   FormImagePicker,
+  FormModal,
+  LocationMultiSelect,
   FormMultiSelect,
   FormTextInput,
   Screen,
@@ -20,6 +22,8 @@ import { iconSizes, spacing } from '../../src/theme';
 import type { Tag } from '../../src/types/schema';
 import {
   useCampaigns,
+  useCurrentCampaign,
+  useCreateNpc,
   useDeleteNpc,
   useGetOrCreateTag,
   useLocations,
@@ -28,6 +32,7 @@ import {
   useTags,
   useUpdateNpc,
 } from '../../src/hooks';
+import { now } from '../../src/utils/id';
 
 function formatDate(value?: string): string {
   if (!value) return 'Unknown';
@@ -45,13 +50,18 @@ export default function NpcDetailScreen() {
   }, [params.id]);
 
   const npc = useNpc(npcId);
+  const createNpc = useCreateNpc();
   const updateNpc = useUpdateNpc();
   const deleteNpc = useDeleteNpc();
-  const getOrCreateTag = useGetOrCreateTag();
   const campaigns = useCampaigns();
+  const currentCampaign = useCurrentCampaign();
+  const continuityId =
+    npc?.continuityId ??
+    campaigns.find((campaign) => campaign.id === npc?.campaignIds[0])?.continuityId ??
+    currentCampaign?.continuityId ??
+    '';
   const locations = useLocations();
-  const notes = useNotes();
-  const tags = useTags();
+  const notes = useNotes(continuityId, currentCampaign?.id);
 
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState('');
@@ -66,6 +76,14 @@ export default function NpcDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
+  const [isRemoveOpen, setIsRemoveOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [isForking, setIsForking] = useState(false);
+  const [activeLinkModal, setActiveLinkModal] = useState<
+    'campaigns' | 'locations' | 'notes' | 'tags' | null
+  >(null);
 
   useEffect(() => {
     if (npc && !isEditing) {
@@ -81,19 +99,32 @@ export default function NpcDetailScreen() {
     }
   }, [npc, isEditing]);
 
+  const continuityCampaigns = useMemo(() => {
+    if (!continuityId) return campaigns;
+    return campaigns.filter((campaign) => campaign.continuityId === continuityId);
+  }, [campaigns, continuityId]);
+
+  const tags = useTags(continuityId, currentCampaign?.id);
+  const getOrCreateTag = useGetOrCreateTag({
+    continuityId,
+    scope: 'continuity',
+  });
+
+  const canRemoveFromCampaign =
+    npc?.scope === 'continuity' &&
+    currentCampaign &&
+    npc.campaignIds.includes(currentCampaign.id);
+
+  const showShareActions =
+    npc?.scope === 'campaign' ||
+    (npc?.scope === 'continuity' && Boolean(currentCampaign));
+
   const campaignOptions = useMemo(() => {
-    return campaigns.map((campaign) => ({
+    return continuityCampaigns.map((campaign) => ({
       label: campaign.name || 'Untitled campaign',
       value: campaign.id,
     }));
-  }, [campaigns]);
-
-  const locationOptions = useMemo(() => {
-    return locations.map((location) => ({
-      label: location.name || 'Unnamed location',
-      value: location.id,
-    }));
-  }, [locations]);
+  }, [continuityCampaigns]);
 
   const noteOptions = useMemo(() => {
     return notes.map((note) => ({
@@ -102,10 +133,15 @@ export default function NpcDetailScreen() {
     }));
   }, [notes]);
 
+  const selectableLocations = useMemo(() => {
+    if (!continuityId) return [];
+    return locations.filter((location) => location.continuityId === continuityId);
+  }, [continuityId, locations]);
+
   const linkedCampaigns = useMemo(() => {
     const ids = new Set(campaignIds);
-    return campaigns.filter((campaign) => ids.has(campaign.id));
-  }, [campaignIds, campaigns]);
+    return continuityCampaigns.filter((campaign) => ids.has(campaign.id));
+  }, [campaignIds, continuityCampaigns]);
 
   const linkedLocations = useMemo(() => {
     const ids = new Set(locationIds);
@@ -141,6 +177,69 @@ export default function NpcDetailScreen() {
     setError(null);
     setIsEditing(true);
   };
+
+  const openLinkModal = (target: 'campaigns' | 'locations' | 'notes' | 'tags') => {
+    setActiveLinkModal(target);
+  };
+
+  const closeLinkModal = () => setActiveLinkModal(null);
+
+  const linkModalTitle = (() => {
+    switch (activeLinkModal) {
+      case 'campaigns':
+        return 'Campaigns';
+      case 'locations':
+        return 'Locations';
+      case 'notes':
+        return 'Notes';
+      case 'tags':
+        return 'Tags';
+      default:
+        return '';
+    }
+  })();
+
+  const linkModalBody = (() => {
+    switch (activeLinkModal) {
+      case 'campaigns':
+        return (
+          <FormMultiSelect
+            label="Campaigns"
+            value={campaignIds}
+            options={campaignOptions}
+            onChange={setCampaignIds}
+          />
+        );
+      case 'locations':
+        return (
+          <LocationMultiSelect
+            locations={selectableLocations}
+            value={locationIds}
+            onChange={setLocationIds}
+          />
+        );
+      case 'notes':
+        return (
+          <FormMultiSelect
+            label="Notes"
+            value={noteIds}
+            options={noteOptions}
+            onChange={setNoteIds}
+          />
+        );
+      case 'tags':
+        return (
+          <TagInput
+            tags={tags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color }))}
+            selectedIds={tagIds}
+            onChange={setTagIds}
+            onCreateTag={handleCreateTag}
+          />
+        );
+      default:
+        return null;
+    }
+  })();
 
   const handleCancel = () => {
     if (npc) {
@@ -209,6 +308,93 @@ export default function NpcDetailScreen() {
     }
   };
 
+  const handleRemove = () => {
+    if (!npc || !currentCampaign || isRemoving) return;
+    setIsRemoveOpen(true);
+  };
+
+  const closeRemoveDialog = () => {
+    setIsRemoveOpen(false);
+  };
+
+  const confirmRemove = () => {
+    if (!npc || !currentCampaign || isRemoving) return;
+    try {
+      setIsRemoving(true);
+      updateNpc(npc.id, {
+        campaignIds: npc.campaignIds.filter((id) => id !== currentCampaign.id),
+      });
+      router.back();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to remove NPC.';
+      setError(message);
+    } finally {
+      setIsRemoving(false);
+      setIsRemoveOpen(false);
+    }
+  };
+
+  const handleShare = () => {
+    if (!npc || isSharing) return;
+    setIsShareOpen(true);
+  };
+
+  const closeShareDialog = () => {
+    setIsShareOpen(false);
+  };
+
+  const confirmShare = () => {
+    if (!npc || isSharing) return;
+    if (!continuityId) {
+      setError('Select a continuity before sharing this NPC.');
+      setIsShareOpen(false);
+      return;
+    }
+    setIsSharing(true);
+    try {
+      updateNpc(npc.id, {
+        scope: 'continuity',
+        continuityId,
+        campaignIds: continuityCampaigns.map((campaign) => campaign.id),
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to share NPC.';
+      setError(message);
+    } finally {
+      setIsSharing(false);
+      setIsShareOpen(false);
+    }
+  };
+
+  const handleFork = () => {
+    if (!npc || !currentCampaign || isForking) return;
+    setIsForking(true);
+    try {
+      const id = createNpc({
+        name: npc.name,
+        race: npc.race,
+        role: npc.role,
+        background: npc.background,
+        image: npc.image,
+        scope: 'campaign',
+        continuityId: npc.continuityId,
+        originId: npc.id,
+        originContinuityId: npc.continuityId,
+        forkedAt: now(),
+        campaignIds: [currentCampaign.id],
+        locationIds: npc.locationIds,
+        noteIds: npc.noteIds,
+        tagIds: npc.tagIds,
+      });
+      router.push(`/npc/${id}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to fork NPC.';
+      setError(message);
+    } finally {
+      setIsForking(false);
+    }
+  };
+
   if (!npc) {
     return (
       <Screen>
@@ -243,6 +429,11 @@ export default function NpcDetailScreen() {
             {!isEditing && (
               <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
                 {[npc.race, npc.role].filter(Boolean).join(' • ') || 'No details yet.'}
+              </Text>
+            )}
+            {!isEditing && npc.scope === 'continuity' && (
+              <Text variant="labelSmall" style={{ color: theme.colors.primary }}>
+                Shared in continuity
               </Text>
             )}
           </View>
@@ -295,38 +486,99 @@ export default function NpcDetailScreen() {
               <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
                 {npc.background?.trim() || 'No background yet.'}
               </Text>
+              {npc.scope === 'continuity' && (
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  Editing shared NPCs affects all campaigns in this continuity.
+                </Text>
+              )}
             </>
           )}
         </Section>
 
         <Section title="Links" icon="link-variant">
           {isEditing ? (
-            <>
-              <FormMultiSelect
-                label="Campaigns"
-                value={campaignIds}
-                options={campaignOptions}
-                onChange={setCampaignIds}
+            <View style={styles.linkList}>
+              <AppCard
+                title="Campaigns"
+                subtitle={`${campaignIds.length} selected`}
+                onPress={() => openLinkModal('campaigns')}
+                right={
+                  <View style={styles.editCardRight}>
+                    <MaterialCommunityIcons
+                      name="folder-outline"
+                      size={18}
+                      color={theme.colors.primary}
+                    />
+                    <MaterialCommunityIcons
+                      name="chevron-right"
+                      size={18}
+                      color={theme.colors.onSurfaceVariant}
+                    />
+                  </View>
+                }
+                style={styles.editCard}
               />
-              <FormMultiSelect
-                label="Locations"
-                value={locationIds}
-                options={locationOptions}
-                onChange={setLocationIds}
+              <AppCard
+                title="Locations"
+                subtitle={`${locationIds.length} selected`}
+                onPress={() => openLinkModal('locations')}
+                right={
+                  <View style={styles.editCardRight}>
+                    <MaterialCommunityIcons
+                      name="map-marker-outline"
+                      size={18}
+                      color={theme.colors.primary}
+                    />
+                    <MaterialCommunityIcons
+                      name="chevron-right"
+                      size={18}
+                      color={theme.colors.onSurfaceVariant}
+                    />
+                  </View>
+                }
+                style={styles.editCard}
               />
-              <FormMultiSelect
-                label="Notes"
-                value={noteIds}
-                options={noteOptions}
-                onChange={setNoteIds}
+              <AppCard
+                title="Notes"
+                subtitle={`${noteIds.length} selected`}
+                onPress={() => openLinkModal('notes')}
+                right={
+                  <View style={styles.editCardRight}>
+                    <MaterialCommunityIcons
+                      name="note-text-outline"
+                      size={18}
+                      color={theme.colors.primary}
+                    />
+                    <MaterialCommunityIcons
+                      name="chevron-right"
+                      size={18}
+                      color={theme.colors.onSurfaceVariant}
+                    />
+                  </View>
+                }
+                style={styles.editCard}
               />
-              <TagInput
-                tags={tags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color }))}
-                selectedIds={tagIds}
-                onChange={setTagIds}
-                onCreateTag={handleCreateTag}
+              <AppCard
+                title="Tags"
+                subtitle={`${tagIds.length} selected`}
+                onPress={() => openLinkModal('tags')}
+                right={
+                  <View style={styles.editCardRight}>
+                    <MaterialCommunityIcons
+                      name="tag-outline"
+                      size={18}
+                      color={theme.colors.primary}
+                    />
+                    <MaterialCommunityIcons
+                      name="chevron-right"
+                      size={18}
+                      color={theme.colors.onSurfaceVariant}
+                    />
+                  </View>
+                }
+                style={styles.editCard}
               />
-            </>
+            </View>
           ) : (
             <>
               {linkedCampaigns.length === 0 ? (
@@ -421,6 +673,16 @@ export default function NpcDetailScreen() {
               <Button mode="outlined" onPress={() => router.back()} style={styles.actionButton}>
                 Back
               </Button>
+              {canRemoveFromCampaign && (
+                <Button
+                  mode="outlined"
+                  icon="link-off"
+                  onPress={handleRemove}
+                  style={styles.actionButton}
+                >
+                  Remove
+                </Button>
+              )}
               <Button
                 mode="outlined"
                 icon="trash-can-outline"
@@ -434,17 +696,77 @@ export default function NpcDetailScreen() {
             </>
           )}
         </View>
+        {!isEditing && showShareActions && (
+          <View style={styles.shareRow}>
+            {npc.scope === 'campaign' && (
+              <Button
+                mode="outlined"
+                icon="share-variant"
+                onPress={handleShare}
+                disabled={isSharing}
+              >
+                Share to Continuity
+              </Button>
+            )}
+            {npc.scope === 'continuity' && currentCampaign && (
+              <Button
+                mode="outlined"
+                icon="source-fork"
+                onPress={handleFork}
+                disabled={isForking}
+              >
+                Fork to Campaign
+              </Button>
+            )}
+          </View>
+        )}
       </Screen>
       <ConfirmDialog
         visible={isDeleteOpen}
         title="Delete NPC?"
-        description="This action cannot be undone."
+        description={
+          npc?.scope === 'continuity'
+            ? 'This deletes the shared NPC for every campaign in this continuity.'
+            : 'This action cannot be undone.'
+        }
         confirmLabel="Delete"
         onCancel={closeDeleteDialog}
         onConfirm={confirmDelete}
         confirmLoading={isDeleting}
         destructive
       />
+      <ConfirmDialog
+        visible={isRemoveOpen}
+        title="Remove from campaign?"
+        description="This will remove the NPC from this campaign only."
+        confirmLabel="Remove"
+        onCancel={closeRemoveDialog}
+        onConfirm={confirmRemove}
+        confirmLoading={isRemoving}
+      />
+      <ConfirmDialog
+        visible={isShareOpen}
+        title="Share to continuity?"
+        description="Shared NPCs appear in every campaign in this continuity."
+        confirmLabel="Share"
+        onCancel={closeShareDialog}
+        onConfirm={confirmShare}
+        confirmLoading={isSharing}
+      />
+      {activeLinkModal && (
+        <FormModal
+          title={linkModalTitle}
+          visible={Boolean(activeLinkModal)}
+          onDismiss={closeLinkModal}
+          actions={
+            <Button mode="contained" onPress={closeLinkModal}>
+              Done
+            </Button>
+          }
+        >
+          {linkModalBody}
+        </FormModal>
+      )}
     </>
   );
 }
@@ -466,6 +788,17 @@ const styles = StyleSheet.create({
   },
   contentInput: {
     minHeight: 140,
+  },
+  linkList: {
+    gap: spacing[2],
+  },
+  editCard: {
+    paddingVertical: spacing[1],
+  },
+  editCardRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[1],
   },
   imageRow: {
     flexDirection: 'row',
@@ -506,6 +839,11 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
+  },
+  shareRow: {
+    flexDirection: 'row',
+    gap: spacing[3],
+    marginTop: spacing[3],
   },
   errorText: {
     marginTop: spacing[3],

@@ -2,13 +2,22 @@ import { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { Button, FAB, Text, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Stack, router } from 'expo-router';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
 import ColorPicker, { Swatches } from 'reanimated-color-picker';
-import { AppCard, EmptyState, FormModal, FormTextInput, Screen, TagChip } from '../src/components';
+import {
+  AppCard,
+  EmptyState,
+  FormModal,
+  FormSelect,
+  FormTextInput,
+  Screen,
+  TagChip,
+} from '../src/components';
 import { useTheme } from '../src/theme/ThemeProvider';
 import { layout, spacing, tagColors } from '../src/theme';
 import {
   useCreateTag,
+  useCurrentCampaign,
   useLocations,
   useNotes,
   useNpcs,
@@ -40,11 +49,18 @@ function buildUsageLabel(usage: TagUsage): string {
 
 export default function TagsScreen() {
   const { theme } = useTheme();
-  const tags = useTags();
-  const notes = useNotes();
-  const npcs = useNpcs();
-  const locations = useLocations();
-  const sessionLogs = useSessionLogs();
+  const params = useLocalSearchParams<{ continuityId?: string | string[] }>();
+  const currentCampaign = useCurrentCampaign();
+  const continuityId = useMemo(() => {
+    const raw = params.continuityId;
+    const paramValue = Array.isArray(raw) ? raw[0] : raw ?? '';
+    return paramValue || currentCampaign?.continuityId || '';
+  }, [currentCampaign?.continuityId, params.continuityId]);
+  const tags = useTags(continuityId, currentCampaign?.id);
+  const notes = useNotes(continuityId, currentCampaign?.id);
+  const npcs = useNpcs(currentCampaign?.id);
+  const locations = useLocations(currentCampaign?.id);
+  const sessionLogs = useSessionLogs(currentCampaign?.id);
   const createTag = useCreateTag();
   const { refreshing, onRefresh } = usePullToRefresh();
   const [query, setQuery] = useState('');
@@ -54,6 +70,7 @@ export default function TagsScreen() {
   const [createError, setCreateError] = useState<string | null>(null);
   const [draftName, setDraftName] = useState('');
   const [draftColor, setDraftColor] = useState<string>(defaultTagColor);
+  const [draftScope, setDraftScope] = useState<'continuity' | 'campaign'>('continuity');
 
   const tagUsage = useMemo(() => {
     const map = new Map<string, TagUsage>();
@@ -92,6 +109,7 @@ export default function TagsScreen() {
   const openCreateModal = () => {
     setDraftName('');
     setDraftColor(defaultTagColor);
+    setDraftScope('continuity');
     setCreateError(null);
     setIsCreateOpen(true);
   };
@@ -112,10 +130,27 @@ export default function TagsScreen() {
       setCreateError('A tag with this name already exists.');
       return;
     }
+    if (!continuityId) {
+      setCreateError('Select a campaign or continuity first.');
+      return;
+    }
     setIsCreating(true);
     setCreateError(null);
     try {
-      createTag({ name: trimmed, color: draftColor });
+      const scope = draftScope;
+      const campaignId = scope === 'campaign' ? currentCampaign?.id ?? '' : '';
+      if (scope === 'campaign' && !campaignId) {
+        setCreateError('Select a campaign to create a campaign-only tag.');
+        setIsCreating(false);
+        return;
+      }
+      createTag({
+        name: trimmed,
+        color: draftColor,
+        scope,
+        continuityId,
+        campaignId,
+      });
       setIsCreateOpen(false);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to create tag.';
@@ -142,6 +177,16 @@ export default function TagsScreen() {
       }
     >
       <FormTextInput label="Name" value={draftName} onChangeText={setDraftName} />
+      <FormSelect
+        label="Scope"
+        value={draftScope}
+        options={[
+          { label: 'Shared in continuity', value: 'continuity' },
+          { label: 'Campaign only', value: 'campaign' },
+        ]}
+        onChange={(value) => setDraftScope(value as 'continuity' | 'campaign')}
+        helperText="Shared tags are available to every campaign in this continuity."
+      />
       <Text variant="labelMedium" style={{ color: theme.colors.onSurface }}>
         Color
       </Text>

@@ -32,7 +32,13 @@ function rowToNote(row: NoteRow): Note {
     id: row.id,
     title: row.title,
     content: row.content,
+    scope: (row.scope as Note['scope']) || 'campaign',
+    continuityId: row.continuityId || '',
     campaignId: row.campaignId,
+    campaignIds: parseJsonArray(row.campaignIds),
+    originId: row.originId || '',
+    originContinuityId: row.originContinuityId || '',
+    forkedAt: row.forkedAt || '',
     locationIds: parseJsonArray(row.locationIds),
     tagIds: parseJsonArray(row.tagIds),
     created: row.created,
@@ -43,47 +49,95 @@ function rowToNote(row: NoteRow): Note {
 /**
  * Hook to get all notes, optionally filtered by campaign.
  */
-export function useNotes(campaignId?: string): Note[] {
+export function useNotes(continuityId?: string, campaignId?: string): Note[] {
   const store = useStore();
   const table = useTable('notes', store);
 
   return useMemo(() => {
     const notes = Object.values(table).map((row) => rowToNote(row as unknown as NoteRow));
 
-    if (campaignId) {
-      return notes.filter((note) => note.campaignId === campaignId);
+    if (!continuityId) {
+      if (campaignId) {
+        return notes.filter((note) => note.campaignId === campaignId);
+      }
+      return notes;
     }
 
-    return notes;
-  }, [table, campaignId]);
+    if (!campaignId) {
+      return notes.filter((note) => note.continuityId === continuityId);
+    }
+
+    return notes.filter((note) => {
+      if (note.continuityId !== continuityId) return false;
+      if (note.scope === 'continuity') {
+        return note.campaignIds.includes(campaignId);
+      }
+      if (note.scope === 'campaign') {
+        return note.campaignId === campaignId;
+      }
+      return false;
+    });
+  }, [table, continuityId, campaignId]);
 }
 
 /**
  * Hook to get notes by location.
  */
-export function useNotesByLocation(locationId: string): Note[] {
+export function useNotesByLocation(
+  locationId: string,
+  continuityId?: string,
+  campaignId?: string
+): Note[] {
   const store = useStore();
   const table = useTable('notes', store);
 
   return useMemo(() => {
     return Object.values(table)
       .map((row) => rowToNote(row as unknown as NoteRow))
-      .filter((note) => note.locationIds.includes(locationId));
-  }, [table, locationId]);
+      .filter((note) => {
+        if (!note.locationIds.includes(locationId)) return false;
+        if (!continuityId) return true;
+        if (note.continuityId !== continuityId) return false;
+        if (!campaignId) return true;
+        if (note.scope === 'continuity') {
+          return note.campaignIds.includes(campaignId);
+        }
+        if (note.scope === 'campaign') {
+          return note.campaignId === campaignId;
+        }
+        return false;
+      });
+  }, [table, locationId, continuityId, campaignId]);
 }
 
 /**
  * Hook to get notes by tag.
  */
-export function useNotesByTag(tagId: string): Note[] {
+export function useNotesByTag(
+  tagId: string,
+  continuityId?: string,
+  campaignId?: string
+): Note[] {
   const store = useStore();
   const table = useTable('notes', store);
 
   return useMemo(() => {
     return Object.values(table)
       .map((row) => rowToNote(row as unknown as NoteRow))
-      .filter((note) => note.tagIds.includes(tagId));
-  }, [table, tagId]);
+      .filter((note) => {
+        if (!note.tagIds.includes(tagId)) return false;
+        if (!continuityId) return true;
+        if (note.continuityId !== continuityId) return false;
+        if (!campaignId) return true;
+        if (note.scope === 'continuity') {
+          return note.campaignIds.includes(campaignId);
+        }
+        if (note.scope === 'campaign') {
+          return note.campaignId === campaignId;
+        }
+        return false;
+      });
+  }, [table, tagId, continuityId, campaignId]);
 }
 
 /**
@@ -102,7 +156,13 @@ export function useNote(id: string): Note | null {
 export interface CreateNoteInput {
   title: string;
   content?: string;
-  campaignId: string;
+  scope?: Note['scope'];
+  continuityId?: string;
+  campaignId?: string;
+  campaignIds?: RecordId[];
+  originId?: string;
+  originContinuityId?: string;
+  forkedAt?: string;
   locationIds?: RecordId[];
   tagIds?: RecordId[];
 }
@@ -119,11 +179,24 @@ export function useCreateNote(): (data: CreateNoteInput) => string {
       const id = generateId();
       const timestamp = now();
 
+      const scope = data.scope || 'campaign';
+      const continuityId = data.continuityId || '';
+      const campaignId = data.campaignId || '';
+      const campaignIds =
+        data.campaignIds ||
+        (scope === 'campaign' && campaignId ? [campaignId] : []);
+
       store.setRow('notes', id, {
         id,
         title: data.title,
         content: data.content || '',
-        campaignId: data.campaignId,
+        scope,
+        continuityId,
+        campaignId: scope === 'campaign' ? campaignId : '',
+        campaignIds: JSON.stringify(campaignIds),
+        originId: data.originId || '',
+        originContinuityId: data.originContinuityId || '',
+        forkedAt: data.forkedAt || '',
         locationIds: JSON.stringify(data.locationIds || []),
         tagIds: JSON.stringify(data.tagIds || []),
         created: timestamp,
@@ -140,7 +213,13 @@ export function useCreateNote(): (data: CreateNoteInput) => string {
 export interface UpdateNoteInput {
   title?: string;
   content?: string;
+  scope?: Note['scope'];
+  continuityId?: string;
   campaignId?: string;
+  campaignIds?: RecordId[];
+  originId?: string;
+  originContinuityId?: string;
+  forkedAt?: string;
   locationIds?: RecordId[];
   tagIds?: RecordId[];
 }
@@ -163,7 +242,15 @@ export function useUpdateNote(): (id: string, data: UpdateNoteInput) => void {
 
       if (data.title !== undefined) updates.title = data.title;
       if (data.content !== undefined) updates.content = data.content;
+      if (data.scope !== undefined) updates.scope = data.scope;
+      if (data.continuityId !== undefined) updates.continuityId = data.continuityId;
       if (data.campaignId !== undefined) updates.campaignId = data.campaignId;
+      if (data.campaignIds !== undefined)
+        updates.campaignIds = JSON.stringify(data.campaignIds);
+      if (data.originId !== undefined) updates.originId = data.originId;
+      if (data.originContinuityId !== undefined)
+        updates.originContinuityId = data.originContinuityId;
+      if (data.forkedAt !== undefined) updates.forkedAt = data.forkedAt;
       if (data.locationIds !== undefined) updates.locationIds = JSON.stringify(data.locationIds);
       if (data.tagIds !== undefined) updates.tagIds = JSON.stringify(data.tagIds);
 

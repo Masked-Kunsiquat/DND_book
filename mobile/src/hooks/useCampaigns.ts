@@ -18,6 +18,7 @@ function rowToCampaign(row: CampaignRow): Campaign {
   return {
     id: row.id,
     name: row.name,
+    continuityId: row.continuityId,
     created: row.created,
     updated: row.updated,
   };
@@ -75,6 +76,7 @@ export function useSetCurrentCampaign(): (id: string) => void {
 
 export interface CreateCampaignInput {
   name: string;
+  continuityId: string;
 }
 
 /**
@@ -92,8 +94,53 @@ export function useCreateCampaign(): (data: CreateCampaignInput) => string {
       store.setRow('campaigns', id, {
         id,
         name: data.name,
+        continuityId: data.continuityId,
         created: timestamp,
         updated: timestamp,
+      });
+
+      const locationsTable = store.getTable('locations');
+      Object.entries(locationsTable).forEach(([locationId, row]) => {
+        const scope = (row as { scope?: string }).scope;
+        const continuityId = (row as { continuityId?: string }).continuityId;
+        if (scope !== 'continuity' || continuityId !== data.continuityId) return;
+        const existingCampaignIds = (() => {
+          try {
+            const parsed = JSON.parse((row as { campaignIds?: string }).campaignIds || '[]');
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
+        })();
+        if (!existingCampaignIds.includes(id)) {
+          store.setRow('locations', locationId, {
+            ...row,
+            campaignIds: JSON.stringify([...existingCampaignIds, id]),
+            updated: now(),
+          });
+        }
+      });
+
+      const npcsTable = store.getTable('npcs');
+      Object.entries(npcsTable).forEach(([npcId, row]) => {
+        const scope = (row as { scope?: string }).scope;
+        const continuityId = (row as { continuityId?: string }).continuityId;
+        if (scope !== 'continuity' || continuityId !== data.continuityId) return;
+        const existingCampaignIds = (() => {
+          try {
+            const parsed = JSON.parse((row as { campaignIds?: string }).campaignIds || '[]');
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
+        })();
+        if (!existingCampaignIds.includes(id)) {
+          store.setRow('npcs', npcId, {
+            ...row,
+            campaignIds: JSON.stringify([...existingCampaignIds, id]),
+            updated: now(),
+          });
+        }
       });
 
       log.debug('Created campaign', id);
@@ -105,6 +152,7 @@ export function useCreateCampaign(): (data: CreateCampaignInput) => string {
 
 export interface UpdateCampaignInput {
   name?: string;
+  continuityId?: string;
 }
 
 /**

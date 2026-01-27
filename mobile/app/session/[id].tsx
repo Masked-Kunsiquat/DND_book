@@ -12,6 +12,7 @@ import {
   FormModal,
   FormMultiSelect,
   FormTextInput,
+  LocationMultiSelect,
   LocationCard,
   NoteCard,
   NPCCard,
@@ -70,10 +71,8 @@ export default function SessionDetailScreen() {
   const npcs = useNpcs();
   const notes = useNotes();
   const playerCharacters = usePlayerCharacters();
-  const tags = useTags();
   const updateSessionLog = useUpdateSessionLog();
   const deleteSessionLog = useDeleteSessionLog();
-  const getOrCreateTag = useGetOrCreateTag();
 
   const [isEditing, setIsEditing] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -95,6 +94,36 @@ export default function SessionDetailScreen() {
     'participants' | 'campaigns' | 'locations' | 'npcs' | 'notes' | 'tags' | null
   >(null);
 
+  const displayCampaignIds = useMemo(
+    () => (isEditing ? campaignIds : session?.campaignIds ?? []),
+    [campaignIds, isEditing, session?.campaignIds]
+  );
+
+  const continuityInfo = useMemo(() => {
+    if (displayCampaignIds.length === 0) {
+      return { continuityId: undefined, hasMismatch: false };
+    }
+    const selectedCampaigns = campaigns.filter((campaign) =>
+      displayCampaignIds.includes(campaign.id)
+    );
+    const continuitySet = new Set(
+      selectedCampaigns.map((campaign) => campaign.continuityId).filter(Boolean)
+    );
+    if (continuitySet.size > 1) {
+      return { continuityId: undefined, hasMismatch: true };
+    }
+    const [continuityId] = Array.from(continuitySet);
+    return { continuityId, hasMismatch: false };
+  }, [campaigns, displayCampaignIds]);
+  const continuityId = continuityInfo.continuityId;
+  const hasContinuityMismatch = continuityInfo.hasMismatch;
+  const activeCampaignId = displayCampaignIds[0] || '';
+  const tagContinuityId = hasContinuityMismatch ? undefined : continuityId;
+  const tags = useTags(tagContinuityId, tagContinuityId ? activeCampaignId : undefined);
+  const getOrCreateTag = useGetOrCreateTag(
+    tagContinuityId ? { continuityId: tagContinuityId, scope: 'continuity' } : undefined
+  );
+
   useEffect(() => {
     if (session && !isEditing) {
       setTitle(session.title);
@@ -111,10 +140,6 @@ export default function SessionDetailScreen() {
     }
   }, [session, isEditing]);
 
-  const displayCampaignIds = useMemo(
-    () => (isEditing ? campaignIds : session?.campaignIds ?? []),
-    [campaignIds, isEditing, session?.campaignIds]
-  );
   const displayLocationIds = useMemo(
     () => (isEditing ? locationIds : session?.locationIds ?? []),
     [isEditing, locationIds, session?.locationIds]
@@ -148,40 +173,54 @@ export default function SessionDetailScreen() {
     }));
   }, [campaigns]);
 
-  const locationOptions = useMemo(() => {
-    const filtered =
-      campaignIdSet.size === 0
-        ? locations
-        : locations.filter((location) =>
-            location.campaignIds.some((id) => campaignIdSet.has(id))
-          );
-    return filtered.map((location) => ({
-      label: location.name || 'Unnamed location',
-      value: location.id,
-    }));
-  }, [campaignIdSet, locations]);
+  const selectableLocations = useMemo(() => {
+    if (campaignIdSet.size === 0) {
+      return continuityId
+        ? locations.filter((location) => location.continuityId === continuityId)
+        : locations;
+    }
+    return locations.filter((location) => location.campaignIds.some((id) => campaignIdSet.has(id)));
+  }, [campaignIdSet, continuityId, locations]);
 
   const npcOptions = useMemo(() => {
     const filtered =
       campaignIdSet.size === 0
-        ? npcs
+        ? continuityId
+          ? npcs.filter((npc) => npc.continuityId === continuityId)
+          : npcs
         : npcs.filter((npc) => npc.campaignIds.some((id) => campaignIdSet.has(id)));
     return filtered.map((npc) => ({
-      label: npc.name || 'Unnamed NPC',
+      label:
+        npc.scope === 'continuity'
+          ? `${npc.name || 'Unnamed NPC'} (Shared)`
+          : npc.name || 'Unnamed NPC',
       value: npc.id,
     }));
-  }, [campaignIdSet, npcs]);
+  }, [campaignIdSet, continuityId, npcs]);
 
   const noteOptions = useMemo(() => {
     const filtered =
       campaignIdSet.size === 0
-        ? notes
-        : notes.filter((note) => campaignIdSet.has(note.campaignId));
+        ? continuityId
+          ? notes.filter((note) => note.continuityId === continuityId)
+          : notes
+        : notes.filter((note) => {
+            if (note.scope === 'campaign') {
+              return campaignIdSet.has(note.campaignId);
+            }
+            if (note.scope === 'continuity') {
+              return note.campaignIds.some((id) => campaignIdSet.has(id));
+            }
+            return false;
+          });
     return filtered.map((note) => ({
-      label: note.title || 'Untitled note',
+      label:
+        note.scope === 'continuity'
+          ? `${note.title || 'Untitled note'} (Shared)`
+          : note.title || 'Untitled note',
       value: note.id,
     }));
-  }, [campaignIdSet, notes]);
+  }, [campaignIdSet, continuityId, notes]);
 
   const playerOptions = useMemo(() => {
     const filtered =
@@ -219,14 +258,20 @@ export default function SessionDetailScreen() {
     return playerCharacters.filter((pc) => ids.has(pc.id));
   }, [displayPlayerIds, playerCharacters]);
 
+  const availableTags = useMemo(
+    () => (tagContinuityId ? tags : []),
+    [tagContinuityId, tags]
+  );
+
   const resolvedTags = useMemo(() => {
-    const tagById = new Map(tags.map((tag) => [tag.id, tag]));
+    const tagById = new Map(availableTags.map((tag) => [tag.id, tag]));
     return displayTagIds
       .map((id) => tagById.get(id))
-      .filter((tag): tag is (typeof tags)[number] => tag !== undefined);
-  }, [displayTagIds, tags]);
+      .filter((tag): tag is (typeof availableTags)[number] => tag !== undefined);
+  }, [availableTags, displayTagIds]);
 
   const handleCreateTag = (name: string) => {
+    if (!tagContinuityId) return undefined;
     const id = getOrCreateTag(name);
     return id || undefined;
   };
@@ -246,7 +291,17 @@ export default function SessionDetailScreen() {
         .map((npc) => npc.id)
     );
     const allowedNotes = new Set(
-      notes.filter((note) => allowedCampaigns.has(note.campaignId)).map((note) => note.id)
+      notes
+        .filter((note) => {
+          if (note.scope === 'campaign') {
+            return allowedCampaigns.has(note.campaignId);
+          }
+          if (note.scope === 'continuity') {
+            return note.campaignIds.some((id) => allowedCampaigns.has(id));
+          }
+          return false;
+        })
+        .map((note) => note.id)
     );
     const allowedPlayers = new Set(
       playerCharacters
@@ -301,6 +356,10 @@ export default function SessionDetailScreen() {
     const trimmedTitle = title.trim();
     if (!trimmedTitle) {
       setError('Session title is required.');
+      return;
+    }
+    if (hasContinuityMismatch) {
+      setError('Sessions must belong to a single continuity before saving.');
       return;
     }
     const resolvedDate = date.trim() || formatDateOnly(new Date());
@@ -385,10 +444,9 @@ export default function SessionDetailScreen() {
         );
       case 'locations':
         return (
-          <FormMultiSelect
-            label="Locations"
+          <LocationMultiSelect
+            locations={selectableLocations}
             value={locationIds}
-            options={locationOptions}
             onChange={setLocationIds}
           />
         );
@@ -411,9 +469,16 @@ export default function SessionDetailScreen() {
           />
         );
       case 'tags':
+        if (!tagContinuityId) {
+          return (
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+              Select campaigns from a single continuity to edit tags.
+            </Text>
+          );
+        }
         return (
           <TagInput
-            tags={tags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color }))}
+            tags={availableTags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color }))}
             selectedIds={tagIds}
             onChange={setTagIds}
             onCreateTag={handleCreateTag}

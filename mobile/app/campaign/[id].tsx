@@ -19,6 +19,8 @@ import { useTheme } from '../../src/theme/ThemeProvider';
 import { spacing } from '../../src/theme';
 import {
   useCampaign,
+  useCampaigns,
+  useCurrentCampaign,
   useDeleteCampaign,
   useLocations,
   useNotes,
@@ -55,11 +57,14 @@ export default function CampaignDetailScreen() {
   const scopedCampaignId = hasCampaignId ? campaignId : '__missing__';
 
   const campaign = useCampaign(scopedCampaignId);
+  const campaigns = useCampaigns();
+  const currentCampaign = useCurrentCampaign();
   const updateCampaign = useUpdateCampaign();
   const deleteCampaign = useDeleteCampaign();
   const setCurrentCampaign = useSetCurrentCampaign();
+  const continuityId = campaign?.continuityId || currentCampaign?.continuityId || '';
 
-  const notes = useNotes(scopedCampaignId);
+  const notes = useNotes(continuityId, scopedCampaignId);
   const npcs = useNpcs(scopedCampaignId);
   const locations = useLocations(scopedCampaignId);
   const sessionLogs = useSessionLogs(scopedCampaignId);
@@ -185,8 +190,21 @@ export default function CampaignDetailScreen() {
     if (!campaign || isDeleting) return;
     try {
       setIsDeleting(true);
+      const remainingCampaigns = campaigns.filter((item) => item.id !== campaign.id);
+      const sameContinuity = remainingCampaigns.filter(
+        (item) => item.continuityId === campaign.continuityId
+      );
+      const nextCampaign =
+        sameContinuity[0] || remainingCampaigns[0] || null;
+
       deleteCampaign(campaign.id);
-      router.back();
+      if (nextCampaign && currentCampaign?.id === campaign.id) {
+        setCurrentCampaign(nextCampaign.id);
+      }
+      router.replace({
+        pathname: '/campaigns',
+        params: { continuityId: campaign.continuityId },
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete campaign.';
       setError(message);

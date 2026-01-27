@@ -36,6 +36,11 @@ function rowToNpc(row: NpcRow): Npc {
     role: row.role,
     background: row.background,
     image: row.image,
+    scope: (row.scope as Npc['scope']) || 'campaign',
+    continuityId: row.continuityId || '',
+    originId: row.originId || '',
+    originContinuityId: row.originContinuityId || '',
+    forkedAt: row.forkedAt || '',
     campaignIds: parseJsonArray(row.campaignIds),
     locationIds: parseJsonArray(row.locationIds),
     noteIds: parseJsonArray(row.noteIds),
@@ -111,6 +116,11 @@ export interface CreateNpcInput {
   role?: string;
   background?: string;
   image?: string;
+  scope?: Npc['scope'];
+  continuityId?: RecordId;
+  originId?: RecordId;
+  originContinuityId?: RecordId;
+  forkedAt?: string;
   campaignIds?: RecordId[];
   locationIds?: RecordId[];
   noteIds?: RecordId[];
@@ -136,6 +146,11 @@ export function useCreateNpc(): (data: CreateNpcInput) => string {
         role: data.role || '',
         background: data.background || '',
         image: data.image || '',
+        scope: data.scope || 'campaign',
+        continuityId: data.continuityId || '',
+        originId: data.originId || '',
+        originContinuityId: data.originContinuityId || '',
+        forkedAt: data.forkedAt || '',
         campaignIds: JSON.stringify(data.campaignIds || []),
         locationIds: JSON.stringify(data.locationIds || []),
         noteIds: JSON.stringify(data.noteIds || []),
@@ -157,6 +172,11 @@ export interface UpdateNpcInput {
   role?: string;
   background?: string;
   image?: string;
+  scope?: Npc['scope'];
+  continuityId?: RecordId;
+  originId?: RecordId;
+  originContinuityId?: RecordId;
+  forkedAt?: string;
   campaignIds?: RecordId[];
   locationIds?: RecordId[];
   noteIds?: RecordId[];
@@ -184,6 +204,12 @@ export function useUpdateNpc(): (id: string, data: UpdateNpcInput) => void {
       if (data.role !== undefined) updates.role = data.role;
       if (data.background !== undefined) updates.background = data.background;
       if (data.image !== undefined) updates.image = data.image;
+      if (data.scope !== undefined) updates.scope = data.scope;
+      if (data.continuityId !== undefined) updates.continuityId = data.continuityId;
+      if (data.originId !== undefined) updates.originId = data.originId;
+      if (data.originContinuityId !== undefined)
+        updates.originContinuityId = data.originContinuityId;
+      if (data.forkedAt !== undefined) updates.forkedAt = data.forkedAt;
       if (data.campaignIds !== undefined) updates.campaignIds = JSON.stringify(data.campaignIds);
       if (data.locationIds !== undefined) updates.locationIds = JSON.stringify(data.locationIds);
       if (data.noteIds !== undefined) updates.noteIds = JSON.stringify(data.noteIds);

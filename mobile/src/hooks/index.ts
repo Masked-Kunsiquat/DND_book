@@ -21,6 +21,17 @@ export {
   type UpdateCampaignInput,
 } from './useCampaigns';
 
+// Continuities
+export {
+  useContinuities,
+  useContinuity,
+  useCreateContinuity,
+  useUpdateContinuity,
+  useDeleteContinuity,
+  type CreateContinuityInput,
+  type UpdateContinuityInput,
+} from './useContinuities';
+
 // Notes
 export {
   useNotes,
@@ -99,3 +110,14 @@ export {
   type CreatePlayerCharacterInput,
   type UpdatePlayerCharacterInput,
 } from './usePlayerCharacters';
+
+// Player Character Templates
+export {
+  usePlayerCharacterTemplates,
+  usePlayerCharacterTemplate,
+  useCreatePlayerCharacterTemplate,
+  useUpdatePlayerCharacterTemplate,
+  useDeletePlayerCharacterTemplate,
+  type CreatePlayerCharacterTemplateInput,
+  type UpdatePlayerCharacterTemplateInput,
+} from './usePlayerCharacterTemplates';
