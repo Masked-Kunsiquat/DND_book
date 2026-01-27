@@ -35,6 +35,12 @@ interface TypeBadgeProps {
   label: string;
 }
 
+/**
+ * Render a small themed badge that displays a location type label.
+ *
+ * @param label - The text displayed inside the badge
+ * @returns A themed View containing the label styled as a compact type badge
+ */
 function TypeBadge({ label }: TypeBadgeProps) {
   const { theme } = useTheme();
 
@@ -55,6 +61,13 @@ function TypeBadge({ label }: TypeBadgeProps) {
   );
 }
 
+/**
+ * Renders a themed badge labeled "Shadow".
+ *
+ * The badge uses theme colors for its dashed border, background, and text to indicate a shadowed location.
+ *
+ * @returns A React element displaying a small "Shadow" badge
+ */
 function ShadowBadge() {
   const { theme } = useTheme();
 
@@ -75,6 +88,19 @@ function ShadowBadge() {
   );
 }
 
+/**
+ * Render a card summarizing a location with optional parent, status indicator, type badge, and tag chips.
+ *
+ * @param location - Location data to display (name, type, status, etc.)
+ * @param parentName - Optional resolved parent location name to show as a subtitle
+ * @param tags - Optional list of tags to render as clickable chips
+ * @param statusLabel - Optional status message shown beneath the title
+ * @param statusTone - Tone for the status label; `'error'` selects error color, otherwise warning color
+ * @param onTagPress - Optional callback invoked with a tag id when a tag chip is pressed
+ * @param onPress - Optional callback invoked when the card is pressed
+ * @param style - Optional container style applied to the card
+ * @returns A React element displaying the location card with its badges, status, and tags
+ */
 export function LocationCard({
   location,
   parentName,

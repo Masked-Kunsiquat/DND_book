@@ -63,10 +63,29 @@ const ICONS: Record<SuggestionKind, string> = {
   tag: 'tag-outline',
 };
 
+/**
+ * Normalize a string by trimming leading and trailing whitespace and converting it to lowercase.
+ *
+ * @param value - The string to normalize
+ * @returns The input string with surrounding whitespace removed and all characters in lowercase
+ */
 function normalize(value: string): string {
   return value.trim().toLowerCase();
 }
 
+/**
+ * Compute a fuzzy-match score for `query` against `target`.
+ *
+ * @param query - The search text to match (may be empty).
+ * @param target - The target text being searched.
+ * @returns A numeric score indicating match quality:
+ *  - `100` for an exact match.
+ *  - `80` downwards for prefix matches (higher means shorter remainder).
+ *  - `60` downwards for substring matches (higher means earlier occurrence).
+ *  - `31+` for subsequence matches (characters appear in order, not necessarily contiguous).
+ *  - `1` when `query` is empty.
+ *  - `-1` when no match is found.
+ */
 function fuzzyScore(query: string, target: string): number {
   if (!query) return 1;
   if (query === target) return 100;
@@ -86,6 +105,14 @@ function fuzzyScore(query: string, target: string): number {
   return 30 + score;
 }
 
+/**
+ * Produce up to `max` suggestion items that best match the provided query, ordered by relevance and name.
+ *
+ * @param items - Candidate suggestion items to score and filter
+ * @param query - The user-entered text used for fuzzy matching
+ * @param max - Maximum number of suggestions to return
+ * @returns An array of up to `max` suggestion items that match `query`, ordered by descending relevance then by item name
+ */
 function filterSuggestions(items: SuggestionItem[], query: string, max: number): SuggestionItem[] {
   const normalizedQuery = normalize(query);
   const scored = items
@@ -103,6 +130,22 @@ function filterSuggestions(items: SuggestionItem[], query: string, max: number):
   return scored.slice(0, max).map((entry) => entry.item);
 }
 
+/**
+ * Render a contextual suggestion list for characters, locations, items, or tags based on a trigger keyword.
+ *
+ * Displays a labeled surface containing fuzzy-matched suggestions (NPCs, PCs, locations, items, or tags)
+ * for the first provided trigger prop with a `keyword`. Shows an optional "Create" row when the trimmed
+ * keyword is non-empty and no existing item name exactly matches it; selecting Create attempts to create
+ * a shadow entity and then calls the active trigger's `onSelect`.
+ *
+ * @param character - Trigger data for characters; providing `{ keyword, onSelect }` enables character suggestions (NPCs + PCs)
+ * @param location - Trigger data for locations; providing `{ keyword, onSelect }` enables location suggestions
+ * @param item - Trigger data for items; providing `{ keyword, onSelect }` enables item suggestions
+ * @param tag - Trigger data for tags; providing `{ keyword, onSelect }` enables tag suggestions
+ * @param maxSuggestions - Maximum number of suggestion rows to show (default: 6)
+ * @param containerStyle - Optional style overrides for the suggestion container
+ * @returns The suggestion surface UI or `null` when no trigger is active
+ */
 export function EntitySuggestions({
   character,
   location,

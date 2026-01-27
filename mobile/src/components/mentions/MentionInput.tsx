@@ -27,6 +27,15 @@ export interface MentionInputProps
   multiline?: boolean;
 }
 
+/**
+ * Append an alpha channel to a hex color string.
+ *
+ * Accepts 3- or 6-digit hex colors (prefixed with `#`) and appends a two-digit alpha hex derived from `alpha`.
+ *
+ * @param color - The input hex color in `#RGB` or `#RRGGBB` format
+ * @param alpha - Alpha value in the range 0–1; values outside this range are clamped
+ * @returns The hex color with a two-digit alpha suffix (e.g., `#rrggbbaa`), or the original `color` if it is not a valid 3- or 6-digit hex string
+ */
 function withAlpha(color: string, alpha: number): string {
   if (!color.startsWith('#') || (color.length !== 7 && color.length !== 4)) {
     return color;
@@ -45,6 +54,20 @@ function withAlpha(color: string, alpha: number): string {
   return `${normalized}${alphaHex}`;
 }
 
+/**
+ * A themed, mention-aware text input that integrates configured mention triggers and optional suggestion UI.
+ *
+ * Renders a TextInput wired to mention triggers from settings and theme, and conditionally renders suggestion UI.
+ *
+ * @param value - Current text value of the input
+ * @param onChangeText - Callback invoked with the new text when the input changes
+ * @param renderSuggestions - Optional render prop called with the active triggers to render suggestion UI
+ * @param containerStyle - Optional style applied to the component container
+ * @param placeholder - Placeholder text shown when the input is empty
+ * @param multiline - Whether the input supports multiple lines
+ * @param style - Additional style applied to the TextInput
+ * @returns A React element that renders the mention-enabled text input and optional suggestions
+ */
 export function MentionInput({
   value,
   onChangeText,

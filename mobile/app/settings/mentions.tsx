@@ -27,6 +27,15 @@ const PREVIEW_LABELS = {
   tag: 'quest',
 };
 
+/**
+ * Renders the Mention Settings screen for configuring mention trigger characters and previewing changes.
+ *
+ * Displays four selectors (character, location, item, tag) that prevent duplicate assignments by showing
+ * per-field error messages when a value is already used, provides a Reset action to restore defaults,
+ * and shows a live preview sentence reflecting the current settings.
+ *
+ * @returns The rendered Mention Settings screen element.
+ */
 export default function MentionSettingsScreen() {
   const { theme } = useTheme();
   const { settings, updateMentionSetting, resetMentionSettings } = useMentionSettings();

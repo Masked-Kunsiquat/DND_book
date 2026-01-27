@@ -35,6 +35,16 @@ interface TypeBadgeProps {
   variant?: 'default' | 'shared';
 }
 
+/**
+ * Renders a compact badge displaying a type label with variant-specific themed styling.
+ *
+ * The `variant` controls the badge background and border colors: `'shared'` uses primary container and primary colors,
+ * while `'default'` uses surface variant and outline variant colors.
+ *
+ * @param label - Text to display inside the badge
+ * @param variant - Visual variant of the badge; `'shared'` applies shared/primary styling, `'default'` applies neutral styling
+ * @returns A React element containing the styled badge with the provided label
+ */
 function TypeBadge({ label, variant = 'default' }: TypeBadgeProps) {
   const { theme } = useTheme();
 
@@ -64,6 +74,11 @@ function TypeBadge({ label, variant = 'default' }: TypeBadgeProps) {
   );
 }
 
+/**
+ * Render a themed "Shadow" status badge.
+ *
+ * @returns A React element displaying a small badge labeled "Shadow" that uses theme-provided border, background, and text colors.
+ */
 function ShadowBadge() {
   const { theme } = useTheme();
 
@@ -86,6 +101,21 @@ function ShadowBadge() {
 
 const MAX_TAGS = 2;
 
+/**
+ * Render a compact row representing a location with contextual path, type and status badges, and optional tag chips.
+ *
+ * Displays the location name and path, a type badge (and "Shared"/"Shadow" badges when applicable), an optional status line with a colored indicator, and up to two tag chips with a +N overflow indicator when more tags exist.
+ *
+ * @param location - Location data to display (name, type, scope, status, etc.)
+ * @param pathLabel - Optional path or hierarchy label shown under the location name; defaults to "Top level" when omitted or empty
+ * @param tags - Optional array of tags to render as TagChip items; at most two tags are shown and remaining tags are indicated with a "+N" label
+ * @param statusLabel - Optional status message rendered with a status icon and tone color
+ * @param statusTone - Visual tone for the status label; either `'warning'` (default) or `'error'`, which selects the corresponding semantic color
+ * @param onTagPress - Optional callback invoked with a tag's id when a tag chip is pressed
+ * @param onPress - Optional handler invoked when the row is pressed
+ * @param style - Optional additional style object applied to the row container
+ * @returns A Pressable React element containing the composed location row UI
+ */
 export function LocationRow({
   location,
   pathLabel,

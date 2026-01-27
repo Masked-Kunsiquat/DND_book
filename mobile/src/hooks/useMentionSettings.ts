@@ -18,7 +18,11 @@ export interface UseMentionSettingsResult {
 }
 
 /**
- * Hook to read and update mention trigger settings stored in TinyBase values.
+ * Manage mention trigger settings persisted in the TinyBase store.
+ *
+ * Reads the stored `mentionSettings` value, parses it into `MentionSettings`, and provides functions to overwrite the settings, update a single setting key, or reset to the default settings.
+ *
+ * @returns An object containing the current `settings`, `setMentionSettings` to replace them, `updateMentionSetting` to change a single key, and `resetMentionSettings` to restore defaults.
  */
 export function useMentionSettings(): UseMentionSettingsResult {
   const store = useStore();
