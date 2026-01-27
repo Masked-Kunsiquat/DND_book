@@ -15,6 +15,9 @@ export { NPCCard, type NPCCardProps } from './cards/NPCCard';
 export { ComingSoonBadge, type ComingSoonBadgeProps } from './chips/ComingSoonBadge';
 export { TagChip, type TagChipProps } from './chips/TagChip';
 
+// Mentions
+export { MentionInput, type MentionInputProps, type MentionTriggerKey } from './mentions/MentionInput';
+
 // Layout
 export { Screen, type ScreenProps } from './layout/Screen';
 export { Section, type SectionProps } from './layout/Section';

@@ -500,10 +500,10 @@ sessionLogs: {
 
 #### 2.1 Install & Configure Library
 
-- [ ] Install `react-native-controlled-mentions`
-- [ ] Create `MentionInput` wrapper component
-- [ ] Integrate with user trigger settings
-- [ ] Style mention chips (complete vs shadow)
+- [x] Install `react-native-controlled-mentions`
+- [x] Create `MentionInput` wrapper component
+- [x] Integrate with user trigger settings
+- [x] Style mention chips (complete vs shadow)
 
 #### 2.2 Suggestion Pickers
 
