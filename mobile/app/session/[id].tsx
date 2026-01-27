@@ -242,6 +242,9 @@ function buildShadowPromptItems(mentions: Mention[]): ShadowPromptItem[] {
         case 'location':
           route = `/location/${mention.entityId}`;
           break;
+        case 'item':
+          route = `/item/${mention.entityId}`;
+          break;
         case 'tag':
           route = `/tag/${mention.entityId}`;
           break;
