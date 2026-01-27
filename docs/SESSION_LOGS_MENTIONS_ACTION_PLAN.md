@@ -530,9 +530,9 @@ sessionLogs: {
 
 #### 3.2 Entity Extraction
 
-- [ ] Parse mentions from content on save
-- [ ] Update `locationIds`, `npcIds`, etc. from mentions
-- [ ] Handle shadow entity references
+- [x] Parse mentions from content on save
+- [x] Update `locationIds`, `npcIds`, etc. from mentions
+- [x] Handle shadow entity references
 
 #### 3.3 Post-Session Flow
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, IconButton, Text } from 'react-native-paper';
+import { triggerRegEx } from 'react-native-controlled-mentions';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import {
@@ -29,6 +30,7 @@ import {
   useCampaigns,
   useDeleteSessionLog,
   useGetOrCreateTag,
+  useItems,
   useLocations,
   useMentionSettings,
   useNotes,
@@ -38,6 +40,8 @@ import {
   useTags,
   useUpdateSessionLog,
 } from '../../src/hooks';
+import { generateId } from '../../src/utils/id';
+import type { Item, Location, Mention, MentionSettings, Npc, PlayerCharacter } from '../../src/types/schema';
 
 function formatDate(value?: string): string {
   if (!value) return 'Unknown';
@@ -60,6 +64,155 @@ function formatDateOnly(value: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+interface MentionExtractionResult {
+  mentions: Mention[];
+  npcIds: string[];
+  playerCharacterIds: string[];
+  locationIds: string[];
+  itemIds: string[];
+  tagIds: string[];
+}
+
+function mergeUnique(base: string[], extra: string[]): string[] {
+  return Array.from(new Set([...base, ...extra]));
+}
+
+function extractMentions(
+  value: string,
+  settings: MentionSettings,
+  npcs: Npc[],
+  pcs: PlayerCharacter[],
+  locations: Location[],
+  items: Item[]
+): MentionExtractionResult {
+  if (!value) {
+    return {
+      mentions: [],
+      npcIds: [],
+      playerCharacterIds: [],
+      locationIds: [],
+      itemIds: [],
+      tagIds: [],
+    };
+  }
+
+  const triggerToKey = new Map<string, 'character' | 'location' | 'item' | 'tag'>([
+    [settings.character, 'character'],
+    [settings.location, 'location'],
+    [settings.item, 'item'],
+    [settings.tag, 'tag'],
+  ]);
+
+  const npcById = new Map(npcs.map((npc) => [npc.id, npc]));
+  const pcIdSet = new Set(pcs.map((pc) => pc.id));
+  const locationById = new Map(locations.map((location) => [location.id, location]));
+  const itemById = new Map(items.map((item) => [item.id, item]));
+
+  const mentionList: Mention[] = [];
+  const npcIds = new Set<string>();
+  const playerCharacterIds = new Set<string>();
+  const locationIds = new Set<string>();
+  const itemIds = new Set<string>();
+  const tagIds = new Set<string>();
+
+  const regex = new RegExp(triggerRegEx.source, 'gi');
+
+  for (const match of value.matchAll(regex)) {
+    const trigger = match[2] ?? '';
+    const name = match[3] ?? '';
+    const rawId = match[4] ?? '';
+    if (!trigger || !name) continue;
+
+    const triggerKey = triggerToKey.get(trigger);
+    if (!triggerKey) continue;
+
+    const entityId = rawId && rawId !== 'null' ? rawId : null;
+    let entityType: Mention['entityType'] = 'tag';
+    let status: Mention['status'] = 'resolved';
+
+    switch (triggerKey) {
+      case 'character': {
+        if (entityId && pcIdSet.has(entityId)) {
+          entityType = 'pc';
+          playerCharacterIds.add(entityId);
+        } else {
+          entityType = 'npc';
+          if (entityId) {
+            npcIds.add(entityId);
+            const npc = npcById.get(entityId);
+            if (!npc || npc.status === 'shadow') {
+              status = 'shadow';
+            }
+          } else {
+            status = 'shadow';
+          }
+        }
+        break;
+      }
+      case 'location': {
+        entityType = 'location';
+        if (entityId) {
+          locationIds.add(entityId);
+          const location = locationById.get(entityId);
+          if (!location || location.status === 'shadow') {
+            status = 'shadow';
+          }
+        } else {
+          status = 'shadow';
+        }
+        break;
+      }
+      case 'item': {
+        entityType = 'item';
+        if (entityId) {
+          itemIds.add(entityId);
+          const item = itemById.get(entityId);
+          if (!item || item.status === 'shadow') {
+            status = 'shadow';
+          }
+        } else {
+          status = 'shadow';
+        }
+        break;
+      }
+      case 'tag': {
+        entityType = 'tag';
+        if (entityId) {
+          tagIds.add(entityId);
+        }
+        if (!entityId) {
+          status = 'shadow';
+        }
+        break;
+      }
+      default:
+        break;
+    }
+
+    const start = match.index ?? 0;
+    const end = start + (match[0]?.length ?? 0);
+
+    mentionList.push({
+      id: generateId(),
+      trigger,
+      entityType,
+      entityId,
+      displayLabel: name,
+      position: { start, end },
+      status,
+    });
+  }
+
+  return {
+    mentions: mentionList,
+    npcIds: Array.from(npcIds),
+    playerCharacterIds: Array.from(playerCharacterIds),
+    locationIds: Array.from(locationIds),
+    itemIds: Array.from(itemIds),
+    tagIds: Array.from(tagIds),
+  };
+}
+
 export default function SessionDetailScreen() {
   const { theme } = useTheme();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
@@ -72,6 +225,7 @@ export default function SessionDetailScreen() {
   const campaigns = useCampaigns();
   const locations = useLocations();
   const npcs = useNpcs();
+  const items = useItems();
   const notes = useNotes();
   const playerCharacters = usePlayerCharacters();
   const updateSessionLog = useUpdateSessionLog();
@@ -129,6 +283,11 @@ export default function SessionDetailScreen() {
   );
   const { settings: mentionSettings } = useMentionSettings();
 
+  const mentionDerived = useMemo(
+    () => extractMentions(content, mentionSettings, npcs, playerCharacters, locations, items),
+    [content, mentionSettings, npcs, playerCharacters, locations, items]
+  );
+
   useEffect(() => {
     if (session && !isEditing) {
       setTitle(session.title);
@@ -151,11 +310,32 @@ export default function SessionDetailScreen() {
     if (content === session.content) return;
 
     const handle = setTimeout(() => {
-      updateSessionLog(session.id, { content });
+      updateSessionLog(session.id, {
+        content,
+        mentions: mentionDerived.mentions,
+        locationIds: mergeUnique(locationIds, mentionDerived.locationIds),
+        npcIds: mergeUnique(npcIds, mentionDerived.npcIds),
+        playerCharacterIds: mergeUnique(
+          playerCharacterIds,
+          mentionDerived.playerCharacterIds
+        ),
+        itemIds: mentionDerived.itemIds,
+        tagIds: mergeUnique(tagIds, mentionDerived.tagIds),
+      });
     }, 600);
 
     return () => clearTimeout(handle);
-  }, [content, isEditing, session, updateSessionLog]);
+  }, [
+    content,
+    isEditing,
+    locationIds,
+    mentionDerived,
+    npcIds,
+    playerCharacterIds,
+    session,
+    tagIds,
+    updateSessionLog,
+  ]);
 
   const displayLocationIds = useMemo(
     () => (isEditing ? locationIds : session?.locationIds ?? []),
@@ -384,11 +564,16 @@ export default function SessionDetailScreen() {
         outcomes: outcomes.trim(),
         content,
         campaignIds,
-        locationIds,
-        npcIds,
+        mentions: mentionDerived.mentions,
+        locationIds: mergeUnique(locationIds, mentionDerived.locationIds),
+        npcIds: mergeUnique(npcIds, mentionDerived.npcIds),
         noteIds,
-        playerCharacterIds,
-        tagIds,
+        playerCharacterIds: mergeUnique(
+          playerCharacterIds,
+          mentionDerived.playerCharacterIds
+        ),
+        itemIds: mentionDerived.itemIds,
+        tagIds: mergeUnique(tagIds, mentionDerived.tagIds),
       });
       setIsEditing(false);
     } catch (err) {
