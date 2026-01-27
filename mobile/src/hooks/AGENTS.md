@@ -31,6 +31,7 @@ export function useDeleteEntity(): (id: string) => void
 | `useLocations.ts` | Location | Hierarchy: `useChildLocations()`, `useRootLocations()`, `useLocationPath()` |
 | `useItems.ts` | Item | - |
 | `useTags.ts` | Tag | `useGetOrCreateTag()`, `useTagByName()` |
+| `useMentionSettings.ts` | Mention Settings | Global trigger preferences |
 | `useSessionLogs.ts` | SessionLog | Filter by campaignId |
 | `usePlayerCharacters.ts` | PlayerCharacter | `usePlayerCharactersByPlayer()` |
 | `useSync.ts` | - | P2P sync state and actions |

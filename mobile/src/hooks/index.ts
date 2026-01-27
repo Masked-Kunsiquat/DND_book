@@ -98,6 +98,13 @@ export {
   type UpdateTagInput,
 } from './useTags';
 
+// Mention Settings
+export {
+  useMentionSettings,
+  type MentionSettingKey,
+  type UseMentionSettingsResult,
+} from './useMentionSettings';
+
 // Session Logs
 export {
   useSessionLogs,

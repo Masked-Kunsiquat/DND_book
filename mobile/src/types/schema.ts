@@ -13,6 +13,13 @@ export type EntityStatus = 'complete' | 'shadow';
 export type MentionEntityType = 'npc' | 'pc' | 'location' | 'item' | 'tag';
 export type MentionStatus = 'resolved' | 'shadow';
 
+export interface MentionSettings {
+  character: string;
+  location: string;
+  item: string;
+  tag: string;
+}
+
 export interface Mention {
   id: string;
   trigger: string;

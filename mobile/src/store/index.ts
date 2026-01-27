@@ -8,6 +8,7 @@ import { createAppStore, type AppStore } from './schema';
 import { createPersister, type Persister } from './persistence';
 import { generateDeviceId, generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
+import { DEFAULT_MENTION_SETTINGS } from '../utils/mentions';
 
 // Context for the store
 const StoreContext = createContext<AppStore | null>(null);
@@ -31,6 +32,7 @@ export function StoreProvider({ children }: StoreProviderProps) {
       const appStore = createAppStore();
       let persister: Persister | null = null;
       let didMigrateContinuity = false;
+      let didMigrateMentionSettings = false;
 
       try {
         // Create persister and load existing data
@@ -50,6 +52,13 @@ export function StoreProvider({ children }: StoreProviderProps) {
         const didSetDeviceId = !existingDeviceId;
         if (didSetDeviceId) {
           appStore.setValue('deviceId', generateDeviceId());
+        }
+
+        // Ensure mention settings are initialized
+        const existingMentionSettings = appStore.getValue('mentionSettings');
+        if (!existingMentionSettings) {
+          appStore.setValue('mentionSettings', JSON.stringify(DEFAULT_MENTION_SETTINGS));
+          didMigrateMentionSettings = true;
         }
 
         // Ensure at least one continuity exists
@@ -183,7 +192,7 @@ export function StoreProvider({ children }: StoreProviderProps) {
         persister.startAutoSave();
 
         // Save immediately if this is first run or device ID was newly set
-        if (!hadData || didSetDeviceId || didMigrateContinuity) {
+        if (!hadData || didSetDeviceId || didMigrateContinuity || didMigrateMentionSettings) {
           await persister.save();
         }
       } catch (error) {

@@ -5,6 +5,7 @@
 
 import { createMergeableStore } from 'tinybase';
 import type { TablesSchema, ValuesSchema } from 'tinybase';
+import { DEFAULT_MENTION_SETTINGS } from '../utils/mentions';
 
 // Schema definition for TinyBase
 // Note: TinyBase stores all values as strings, numbers, or booleans
@@ -163,6 +164,7 @@ export const valuesSchema = {
   currentCampaignId: { type: 'string' },
   deviceId: { type: 'string' },
   lastSyncedAt: { type: 'string' },
+  mentionSettings: { type: 'string' },
 } as const satisfies ValuesSchema;
 
 /**
@@ -180,6 +182,7 @@ export function createAppStore() {
     currentCampaignId: '',
     deviceId: '',
     lastSyncedAt: '',
+    mentionSettings: JSON.stringify(DEFAULT_MENTION_SETTINGS),
   });
 
   return store;
