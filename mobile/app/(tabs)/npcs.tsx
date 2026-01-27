@@ -69,6 +69,18 @@ export default function NpcsScreen() {
   const params = useLocalSearchParams<{ tagId?: string | string[] }>();
   const continuityId = currentCampaign?.continuityId ?? '';
 
+  const continuityCampaigns = useMemo(() => {
+    if (!continuityId) return campaigns;
+    return campaigns.filter((campaign) => campaign.continuityId === continuityId);
+  }, [campaigns, continuityId]);
+
+  const campaignOptions = useMemo(() => {
+    return continuityCampaigns.map((campaign) => ({
+      label: campaign.name || 'Untitled campaign',
+      value: campaign.id,
+    }));
+  }, [continuityCampaigns]);
+
   const tagParam = useMemo(() => {
     const raw = params.tagId;
     return Array.isArray(raw) ? raw[0] : raw ?? '';
@@ -115,24 +127,25 @@ export default function NpcsScreen() {
     );
   };
 
-  const continuityCampaigns = useMemo(() => {
-    if (!continuityId) return campaigns;
-    return campaigns.filter((campaign) => campaign.continuityId === continuityId);
-  }, [campaigns, continuityId]);
-
-  const campaignOptions = useMemo(() => {
-    return continuityCampaigns.map((campaign) => ({
-      label: campaign.name || 'Untitled campaign',
-      value: campaign.id,
-    }));
-  }, [continuityCampaigns]);
-
   const noteOptions = useMemo(() => {
     return notes.map((note) => ({
       label: note.title || 'Untitled note',
       value: note.id,
     }));
   }, [notes]);
+
+  const selectableLocations = useMemo(() => {
+    if (!continuityId) return [];
+    return locations.filter((location) => {
+      if (location.continuityId !== continuityId) return false;
+      if (draftScope === 'continuity') return true;
+      if (draftCampaignIds.length === 0) {
+        return location.scope === 'continuity';
+      }
+      if (location.scope === 'continuity') return true;
+      return location.campaignIds.some((id) => draftCampaignIds.includes(id));
+    });
+  }, [continuityId, draftCampaignIds, draftScope, locations]);
 
   const openCreateModal = () => {
     setDraftName(`New NPC ${npcs.length + 1}`);
@@ -248,7 +261,7 @@ export default function NpcsScreen() {
       case 'locations':
         return (
           <LocationMultiSelect
-            locations={locations}
+            locations={selectableLocations}
             value={draftLocationIds}
             onChange={setDraftLocationIds}
           />

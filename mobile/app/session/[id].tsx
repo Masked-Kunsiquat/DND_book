@@ -94,17 +94,35 @@ export default function SessionDetailScreen() {
     'participants' | 'campaigns' | 'locations' | 'npcs' | 'notes' | 'tags' | null
   >(null);
 
-  const activeCampaignId = (isEditing ? campaignIds : session?.campaignIds ?? [])[0] || '';
-  const continuityId = useMemo(() => {
-    if (!activeCampaignId) return '';
-    const campaign = campaigns.find((item) => item.id === activeCampaignId);
-    return campaign?.continuityId ?? '';
-  }, [activeCampaignId, campaigns]);
-  const tags = useTags(continuityId, activeCampaignId);
-  const getOrCreateTag = useGetOrCreateTag({
-    continuityId,
-    scope: 'continuity',
-  });
+  const displayCampaignIds = useMemo(
+    () => (isEditing ? campaignIds : session?.campaignIds ?? []),
+    [campaignIds, isEditing, session?.campaignIds]
+  );
+
+  const continuityInfo = useMemo(() => {
+    if (displayCampaignIds.length === 0) {
+      return { continuityId: undefined, hasMismatch: false };
+    }
+    const selectedCampaigns = campaigns.filter((campaign) =>
+      displayCampaignIds.includes(campaign.id)
+    );
+    const continuitySet = new Set(
+      selectedCampaigns.map((campaign) => campaign.continuityId).filter(Boolean)
+    );
+    if (continuitySet.size > 1) {
+      return { continuityId: undefined, hasMismatch: true };
+    }
+    const [continuityId] = Array.from(continuitySet);
+    return { continuityId, hasMismatch: false };
+  }, [campaigns, displayCampaignIds]);
+  const continuityId = continuityInfo.continuityId;
+  const hasContinuityMismatch = continuityInfo.hasMismatch;
+  const activeCampaignId = displayCampaignIds[0] || '';
+  const tagContinuityId = hasContinuityMismatch ? undefined : continuityId;
+  const tags = useTags(tagContinuityId, tagContinuityId ? activeCampaignId : undefined);
+  const getOrCreateTag = useGetOrCreateTag(
+    tagContinuityId ? { continuityId: tagContinuityId, scope: 'continuity' } : undefined
+  );
 
   useEffect(() => {
     if (session && !isEditing) {
@@ -122,10 +140,6 @@ export default function SessionDetailScreen() {
     }
   }, [session, isEditing]);
 
-  const displayCampaignIds = useMemo(
-    () => (isEditing ? campaignIds : session?.campaignIds ?? []),
-    [campaignIds, isEditing, session?.campaignIds]
-  );
   const displayLocationIds = useMemo(
     () => (isEditing ? locationIds : session?.locationIds ?? []),
     [isEditing, locationIds, session?.locationIds]
@@ -244,14 +258,20 @@ export default function SessionDetailScreen() {
     return playerCharacters.filter((pc) => ids.has(pc.id));
   }, [displayPlayerIds, playerCharacters]);
 
+  const availableTags = useMemo(
+    () => (tagContinuityId ? tags : []),
+    [tagContinuityId, tags]
+  );
+
   const resolvedTags = useMemo(() => {
-    const tagById = new Map(tags.map((tag) => [tag.id, tag]));
+    const tagById = new Map(availableTags.map((tag) => [tag.id, tag]));
     return displayTagIds
       .map((id) => tagById.get(id))
-      .filter((tag): tag is (typeof tags)[number] => tag !== undefined);
-  }, [displayTagIds, tags]);
+      .filter((tag): tag is (typeof availableTags)[number] => tag !== undefined);
+  }, [availableTags, displayTagIds]);
 
   const handleCreateTag = (name: string) => {
+    if (!tagContinuityId) return undefined;
     const id = getOrCreateTag(name);
     return id || undefined;
   };
@@ -336,6 +356,10 @@ export default function SessionDetailScreen() {
     const trimmedTitle = title.trim();
     if (!trimmedTitle) {
       setError('Session title is required.');
+      return;
+    }
+    if (hasContinuityMismatch) {
+      setError('Sessions must belong to a single continuity before saving.');
       return;
     }
     const resolvedDate = date.trim() || formatDateOnly(new Date());
@@ -445,9 +469,16 @@ export default function SessionDetailScreen() {
           />
         );
       case 'tags':
+        if (!tagContinuityId) {
+          return (
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+              Select campaigns from a single continuity to edit tags.
+            </Text>
+          );
+        }
         return (
           <TagInput
-            tags={tags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color }))}
+            tags={availableTags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color }))}
             selectedIds={tagIds}
             onChange={setTagIds}
             onCreateTag={handleCreateTag}

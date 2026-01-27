@@ -126,6 +126,7 @@ export function LocationMultiSelect({
     : 'Locations';
 
   const toggleValue = (optionValue: string) => {
+    if (disabled) return;
     if (value.includes(optionValue)) {
       onChange(value.filter((item) => item !== optionValue));
     } else {
@@ -215,16 +216,18 @@ export function LocationMultiSelect({
                     titleStyle={{ color: theme.colors.onSurface }}
                     descriptionStyle={{ color: theme.colors.onSurfaceVariant }}
                     left={() => (
-                      <Checkbox
-                        status={selected ? 'checked' : 'unchecked'}
-                        onPress={() => toggleValue(location.id)}
-                      />
-                    )}
+                  <Checkbox
+                    status={selected ? 'checked' : 'unchecked'}
                     onPress={() => toggleValue(location.id)}
+                    disabled={disabled}
                   />
-                );
-              })}
-            </ScrollView>
+                )}
+                onPress={() => toggleValue(location.id)}
+                disabled={disabled}
+              />
+            );
+          })}
+        </ScrollView>
           )}
         </>
       )}

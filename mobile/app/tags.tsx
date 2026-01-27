@@ -58,9 +58,9 @@ export default function TagsScreen() {
   }, [currentCampaign?.continuityId, params.continuityId]);
   const tags = useTags(continuityId, currentCampaign?.id);
   const notes = useNotes(continuityId, currentCampaign?.id);
-  const npcs = useNpcs();
-  const locations = useLocations();
-  const sessionLogs = useSessionLogs();
+  const npcs = useNpcs(currentCampaign?.id);
+  const locations = useLocations(currentCampaign?.id);
+  const sessionLogs = useSessionLogs(currentCampaign?.id);
   const createTag = useCreateTag();
   const { refreshing, onRefresh } = usePullToRefresh();
   const [query, setQuery] = useState('');

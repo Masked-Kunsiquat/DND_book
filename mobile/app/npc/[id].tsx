@@ -56,9 +56,10 @@ export default function NpcDetailScreen() {
   const campaigns = useCampaigns();
   const currentCampaign = useCurrentCampaign();
   const continuityId =
+    npc?.continuityId ??
     currentCampaign?.continuityId ??
     campaigns.find((campaign) => campaign.id === npc?.campaignIds[0])?.continuityId ??
-    '';
+    undefined;
   const locations = useLocations();
   const notes = useNotes(continuityId, currentCampaign?.id);
 
@@ -339,6 +340,11 @@ export default function NpcDetailScreen() {
 
   const confirmShare = () => {
     if (!npc || isSharing) return;
+    if (!continuityId) {
+      setError('Select a continuity before sharing this NPC.');
+      setIsShareOpen(false);
+      return;
+    }
     setIsSharing(true);
     try {
       updateNpc(npc.id, {
