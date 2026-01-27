@@ -62,8 +62,9 @@ export default function CampaignDetailScreen() {
   const updateCampaign = useUpdateCampaign();
   const deleteCampaign = useDeleteCampaign();
   const setCurrentCampaign = useSetCurrentCampaign();
+  const continuityId = campaign?.continuityId || currentCampaign?.continuityId || '';
 
-  const notes = useNotes(scopedCampaignId);
+  const notes = useNotes(continuityId, scopedCampaignId);
   const npcs = useNpcs(scopedCampaignId);
   const locations = useLocations(scopedCampaignId);
   const sessionLogs = useSessionLogs(scopedCampaignId);

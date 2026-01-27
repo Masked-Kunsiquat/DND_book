@@ -56,7 +56,7 @@ export default function NpcsScreen() {
   });
   const campaigns = useCampaigns();
   const locations = useLocations();
-  const notes = useNotes();
+  const notes = useNotes(currentCampaign?.continuityId, currentCampaign?.id);
   const tags = useTags(currentCampaign?.continuityId, currentCampaign?.id);
   const { refreshing, onRefresh } = usePullToRefresh();
   const effectiveCampaignId = currentCampaign?.id;

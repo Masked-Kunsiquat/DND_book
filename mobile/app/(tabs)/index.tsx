@@ -15,7 +15,7 @@ import { iconSizes, spacing, semanticColors } from '../../src/theme';
 export default function Home() {
   const { theme } = useTheme();
   const currentCampaign = useCurrentCampaign();
-  const notes = useNotes(currentCampaign?.id);
+  const notes = useNotes(currentCampaign?.continuityId, currentCampaign?.id);
   const npcs = useNpcs(currentCampaign?.id);
   const locations = useLocations(currentCampaign?.id);
   const tags = useTags(currentCampaign?.continuityId, currentCampaign?.id);

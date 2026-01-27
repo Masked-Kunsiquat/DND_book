@@ -378,6 +378,30 @@ export default function ContinuitiesScreen() {
               />
             }
           />
+          <AppCard
+            title="Notes Library"
+            subtitle={
+              currentContinuity
+                ? `Shared notes in ${currentContinuity.name || 'this continuity'}`
+                : 'Select a continuity to view shared notes.'
+            }
+            onPress={
+              currentContinuity
+                ? () =>
+                    router.push({
+                      pathname: '/library/notes',
+                      params: { continuityId: currentContinuity.id },
+                    })
+                : undefined
+            }
+            right={
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={18}
+                color={theme.colors.onSurfaceVariant}
+              />
+            }
+          />
         </Section>
 
         <Section title="All Continuities" icon="infinity" action={{ label: 'New', onPress: openCreateModal }}>

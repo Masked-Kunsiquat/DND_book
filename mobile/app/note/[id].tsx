@@ -20,6 +20,7 @@ import {
   useCampaign,
   useCampaigns,
   useCurrentCampaign,
+  useCreateNote,
   useDeleteNote,
   useGetOrCreateTag,
   useLocations,
@@ -27,6 +28,7 @@ import {
   useTags,
   useUpdateNote,
 } from '../../src/hooks';
+import { now } from '../../src/utils/id';
 
 function formatDate(value?: string): string {
   if (!value) return 'Unknown';
@@ -48,12 +50,14 @@ export default function NoteDetailScreen() {
   const campaigns = useCampaigns();
   const currentCampaign = useCurrentCampaign();
   const locations = useLocations();
-  const tagContinuityId = campaign?.continuityId || currentCampaign?.continuityId;
-  const tags = useTags(tagContinuityId, currentCampaign?.id);
+  const continuityId =
+    note?.continuityId || campaign?.continuityId || currentCampaign?.continuityId || '';
+  const tags = useTags(continuityId, currentCampaign?.id);
   const updateNote = useUpdateNote();
+  const createNote = useCreateNote();
   const deleteNote = useDeleteNote();
   const getOrCreateTag = useGetOrCreateTag({
-    continuityId: tagContinuityId,
+    continuityId,
     scope: 'continuity',
   });
 
@@ -66,6 +70,9 @@ export default function NoteDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [isForking, setIsForking] = useState(false);
 
   useEffect(() => {
     if (note && !isEditing) {
@@ -77,12 +84,17 @@ export default function NoteDetailScreen() {
     }
   }, [note, isEditing]);
 
-  const continuityId = campaign?.continuityId || currentCampaign?.continuityId || '';
-
   const continuityCampaigns = useMemo(() => {
     if (!continuityId) return campaigns;
     return campaigns.filter((item) => item.continuityId === continuityId);
   }, [campaigns, continuityId]);
+
+  const continuityLocations = useMemo(() => {
+    if (!continuityId) return [];
+    return locations.filter(
+      (location) => location.scope === 'continuity' && location.continuityId === continuityId
+    );
+  }, [continuityId, locations]);
 
   const campaignOptions = useMemo(() => {
     return continuityCampaigns.map((item) => ({
@@ -92,6 +104,12 @@ export default function NoteDetailScreen() {
   }, [continuityCampaigns]);
 
   const locationOptions = useMemo(() => {
+    if (note?.scope === 'continuity') {
+      return continuityLocations.map((location) => ({
+        label: location.name || 'Unnamed location',
+        value: location.id,
+      }));
+    }
     const filtered = campaignId
       ? locations.filter((location) => location.campaignIds.includes(campaignId))
       : locations;
@@ -99,7 +117,14 @@ export default function NoteDetailScreen() {
       label: location.name || 'Unnamed location',
       value: location.id,
     }));
-  }, [campaignId, locations]);
+  }, [campaignId, continuityLocations, locations, note?.scope]);
+
+  const availableTags = useMemo(() => {
+    if (note?.scope === 'continuity') {
+      return tags.filter((tag) => tag.scope === 'continuity');
+    }
+    return tags;
+  }, [note?.scope, tags]);
 
   const displayLocationIds = useMemo(() => {
     if (isEditing) return locationIds;
@@ -123,7 +148,11 @@ export default function NoteDetailScreen() {
       .filter((tag): tag is (typeof tags)[number] => tag !== undefined);
   }, [displayTagIds, tags]);
 
+  const showShareActions =
+    note?.scope === 'campaign' || (note?.scope === 'continuity' && Boolean(currentCampaign));
+
   const handleCampaignChange = (value: string) => {
+    if (note?.scope === 'continuity') return;
     setCampaignId(value);
     if (!value) {
       setLocationIds([]);
@@ -167,7 +196,7 @@ export default function NoteDetailScreen() {
 
   const handleSave = () => {
     if (!note) return;
-    if (!campaignId) {
+    if (note.scope === 'campaign' && !campaignId) {
       setError('Select a campaign before saving.');
       return;
     }
@@ -176,7 +205,7 @@ export default function NoteDetailScreen() {
       updateNote(note.id, {
         title,
         content,
-        campaignId,
+        campaignId: note.scope === 'campaign' ? campaignId : '',
         locationIds,
         tagIds,
       });
@@ -208,6 +237,63 @@ export default function NoteDetailScreen() {
     } finally {
       setIsDeleting(false);
       setIsDeleteOpen(false);
+    }
+  };
+
+  const handleShare = () => {
+    if (!note || isSharing) return;
+    setIsShareOpen(true);
+  };
+
+  const closeShareDialog = () => {
+    setIsShareOpen(false);
+  };
+
+  const confirmShare = () => {
+    if (!note || isSharing) return;
+    if (!continuityId) {
+      setError('Select a continuity before sharing this note.');
+      setIsShareOpen(false);
+      return;
+    }
+    setIsSharing(true);
+    try {
+      updateNote(note.id, {
+        scope: 'continuity',
+        continuityId,
+        campaignId: '',
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to share note.';
+      setError(message);
+    } finally {
+      setIsSharing(false);
+      setIsShareOpen(false);
+    }
+  };
+
+  const handleFork = () => {
+    if (!note || !currentCampaign || isForking) return;
+    setIsForking(true);
+    try {
+      const id = createNote({
+        title: note.title || 'Untitled note',
+        content: note.content,
+        scope: 'campaign',
+        continuityId,
+        campaignId: currentCampaign.id,
+        originId: note.id,
+        originContinuityId: continuityId,
+        forkedAt: now(),
+        locationIds: note.locationIds,
+        tagIds: note.tagIds,
+      });
+      router.push(`/note/${id}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to fork note.';
+      setError(message);
+    } finally {
+      setIsForking(false);
     }
   };
 
@@ -243,7 +329,9 @@ export default function NoteDetailScreen() {
               </Text>
             )}
             <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-              {campaign?.name ?? 'No campaign'}
+              {note.scope === 'continuity'
+                ? 'Shared in continuity'
+                : campaign?.name ?? 'No campaign'}
             </Text>
           </View>
           {!isEditing && (
@@ -265,21 +353,34 @@ export default function NoteDetailScreen() {
               style={styles.contentInput}
             />
           ) : (
-            <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant }}>
-              {note.content?.trim() ? note.content : 'No content yet.'}
-            </Text>
+            <>
+              <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant }}>
+                {note.content?.trim() ? note.content : 'No content yet.'}
+              </Text>
+              {note.scope === 'continuity' && (
+                <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  Editing shared notes affects all campaigns in this continuity.
+                </Text>
+              )}
+            </>
           )}
         </Section>
 
         <Section title="Links" icon="link-variant">
           {isEditing ? (
             <>
-              <FormSelect
-                label="Campaign"
-                value={campaignId}
-                options={campaignOptions}
-                onChange={handleCampaignChange}
-              />
+              {note.scope === 'campaign' ? (
+                <FormSelect
+                  label="Campaign"
+                  value={campaignId}
+                  options={campaignOptions}
+                  onChange={handleCampaignChange}
+                />
+              ) : (
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  Shared notes are available to every campaign in this continuity.
+                </Text>
+              )}
               <FormMultiSelect
                 label="Locations"
                 value={locationIds}
@@ -288,7 +389,11 @@ export default function NoteDetailScreen() {
                 helperText="Optional: link this note to locations."
               />
               <TagInput
-                tags={tags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color }))}
+                tags={availableTags.map((tag) => ({
+                  id: tag.id,
+                  name: tag.name,
+                  color: tag.color,
+                }))}
                 selectedIds={tagIds}
                 onChange={setTagIds}
                 onCreateTag={handleCreateTag}
@@ -371,16 +476,53 @@ export default function NoteDetailScreen() {
             </>
           )}
         </View>
+        {!isEditing && showShareActions && (
+          <View style={styles.shareRow}>
+            {note.scope === 'campaign' && (
+              <Button
+                mode="outlined"
+                icon="share-variant"
+                onPress={handleShare}
+                disabled={isSharing}
+              >
+                Share to Continuity
+              </Button>
+            )}
+            {note.scope === 'continuity' && currentCampaign && (
+              <Button
+                mode="outlined"
+                icon="source-fork"
+                onPress={handleFork}
+                disabled={isForking}
+              >
+                Fork to Campaign
+              </Button>
+            )}
+          </View>
+        )}
       </Screen>
       <ConfirmDialog
         visible={isDeleteOpen}
         title="Delete note?"
-        description="This action cannot be undone."
+        description={
+          note.scope === 'continuity'
+            ? 'This note will be removed from all campaigns in this continuity.'
+            : 'This action cannot be undone.'
+        }
         confirmLabel="Delete"
         onCancel={closeDeleteDialog}
         onConfirm={confirmDelete}
         confirmLoading={isDeleting}
         destructive
+      />
+      <ConfirmDialog
+        visible={isShareOpen}
+        title="Share to continuity?"
+        description="Shared notes are visible to every campaign in this continuity."
+        confirmLabel="Share"
+        onCancel={closeShareDialog}
+        onConfirm={confirmShare}
+        confirmLoading={isSharing}
       />
     </>
   );
@@ -421,6 +563,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing[3],
     marginTop: spacing[6],
+  },
+  shareRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[2],
+    marginTop: spacing[3],
   },
   actionButton: {
     flex: 1,

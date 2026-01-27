@@ -45,7 +45,8 @@ export function NoteCard({
 }: NoteCardProps) {
   const { theme } = useTheme();
 
-  const campaignBadge = campaignName ? (
+  const badgeLabel = campaignName ?? (note.scope === 'continuity' ? 'Shared' : undefined);
+  const campaignBadge = badgeLabel ? (
     <View
       style={[
         styles.campaignBadge,
@@ -56,7 +57,7 @@ export function NoteCard({
       ]}
     >
       <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-        {campaignName}
+        {badgeLabel}
       </Text>
     </View>
   ) : undefined;

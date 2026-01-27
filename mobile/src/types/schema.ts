@@ -33,7 +33,12 @@ export interface Note {
   id: RecordId;
   title: string;
   content: string;
+  scope: EntityScope;
+  continuityId: RecordId;
   campaignId: RecordId;
+  originId: RecordId;
+  originContinuityId: RecordId;
+  forkedAt: IsoDateString;
   locationIds: RecordId[]; // stored as JSON string in TinyBase
   tagIds: RecordId[];
   created: IsoDateString;
@@ -145,7 +150,12 @@ export interface NoteRow {
   id: string;
   title: string;
   content: string;
+  scope: string;
+  continuityId: string;
   campaignId: string;
+  originId: string;
+  originContinuityId: string;
+  forkedAt: string;
   locationIds: string; // JSON array
   tagIds: string; // JSON array
   created: string;

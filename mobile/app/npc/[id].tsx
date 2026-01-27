@@ -53,8 +53,12 @@ export default function NpcDetailScreen() {
   const deleteNpc = useDeleteNpc();
   const campaigns = useCampaigns();
   const currentCampaign = useCurrentCampaign();
+  const continuityId =
+    currentCampaign?.continuityId ??
+    campaigns.find((campaign) => campaign.id === npc?.campaignIds[0])?.continuityId ??
+    '';
   const locations = useLocations();
-  const notes = useNotes();
+  const notes = useNotes(continuityId, currentCampaign?.id);
 
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState('');
@@ -88,13 +92,6 @@ export default function NpcDetailScreen() {
       setTagIds(npc.tagIds);
     }
   }, [npc, isEditing]);
-
-  const continuityId = useMemo(() => {
-    if (currentCampaign?.continuityId) return currentCampaign.continuityId;
-    const firstCampaignId = npc?.campaignIds[0];
-    const linked = campaigns.find((campaign) => campaign.id === firstCampaignId);
-    return linked?.continuityId ?? '';
-  }, [campaigns, currentCampaign?.continuityId, npc?.campaignIds]);
 
   const continuityCampaigns = useMemo(() => {
     if (!continuityId) return campaigns;

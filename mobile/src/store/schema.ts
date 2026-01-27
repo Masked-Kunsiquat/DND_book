@@ -29,7 +29,12 @@ export const tablesSchema = {
     id: { type: 'string' },
     title: { type: 'string' },
     content: { type: 'string' },
+    scope: { type: 'string' },
+    continuityId: { type: 'string' },
     campaignId: { type: 'string' },
+    originId: { type: 'string' },
+    originContinuityId: { type: 'string' },
+    forkedAt: { type: 'string' },
     locationIds: { type: 'string' }, // JSON array
     tagIds: { type: 'string' }, // JSON array
     created: { type: 'string' },

@@ -16,7 +16,7 @@ import {
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { iconSizes, layout, spacing } from '../../src/theme';
 import { router, useLocalSearchParams } from 'expo-router';
-import type { Tag } from '../../src/types/schema';
+import type { EntityScope, Tag } from '../../src/types/schema';
 import {
   useCampaigns,
   useCreateNote,
@@ -32,6 +32,7 @@ export default function NotesScreen() {
   const { theme } = useTheme();
   const campaigns = useCampaigns();
   const currentCampaign = useCurrentCampaign();
+  const continuityId = currentCampaign?.continuityId ?? '';
   const locations = useLocations();
   const [query, setQuery] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -41,11 +42,12 @@ export default function NotesScreen() {
   const [createError, setCreateError] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState('');
   const [draftContent, setDraftContent] = useState('');
+  const [draftScope, setDraftScope] = useState<EntityScope>('campaign');
   const [draftCampaignId, setDraftCampaignId] = useState('');
   const [draftLocationIds, setDraftLocationIds] = useState<string[]>([]);
   const [draftTagIds, setDraftTagIds] = useState<string[]>([]);
   const createNote = useCreateNote();
-  const tags = useTags(currentCampaign?.continuityId, currentCampaign?.id);
+  const tags = useTags(continuityId, currentCampaign?.id);
   const getOrCreateTag = useGetOrCreateTag({
     continuityId: currentCampaign?.continuityId,
     scope: 'continuity',
@@ -53,7 +55,7 @@ export default function NotesScreen() {
   const { refreshing, onRefresh } = usePullToRefresh();
 
   const effectiveCampaignId = currentCampaign?.id;
-  const notes = useNotes(effectiveCampaignId);
+  const notes = useNotes(continuityId, effectiveCampaignId);
   const params = useLocalSearchParams<{ tagId?: string | string[] }>();
 
   const tagParam = useMemo(() => {
@@ -64,6 +66,13 @@ export default function NotesScreen() {
   const tagById = useMemo(() => {
     return new Map(tags.map((tag) => [tag.id, tag]));
   }, [tags]);
+
+  const availableTags = useMemo(() => {
+    if (draftScope === 'continuity') {
+      return tags.filter((tag) => tag.scope === 'continuity');
+    }
+    return tags;
+  }, [draftScope, tags]);
 
   const campaignById = useMemo(() => {
     return new Map(campaigns.map((campaign) => [campaign.id, campaign]));
@@ -76,7 +85,20 @@ export default function NotesScreen() {
     }));
   }, [campaigns]);
 
+  const continuityLocations = useMemo(() => {
+    if (!continuityId) return [];
+    return locations.filter(
+      (location) => location.scope === 'continuity' && location.continuityId === continuityId
+    );
+  }, [continuityId, locations]);
+
   const locationOptions = useMemo(() => {
+    if (draftScope === 'continuity') {
+      return continuityLocations.map((location) => ({
+        label: location.name || 'Unnamed location',
+        value: location.id,
+      }));
+    }
     const filtered = draftCampaignId
       ? locations.filter((location) => location.campaignIds.includes(draftCampaignId))
       : locations;
@@ -84,7 +106,7 @@ export default function NotesScreen() {
       label: location.name || 'Unnamed location',
       value: location.id,
     }));
-  }, [draftCampaignId, locations]);
+  }, [continuityLocations, draftCampaignId, draftScope, locations]);
 
   const filteredNotes = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -125,6 +147,7 @@ export default function NotesScreen() {
   const openCreateModal = () => {
     setDraftTitle(`New Note ${notes.length + 1}`);
     setDraftContent('');
+    setDraftScope('campaign');
     setDraftCampaignId(currentCampaign?.id ?? campaigns[0]?.id ?? '');
     setDraftLocationIds([]);
     setDraftTagIds([]);
@@ -151,6 +174,17 @@ export default function NotesScreen() {
     setDraftLocationIds((prev) => prev.filter((id) => allowed.has(id)));
   };
 
+  const handleScopeChange = (value: EntityScope) => {
+    setDraftScope(value);
+    setDraftLocationIds([]);
+    setDraftTagIds([]);
+    if (value === 'campaign') {
+      setDraftCampaignId(currentCampaign?.id ?? campaigns[0]?.id ?? '');
+      return;
+    }
+    setDraftCampaignId('');
+  };
+
   const handleCreateTag = (tagName: string) => {
     const id = getOrCreateTag(tagName);
     return id || undefined;
@@ -159,12 +193,16 @@ export default function NotesScreen() {
   const handleCreate = () => {
     if (isCreating) return;
     const trimmedTitle = draftTitle.trim();
-    if (!draftCampaignId) {
+    if (!trimmedTitle) {
+      setCreateError('Note title is required.');
+      return;
+    }
+    if (draftScope === 'campaign' && !draftCampaignId) {
       setCreateError('Select a campaign before creating a note.');
       return;
     }
-    if (!trimmedTitle) {
-      setCreateError('Note title is required.');
+    if (draftScope === 'continuity' && !continuityId) {
+      setCreateError('Select a continuity before creating a shared note.');
       return;
     }
     setIsCreating(true);
@@ -172,7 +210,9 @@ export default function NotesScreen() {
       createNote({
         title: trimmedTitle,
         content: draftContent,
-        campaignId: draftCampaignId,
+        scope: draftScope,
+        continuityId,
+        campaignId: draftScope === 'campaign' ? draftCampaignId : '',
         locationIds: draftLocationIds,
         tagIds: draftTagIds,
       });
@@ -207,11 +247,23 @@ export default function NotesScreen() {
       }
     >
       <FormSelect
-        label="Campaign"
-        value={draftCampaignId}
-        options={campaignOptions}
-        onChange={handleCampaignChange}
+        label="Scope"
+        value={draftScope}
+        options={[
+          { label: 'Campaign note', value: 'campaign' },
+          { label: 'Shared in continuity', value: 'continuity' },
+        ]}
+        onChange={(value) => handleScopeChange(value as EntityScope)}
+        helperText="Shared notes are visible to every campaign in this continuity."
       />
+      {draftScope === 'campaign' && (
+        <FormSelect
+          label="Campaign"
+          value={draftCampaignId}
+          options={campaignOptions}
+          onChange={handleCampaignChange}
+        />
+      )}
       <FormTextInput label="Title" value={draftTitle} onChangeText={setDraftTitle} />
       <FormTextInput
         label="Content"
@@ -225,10 +277,14 @@ export default function NotesScreen() {
         value={draftLocationIds}
         options={locationOptions}
         onChange={setDraftLocationIds}
-        helperText="Optional: link this note to locations."
+        helperText={
+          draftScope === 'continuity'
+            ? 'Optional: link this note to shared locations.'
+            : 'Optional: link this note to locations.'
+        }
       />
       <TagInput
-        tags={tags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color }))}
+        tags={availableTags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color }))}
         selectedIds={draftTagIds}
         onChange={setDraftTagIds}
         onCreateTag={handleCreateTag}
@@ -389,9 +445,12 @@ export default function NotesScreen() {
             </View>
           }
           renderItem={({ item }) => {
-            const campaignName = item.campaignId
-              ? campaignById.get(item.campaignId)?.name
-              : undefined;
+            const campaignName =
+              item.scope === 'continuity'
+                ? 'Shared'
+                : item.campaignId
+                  ? campaignById.get(item.campaignId)?.name
+                  : undefined;
             const resolvedTags = item.tagIds
               .map((tagId) => tagById.get(tagId))
               .filter((tag): tag is Tag => tag !== undefined);

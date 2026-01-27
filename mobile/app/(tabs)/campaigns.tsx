@@ -41,7 +41,6 @@ export default function CampaignsScreen() {
   const [createError, setCreateError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const hasOpenedFromParams = useRef(false);
-  const notes = useNotes();
   const npcs = useNpcs();
   const locations = useLocations();
   const { refreshing, onRefresh } = usePullToRefresh();
@@ -52,6 +51,7 @@ export default function CampaignsScreen() {
   }, [params.continuityId]);
 
   const continuityId = continuityParam || currentCampaign?.continuityId || '';
+  const notes = useNotes(continuityId);
 
   const continuityCampaigns = useMemo(() => {
     if (!continuityId) return campaigns;

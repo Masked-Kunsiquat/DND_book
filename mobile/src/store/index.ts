@@ -122,6 +122,38 @@ export function StoreProvider({ children }: StoreProviderProps) {
           }
         });
 
+        // Backfill note scope metadata
+        const campaignContinuityById = new Map<string, string>();
+        Object.entries(campaignsTable).forEach(([campaignId, row]) => {
+          const continuityId = (row as { continuityId?: string }).continuityId;
+          if (continuityId) {
+            campaignContinuityById.set(campaignId, continuityId);
+          }
+        });
+
+        const notesTable = appStore.getTable('notes');
+        Object.entries(notesTable).forEach(([noteId, row]) => {
+          const scope = (row as { scope?: string }).scope;
+          const continuityId = (row as { continuityId?: string }).continuityId;
+          if (!scope || !continuityId) {
+            const campaignId = (row as { campaignId?: string }).campaignId || '';
+            const resolvedContinuityId =
+              continuityId || campaignContinuityById.get(campaignId) || defaultContinuityId;
+            appStore.setRow('notes', noteId, {
+              ...row,
+              scope: scope || 'campaign',
+              continuityId: resolvedContinuityId,
+              campaignId,
+              originId: (row as { originId?: string }).originId || '',
+              originContinuityId:
+                (row as { originContinuityId?: string }).originContinuityId || '',
+              forkedAt: (row as { forkedAt?: string }).forkedAt || '',
+              updated: now(),
+            });
+            didMigrateContinuity = true;
+          }
+        });
+
         // Backfill tag scope metadata
         const tagsTable = appStore.getTable('tags');
         Object.entries(tagsTable).forEach(([tagId, row]) => {

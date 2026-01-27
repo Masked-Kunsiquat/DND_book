@@ -150,6 +150,16 @@ export default function SessionDetailScreen() {
     () => new Set(displayCampaignIds),
     [displayCampaignIds]
   );
+  const continuityIdSet = useMemo(() => {
+    const ids = new Set<string>();
+    displayCampaignIds.forEach((id) => {
+      const continuityId = campaigns.find((campaign) => campaign.id === id)?.continuityId;
+      if (continuityId) {
+        ids.add(continuityId);
+      }
+    });
+    return ids;
+  }, [campaigns, displayCampaignIds]);
 
   const campaignOptions = useMemo(() => {
     return campaigns.map((campaign) => ({
@@ -186,12 +196,20 @@ export default function SessionDetailScreen() {
     const filtered =
       campaignIdSet.size === 0
         ? notes
-        : notes.filter((note) => campaignIdSet.has(note.campaignId));
+        : notes.filter((note) => {
+            if (note.scope === 'campaign') {
+              return campaignIdSet.has(note.campaignId);
+            }
+            if (note.scope === 'continuity') {
+              return continuityIdSet.has(note.continuityId);
+            }
+            return false;
+          });
     return filtered.map((note) => ({
       label: note.title || 'Untitled note',
       value: note.id,
     }));
-  }, [campaignIdSet, notes]);
+  }, [campaignIdSet, continuityIdSet, notes]);
 
   const playerOptions = useMemo(() => {
     const filtered =
@@ -245,6 +263,12 @@ export default function SessionDetailScreen() {
     setCampaignIds(value);
     if (value.length === 0) return;
     const allowedCampaigns = new Set(value);
+    const allowedContinuities = new Set(
+      campaigns
+        .filter((campaign) => allowedCampaigns.has(campaign.id))
+        .map((campaign) => campaign.continuityId)
+        .filter(Boolean)
+    );
     const allowedLocations = new Set(
       locations
         .filter((location) => location.campaignIds.some((id) => allowedCampaigns.has(id)))
@@ -256,7 +280,17 @@ export default function SessionDetailScreen() {
         .map((npc) => npc.id)
     );
     const allowedNotes = new Set(
-      notes.filter((note) => allowedCampaigns.has(note.campaignId)).map((note) => note.id)
+      notes
+        .filter((note) => {
+          if (note.scope === 'campaign') {
+            return allowedCampaigns.has(note.campaignId);
+          }
+          if (note.scope === 'continuity') {
+            return allowedContinuities.has(note.continuityId);
+          }
+          return false;
+        })
+        .map((note) => note.id)
     );
     const allowedPlayers = new Set(
       playerCharacters

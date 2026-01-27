@@ -39,7 +39,7 @@ export default function TagDetailScreen() {
   const tag = useTag(tagId);
   const currentCampaign = useCurrentCampaign();
   const tags = useTags(tag?.continuityId, currentCampaign?.id);
-  const notes = useNotesByTag(tagId);
+  const notes = useNotesByTag(tagId, tag?.continuityId, currentCampaign?.id);
   const npcs = useNpcsByTag(tagId);
   const locations = useLocationsByTag(tagId);
   const sessionLogs = useSessionLogs();
