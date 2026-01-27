@@ -12,7 +12,10 @@ import type { Item, ItemRow, RecordId } from '../types/schema';
 const log = createLogger('items');
 
 /**
- * Safely parses a JSON array string, returning empty array on failure.
+ * Parses a JSON-encoded array string and returns its array value.
+ *
+ * @param value - JSON string expected to represent an array
+ * @returns The parsed array of strings, or an empty array if `value` is falsy, parsing fails, or the parsed value is not an array
  */
 function parseJsonArray(value: string): string[] {
   if (!value) return [];
@@ -25,7 +28,12 @@ function parseJsonArray(value: string): string[] {
 }
 
 /**
- * Converts a TinyBase row to an Item object.
+ * Convert a TinyBase ItemRow into an Item.
+ *
+ * Maps row fields to an Item, applying defaults for missing fields: `status` defaults to `"complete"`, `scope` defaults to `"campaign"`, `continuityId`, `ownerId`, `locationId`, and `value` default to empty strings, and `ownerType` defaults to `null`. `campaignIds` and `tagIds` are parsed from JSON strings into string arrays.
+ *
+ * @param row - The TinyBase row representing an item
+ * @returns The corresponding Item object
  */
 function rowToItem(row: ItemRow): Item {
   return {
@@ -47,7 +55,10 @@ function rowToItem(row: ItemRow): Item {
 }
 
 /**
- * Hook to get all items, optionally filtered by campaign.
+ * Get all items from the store, optionally limited to those belonging to a specific campaign.
+ *
+ * @param campaignId - If provided, only items whose `campaignIds` include this ID are returned
+ * @returns An array of `Item` objects
  */
 export function useItems(campaignId?: string): Item[] {
   const store = useStore();
@@ -65,7 +76,10 @@ export function useItems(campaignId?: string): Item[] {
 }
 
 /**
- * Hook to get a single item by ID.
+ * Get the item matching the given ID or null if no such item exists.
+ *
+ * @param id - The item ID to retrieve
+ * @returns The `Item` corresponding to `id`, or `null` if not found
  */
 export function useItem(id: string): Item | null {
   const store = useStore();
@@ -92,7 +106,14 @@ export interface CreateItemInput {
 }
 
 /**
- * Hook to create a new item.
+ * Creates and returns a callback that inserts a new item row into the store.
+ *
+ * The callback generates a new ID and timestamp, writes a row to the `items`
+ * table, sets `created` and `updated` to the timestamp, serializes `campaignIds`
+ * and `tagIds` as JSON strings, and applies defaults for optional fields.
+ *
+ * @param data - Input fields for the new item
+ * @returns The generated ID of the created item
  */
 export function useCreateItem(): (data: CreateItemInput) => string {
   const store = useStore();
@@ -142,7 +163,13 @@ export interface UpdateItemInput {
 }
 
 /**
- * Hook to update an existing item.
+ * Returns a function that updates fields of an existing item row in the store.
+ *
+ * The returned updater merges provided fields into the existing row, sets `updated` to the current time,
+ * serializes `campaignIds` and `tagIds` to JSON strings, and coerces a missing `ownerType` to an empty string.
+ *
+ * @returns A function `(id, data)` that applies the provided updates to the item with the given `id`.
+ * @throws An `Error` if no item with the given `id` exists.
  */
 export function useUpdateItem(): (id: string, data: UpdateItemInput) => void {
   const store = useStore();
@@ -181,7 +208,9 @@ export function useUpdateItem(): (id: string, data: UpdateItemInput) => void {
 }
 
 /**
- * Hook to delete an item.
+ * Creates a callback that deletes an item row with the given id from the central store.
+ *
+ * @returns A function that takes an `id` and deletes the corresponding item row (returns `void`)
  */
 export function useDeleteItem(): (id: string) => void {
   const store = useStore();

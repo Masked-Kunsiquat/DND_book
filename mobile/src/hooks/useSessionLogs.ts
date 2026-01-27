@@ -12,7 +12,10 @@ import type { Mention, RecordId, SessionLog, SessionLogRow } from '../types/sche
 const log = createLogger('session-logs');
 
 /**
- * Safely parses a JSON array string, returning empty array on failure.
+ * Parse a JSON string into an array, returning an empty array for missing or invalid input.
+ *
+ * @param value - JSON string expected to represent an array
+ * @returns The parsed array as `T[]`, or an empty array if `value` is missing, invalid JSON, or does not represent an array
  */
 function parseJsonArray<T = string>(value?: string): T[] {
   if (!value) return [];
@@ -25,7 +28,14 @@ function parseJsonArray<T = string>(value?: string): T[] {
 }
 
 /**
- * Converts a TinyBase row to a SessionLog object.
+ * Create a SessionLog object from a TinyBase session log row.
+ *
+ * The returned object maps fields directly from the row, defaults `content` to an empty string when missing,
+ * and parses JSON-encoded array fields (mentions, campaignIds, locationIds, npcIds, noteIds, playerCharacterIds,
+ * itemIds, tagIds) into their corresponding arrays.
+ *
+ * @param row - The TinyBase row representing a session log
+ * @returns A SessionLog with parsed array fields and normalized `content`
  */
 function rowToSessionLog(row: SessionLogRow): SessionLog {
   return {
@@ -115,7 +125,9 @@ export interface CreateSessionLogInput {
 }
 
 /**
- * Hook to create a new session log.
+ * Provides a stable callback that creates a new session log record in the store.
+ *
+ * @returns A function that accepts a `CreateSessionLogInput` and returns the new session log's id
  */
 export function useCreateSessionLog(): (data: CreateSessionLogInput) => string {
   const store = useStore();
@@ -171,7 +183,13 @@ export interface UpdateSessionLogInput {
 }
 
 /**
- * Hook to update an existing session log.
+ * Returns a callback that updates an existing session log row in the store.
+ *
+ * The returned function accepts an `id` and a partial update `data` object; any provided array or structured fields
+ * (for example `mentions`, `campaignIds`, `itemIds`, etc.) are serialized to JSON before persisting.
+ *
+ * @returns A function that updates the session log identified by `id` with the supplied fields (no value is changed when its property is omitted).
+ * @throws Error if no session log exists with the given `id`.
  */
 export function useUpdateSessionLog(): (id: string, data: UpdateSessionLogInput) => void {
   const store = useStore();

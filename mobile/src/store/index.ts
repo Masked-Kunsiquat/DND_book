@@ -28,6 +28,11 @@ export function StoreProvider({ children }: StoreProviderProps) {
   const persisterRef = useRef<Persister | null>(null);
 
   useEffect(() => {
+    /**
+     * Initialize the application store: load persisted data, perform necessary migrations/backfills, and start persistence.
+     *
+     * Ensures a device ID and mention settings exist, creates a default continuity when none are present, backfills continuity and scope metadata for campaigns, locations, NPCs, notes, and tags, and starts the persister's auto-save. If this is a first run or any migrations occurred, triggers an immediate save. On completion the initialized store is placed into component state and readiness is marked; on error a device ID will still be ensured.
+     */
     async function initStore() {
       const appStore = createAppStore();
       let persister: Persister | null = null;

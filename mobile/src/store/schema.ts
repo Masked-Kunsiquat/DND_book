@@ -168,8 +168,11 @@ export const valuesSchema = {
 } as const satisfies ValuesSchema;
 
 /**
- * Creates a new TinyBase MergeableStore with the app schema.
- * MergeableStore is required for Yjs CRDT sync.
+ * Create and configure the app's TinyBase MergeableStore.
+ *
+ * Configures the store with the app's tables and values schemas and initializes default app values (including serialized mention settings). The returned store is a MergeableStore suitable for Yjs CRDT synchronization.
+ *
+ * @returns The configured MergeableStore instance
  */
 export function createAppStore() {
   const store = createMergeableStore();

@@ -20,12 +20,20 @@ export interface UseShadowEntitiesResult {
   createShadowEntity: (type: ShadowEntityType, name: string) => string;
 }
 
+/**
+ * Select the entity scope based on whether a campaign identifier is present.
+ *
+ * @param campaignId - The current campaign's identifier; omit or `undefined` when no campaign context exists.
+ * @returns `campaign` if `campaignId` is truthy, `continuity` otherwise.
+ */
 function resolveScope(campaignId?: string): EntityScope {
   return campaignId ? 'campaign' : 'continuity';
 }
 
 /**
- * Hook to create placeholder entities when mentions reference something new.
+ * Creates placeholder ("shadow") entities for mentions that reference new resources.
+ *
+ * @returns An object with `createShadowEntity(type, name)` that creates a shadow entity of the given type (`'character' | 'location' | 'item' | 'tag'`) and returns the new entity's id; returns an empty string if the normalized name is empty or no entity is created.
  */
 export function useShadowEntities(): UseShadowEntitiesResult {
   const currentCampaign = useCurrentCampaign();
