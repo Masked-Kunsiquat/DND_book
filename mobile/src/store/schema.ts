@@ -119,6 +119,21 @@ export const tablesSchema = {
     created: { type: 'string' },
     updated: { type: 'string' },
   },
+  playerCharacterTemplates: {
+    id: { type: 'string' },
+    name: { type: 'string' },
+    player: { type: 'string' },
+    race: { type: 'string' },
+    class: { type: 'string' },
+    background: { type: 'string' },
+    image: { type: 'string' },
+    continuityId: { type: 'string' },
+    originId: { type: 'string' },
+    originContinuityId: { type: 'string' },
+    forkedAt: { type: 'string' },
+    created: { type: 'string' },
+    updated: { type: 'string' },
+  },
 } as const satisfies TablesSchema;
 
 // App-level values (global state)

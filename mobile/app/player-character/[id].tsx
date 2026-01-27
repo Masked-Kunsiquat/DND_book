@@ -18,6 +18,8 @@ import { useTheme } from '../../src/theme/ThemeProvider';
 import { iconSizes, spacing } from '../../src/theme';
 import {
   useCampaigns,
+  useCreatePlayerCharacterTemplate,
+  useCurrentCampaign,
   useDeletePlayerCharacter,
   useNotes,
   usePlayerCharacter,
@@ -44,6 +46,8 @@ export default function PlayerCharacterDetailScreen() {
   const updatePlayerCharacter = useUpdatePlayerCharacter();
   const deletePlayerCharacter = useDeletePlayerCharacter();
   const campaigns = useCampaigns();
+  const currentCampaign = useCurrentCampaign();
+  const createTemplate = useCreatePlayerCharacterTemplate();
   const notes = useNotes();
   const sessions = useSessionLogsByDate();
 
@@ -59,6 +63,8 @@ export default function PlayerCharacterDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isTemplateOpen, setIsTemplateOpen] = useState(false);
+  const [isTemplateSaving, setIsTemplateSaving] = useState(false);
 
   useEffect(() => {
     if (character && !isEditing) {
@@ -83,6 +89,13 @@ export default function PlayerCharacterDetailScreen() {
   );
 
   const campaignIdSet = useMemo(() => new Set(displayCampaignIds), [displayCampaignIds]);
+  const continuityId = useMemo(() => {
+    if (currentCampaign && displayCampaignIds.includes(currentCampaign.id)) {
+      return currentCampaign.continuityId;
+    }
+    const firstCampaignId = displayCampaignIds[0];
+    return campaigns.find((campaign) => campaign.id === firstCampaignId)?.continuityId || '';
+  }, [campaigns, currentCampaign, displayCampaignIds]);
   const continuityIdSet = useMemo(() => {
     const ids = new Set<string>();
     displayCampaignIds.forEach((id) => {
@@ -134,6 +147,48 @@ export default function PlayerCharacterDetailScreen() {
     if (!character) return [];
     return sessions.filter((session) => session.playerCharacterIds.includes(character.id));
   }, [character, sessions]);
+
+  const openTemplateDialog = () => {
+    if (!character || isTemplateSaving) return;
+    setIsTemplateOpen(true);
+  };
+
+  const closeTemplateDialog = () => {
+    setIsTemplateOpen(false);
+  };
+
+  const confirmTemplate = () => {
+    if (!character || isTemplateSaving) return;
+    if (!continuityId) {
+      setError('Select a continuity before saving this template.');
+      setIsTemplateOpen(false);
+      return;
+    }
+    setIsTemplateSaving(true);
+    try {
+      createTemplate({
+        name: character.name,
+        player: character.player,
+        race: character.race,
+        class: character.class,
+        background: character.background,
+        image: character.image,
+        continuityId,
+        originId: character.id,
+        originContinuityId: continuityId,
+        forkedAt: '',
+      });
+    } catch (templateError) {
+      const message =
+        templateError instanceof Error
+          ? templateError.message
+          : 'Failed to save template.';
+      setError(message);
+    } finally {
+      setIsTemplateSaving(false);
+      setIsTemplateOpen(false);
+    }
+  };
 
   const handleCampaignChange = (value: string[]) => {
     setCampaignIds(value);
@@ -439,6 +494,18 @@ export default function PlayerCharacterDetailScreen() {
             </>
           )}
         </View>
+        {!isEditing && (
+          <View style={styles.templateRow}>
+            <Button
+              mode="outlined"
+              icon="content-save-outline"
+              onPress={openTemplateDialog}
+              disabled={isTemplateSaving}
+            >
+              Save as Template
+            </Button>
+          </View>
+        )}
       </Screen>
       <ConfirmDialog
         visible={isDeleteOpen}
@@ -449,6 +516,15 @@ export default function PlayerCharacterDetailScreen() {
         onConfirm={confirmDelete}
         confirmLoading={isDeleting}
         destructive
+      />
+      <ConfirmDialog
+        visible={isTemplateOpen}
+        title="Save as template?"
+        description="This template can be reused across campaigns in the same continuity."
+        confirmLabel="Save"
+        onCancel={closeTemplateDialog}
+        onConfirm={confirmTemplate}
+        confirmLoading={isTemplateSaving}
       />
     </>
   );
@@ -502,6 +578,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing[3],
     marginTop: spacing[6],
+  },
+  templateRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[2],
+    marginTop: spacing[3],
   },
   actionButton: {
     flex: 1,

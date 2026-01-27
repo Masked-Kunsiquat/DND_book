@@ -137,6 +137,22 @@ export interface PlayerCharacter {
   updated: IsoDateString;
 }
 
+export interface PlayerCharacterTemplate {
+  id: RecordId;
+  name: string;
+  player: string;
+  race: string;
+  class: string;
+  background: string;
+  image: string;
+  continuityId: RecordId;
+  originId: RecordId;
+  originContinuityId: RecordId;
+  forkedAt: IsoDateString;
+  created: IsoDateString;
+  updated: IsoDateString;
+}
+
 // TinyBase row types (all values are strings - arrays stored as JSON)
 export interface CampaignRow {
   id: string;
@@ -250,6 +266,22 @@ export interface PlayerCharacterRow {
   image: string;
   campaignIds: string; // JSON array
   noteIds: string;
+  created: string;
+  updated: string;
+}
+
+export interface PlayerCharacterTemplateRow {
+  id: string;
+  name: string;
+  player: string;
+  race: string;
+  class: string;
+  background: string;
+  image: string;
+  continuityId: string;
+  originId: string;
+  originContinuityId: string;
+  forkedAt: string;
   created: string;
   updated: string;
 }
