@@ -102,6 +102,26 @@ export function StoreProvider({ children }: StoreProviderProps) {
           }
         });
 
+        // Backfill NPC scope metadata
+        const npcsTable = appStore.getTable('npcs');
+        Object.entries(npcsTable).forEach(([npcId, row]) => {
+          const scope = (row as { scope?: string }).scope;
+          const continuityId = (row as { continuityId?: string }).continuityId;
+          if (!scope || !continuityId) {
+            appStore.setRow('npcs', npcId, {
+              ...row,
+              scope: scope || 'campaign',
+              continuityId: continuityId || defaultContinuityId,
+              originId: (row as { originId?: string }).originId || '',
+              originContinuityId:
+                (row as { originContinuityId?: string }).originContinuityId || '',
+              forkedAt: (row as { forkedAt?: string }).forkedAt || '',
+              updated: now(),
+            });
+            didMigrateContinuity = true;
+          }
+        });
+
         // Start auto-saving changes
         persister.startAutoSave();
 

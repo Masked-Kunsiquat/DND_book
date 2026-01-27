@@ -330,6 +330,30 @@ export default function ContinuitiesScreen() {
               />
             }
           />
+          <AppCard
+            title="NPC Library"
+            subtitle={
+              currentContinuity
+                ? `Shared NPCs in ${currentContinuity.name || 'this continuity'}`
+                : 'Select a continuity to view shared NPCs.'
+            }
+            onPress={
+              currentContinuity
+                ? () =>
+                    router.push({
+                      pathname: '/library/npcs',
+                      params: { continuityId: currentContinuity.id },
+                    })
+                : undefined
+            }
+            right={
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={18}
+                color={theme.colors.onSurfaceVariant}
+              />
+            }
+          />
         </Section>
 
         <Section title="All Continuities" icon="infinity" action={{ label: 'New', onPress: openCreateModal }}>

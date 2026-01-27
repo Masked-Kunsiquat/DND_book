@@ -121,6 +121,28 @@ export function useCreateCampaign(): (data: CreateCampaignInput) => string {
         }
       });
 
+      const npcsTable = store.getTable('npcs');
+      Object.entries(npcsTable).forEach(([npcId, row]) => {
+        const scope = (row as { scope?: string }).scope;
+        const continuityId = (row as { continuityId?: string }).continuityId;
+        if (scope !== 'continuity' || continuityId !== data.continuityId) return;
+        const existingCampaignIds = (() => {
+          try {
+            const parsed = JSON.parse((row as { campaignIds?: string }).campaignIds || '[]');
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
+        })();
+        if (!existingCampaignIds.includes(id)) {
+          store.setRow('npcs', npcId, {
+            ...row,
+            campaignIds: JSON.stringify([...existingCampaignIds, id]),
+            updated: now(),
+          });
+        }
+      });
+
       log.debug('Created campaign', id);
       return id;
     },

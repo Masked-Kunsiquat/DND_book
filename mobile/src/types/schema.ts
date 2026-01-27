@@ -47,6 +47,11 @@ export interface Npc {
   role: string;
   background: string;
   image: string; // local file path
+  scope: EntityScope;
+  continuityId: RecordId;
+  originId: RecordId;
+  originContinuityId: RecordId;
+  forkedAt: IsoDateString;
   campaignIds: RecordId[];
   locationIds: RecordId[];
   noteIds: RecordId[];
@@ -148,6 +153,11 @@ export interface NpcRow {
   role: string;
   background: string;
   image: string;
+  scope: string;
+  continuityId: string;
+  originId: string;
+  originContinuityId: string;
+  forkedAt: string;
   campaignIds: string; // JSON array
   locationIds: string;
   noteIds: string;

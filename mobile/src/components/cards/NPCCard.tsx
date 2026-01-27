@@ -27,6 +27,9 @@ export interface NPCCardProps {
 
 function buildSubtitle(npc: Npc): string {
   const details = [npc.race, npc.role].filter(Boolean);
+  if (npc.scope === 'continuity') {
+    details.push('Shared');
+  }
   return details.length > 0 ? details.join(' • ') : 'No details yet.';
 }
 

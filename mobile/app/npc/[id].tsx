@@ -21,6 +21,7 @@ import type { Tag } from '../../src/types/schema';
 import {
   useCampaigns,
   useCurrentCampaign,
+  useCreateNpc,
   useDeleteNpc,
   useGetOrCreateTag,
   useLocations,
@@ -29,6 +30,7 @@ import {
   useTags,
   useUpdateNpc,
 } from '../../src/hooks';
+import { now } from '../../src/utils/id';
 
 function formatDate(value?: string): string {
   if (!value) return 'Unknown';
@@ -46,6 +48,7 @@ export default function NpcDetailScreen() {
   }, [params.id]);
 
   const npc = useNpc(npcId);
+  const createNpc = useCreateNpc();
   const updateNpc = useUpdateNpc();
   const deleteNpc = useDeleteNpc();
   const getOrCreateTag = useGetOrCreateTag();
@@ -68,6 +71,11 @@ export default function NpcDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
+  const [isRemoveOpen, setIsRemoveOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [isForking, setIsForking] = useState(false);
 
   useEffect(() => {
     if (npc && !isEditing) {
@@ -95,6 +103,15 @@ export default function NpcDetailScreen() {
     return campaigns.filter((campaign) => campaign.continuityId === continuityId);
   }, [campaigns, continuityId]);
 
+  const canRemoveFromCampaign =
+    npc?.scope === 'continuity' &&
+    currentCampaign &&
+    npc.campaignIds.includes(currentCampaign.id);
+
+  const showShareActions =
+    npc?.scope === 'campaign' ||
+    (npc?.scope === 'continuity' && Boolean(currentCampaign));
+
   const campaignOptions = useMemo(() => {
     return continuityCampaigns.map((campaign) => ({
       label: campaign.name || 'Untitled campaign',
@@ -118,8 +135,8 @@ export default function NpcDetailScreen() {
 
   const linkedCampaigns = useMemo(() => {
     const ids = new Set(campaignIds);
-    return campaigns.filter((campaign) => ids.has(campaign.id));
-  }, [campaignIds, campaigns]);
+    return continuityCampaigns.filter((campaign) => ids.has(campaign.id));
+  }, [campaignIds, continuityCampaigns]);
 
   const linkedLocations = useMemo(() => {
     const ids = new Set(locationIds);
@@ -223,6 +240,88 @@ export default function NpcDetailScreen() {
     }
   };
 
+  const handleRemove = () => {
+    if (!npc || !currentCampaign || isRemoving) return;
+    setIsRemoveOpen(true);
+  };
+
+  const closeRemoveDialog = () => {
+    setIsRemoveOpen(false);
+  };
+
+  const confirmRemove = () => {
+    if (!npc || !currentCampaign || isRemoving) return;
+    try {
+      setIsRemoving(true);
+      updateNpc(npc.id, {
+        campaignIds: npc.campaignIds.filter((id) => id !== currentCampaign.id),
+      });
+      router.back();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to remove NPC.';
+      setError(message);
+    } finally {
+      setIsRemoving(false);
+      setIsRemoveOpen(false);
+    }
+  };
+
+  const handleShare = () => {
+    if (!npc || isSharing) return;
+    setIsShareOpen(true);
+  };
+
+  const closeShareDialog = () => {
+    setIsShareOpen(false);
+  };
+
+  const confirmShare = () => {
+    if (!npc || isSharing) return;
+    setIsSharing(true);
+    try {
+      updateNpc(npc.id, {
+        scope: 'continuity',
+        continuityId,
+        campaignIds: continuityCampaigns.map((campaign) => campaign.id),
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to share NPC.';
+      setError(message);
+    } finally {
+      setIsSharing(false);
+      setIsShareOpen(false);
+    }
+  };
+
+  const handleFork = () => {
+    if (!npc || !currentCampaign || isForking) return;
+    setIsForking(true);
+    try {
+      const id = createNpc({
+        name: npc.name,
+        race: npc.race,
+        role: npc.role,
+        background: npc.background,
+        image: npc.image,
+        scope: 'campaign',
+        continuityId: npc.continuityId,
+        originId: npc.id,
+        originContinuityId: npc.continuityId,
+        forkedAt: now(),
+        campaignIds: [currentCampaign.id],
+        locationIds: npc.locationIds,
+        noteIds: npc.noteIds,
+        tagIds: npc.tagIds,
+      });
+      router.push(`/npc/${id}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to fork NPC.';
+      setError(message);
+    } finally {
+      setIsForking(false);
+    }
+  };
+
   if (!npc) {
     return (
       <Screen>
@@ -257,6 +356,11 @@ export default function NpcDetailScreen() {
             {!isEditing && (
               <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
                 {[npc.race, npc.role].filter(Boolean).join(' • ') || 'No details yet.'}
+              </Text>
+            )}
+            {!isEditing && npc.scope === 'continuity' && (
+              <Text variant="labelSmall" style={{ color: theme.colors.primary }}>
+                Shared in continuity
               </Text>
             )}
           </View>
@@ -309,6 +413,11 @@ export default function NpcDetailScreen() {
               <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
                 {npc.background?.trim() || 'No background yet.'}
               </Text>
+              {npc.scope === 'continuity' && (
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  Editing shared NPCs affects all campaigns in this continuity.
+                </Text>
+              )}
             </>
           )}
         </Section>
@@ -435,6 +544,16 @@ export default function NpcDetailScreen() {
               <Button mode="outlined" onPress={() => router.back()} style={styles.actionButton}>
                 Back
               </Button>
+              {canRemoveFromCampaign && (
+                <Button
+                  mode="outlined"
+                  icon="link-off"
+                  onPress={handleRemove}
+                  style={styles.actionButton}
+                >
+                  Remove
+                </Button>
+              )}
               <Button
                 mode="outlined"
                 icon="trash-can-outline"
@@ -448,16 +567,62 @@ export default function NpcDetailScreen() {
             </>
           )}
         </View>
+        {!isEditing && showShareActions && (
+          <View style={styles.shareRow}>
+            {npc.scope === 'campaign' && (
+              <Button
+                mode="outlined"
+                icon="share-variant"
+                onPress={handleShare}
+                disabled={isSharing}
+              >
+                Share to Continuity
+              </Button>
+            )}
+            {npc.scope === 'continuity' && currentCampaign && (
+              <Button
+                mode="outlined"
+                icon="source-fork"
+                onPress={handleFork}
+                disabled={isForking}
+              >
+                Fork to Campaign
+              </Button>
+            )}
+          </View>
+        )}
       </Screen>
       <ConfirmDialog
         visible={isDeleteOpen}
         title="Delete NPC?"
-        description="This action cannot be undone."
+        description={
+          npc?.scope === 'continuity'
+            ? 'This deletes the shared NPC for every campaign in this continuity.'
+            : 'This action cannot be undone.'
+        }
         confirmLabel="Delete"
         onCancel={closeDeleteDialog}
         onConfirm={confirmDelete}
         confirmLoading={isDeleting}
         destructive
+      />
+      <ConfirmDialog
+        visible={isRemoveOpen}
+        title="Remove from campaign?"
+        description="This will remove the NPC from this campaign only."
+        confirmLabel="Remove"
+        onCancel={closeRemoveDialog}
+        onConfirm={confirmRemove}
+        confirmLoading={isRemoving}
+      />
+      <ConfirmDialog
+        visible={isShareOpen}
+        title="Share to continuity?"
+        description="Shared NPCs appear in every campaign in this continuity."
+        confirmLabel="Share"
+        onCancel={closeShareDialog}
+        onConfirm={confirmShare}
+        confirmLoading={isSharing}
       />
     </>
   );
@@ -520,6 +685,11 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
+  },
+  shareRow: {
+    flexDirection: 'row',
+    gap: spacing[3],
+    marginTop: spacing[3],
   },
   errorText: {
     marginTop: spacing[3],

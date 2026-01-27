@@ -42,6 +42,11 @@ export const tablesSchema = {
     role: { type: 'string' },
     background: { type: 'string' },
     image: { type: 'string' },
+    scope: { type: 'string' },
+    continuityId: { type: 'string' },
+    originId: { type: 'string' },
+    originContinuityId: { type: 'string' },
+    forkedAt: { type: 'string' },
     campaignIds: { type: 'string' }, // JSON array
     locationIds: { type: 'string' },
     noteIds: { type: 'string' },
