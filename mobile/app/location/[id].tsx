@@ -73,6 +73,13 @@ const ALLOWED_LOCATION_TYPES = new Set<LocationType>(
   LOCATION_TYPE_OPTIONS.map((option) => option.value)
 );
 
+/**
+ * Renders the Location detail screen with viewing, editing, moving, sharing, tagging, media, and child-management UI for a single location.
+ *
+ * The component loads location, campaign, tag, and related data; enforces parent/child type constraints; and provides flows to create, update, move, share, fork, remove from campaign, and delete a location, including confirmation dialogs and inline validation messages.
+ *
+ * @returns The React element for the Location detail screen
+ */
 export default function LocationDetailScreen() {
   const { theme } = useTheme();
   const params = useLocalSearchParams<{ id?: string | string[] }>();

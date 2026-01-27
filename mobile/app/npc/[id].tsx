@@ -41,6 +41,17 @@ function formatDate(value?: string): string {
   return parsed.toLocaleString();
 }
 
+/**
+ * Display and manage an NPC's details, links, and lifecycle actions.
+ *
+ * Renders a screen that shows an NPC's profile, linked campaigns/locations/notes/tags,
+ * and metadata; supports toggling between view and edit modes, creating/updating/deleting
+ * or removing the NPC, sharing to a continuity, forking into a campaign, and completing
+ * "shadow" NPCs. Synchronizes local form state with the NPC data and uses routing/hooks
+ * for navigation and persistence.
+ *
+ * @returns The React element for the NPC detail screen
+ */
 export default function NpcDetailScreen() {
   const { theme } = useTheme();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
