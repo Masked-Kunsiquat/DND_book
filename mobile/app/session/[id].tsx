@@ -43,6 +43,12 @@ import {
 import { generateId } from '../../src/utils/id';
 import type { Item, Location, Mention, MentionSettings, Npc, PlayerCharacter } from '../../src/types/schema';
 
+/**
+ * Format a date string into a locale-specific date and time, or provide a fallback when missing or invalid.
+ *
+ * @param value - The date/time string to format (may be undefined or any string parseable by the JavaScript Date constructor)
+ * @returns `'Unknown'` if `value` is falsy or cannot be parsed as a valid date, otherwise the date/time formatted using the runtime's locale
+ */
 function formatDate(value?: string): string {
   if (!value) return 'Unknown';
   const parsed = new Date(value);
@@ -57,6 +63,12 @@ function formatSessionDate(value?: string): string {
   return parsed.toLocaleDateString();
 }
 
+/**
+ * Format a Date as a calendar date string in `YYYY-MM-DD` format.
+ *
+ * @param value - The Date to format
+ * @returns The formatted date string in `YYYY-MM-DD` form
+ */
 function formatDateOnly(value: Date): string {
   const year = value.getFullYear();
   const month = String(value.getMonth() + 1).padStart(2, '0');
@@ -80,10 +92,30 @@ interface ShadowPromptItem {
   route?: string;
 }
 
+/**
+ * Combine two arrays of strings into a single array with duplicates removed while preserving element order.
+ *
+ * @param base - The primary array whose element order is preserved first
+ * @param extra - The secondary array; elements not already present in `base` are appended in order
+ * @returns A new array containing the unique strings from `base` followed by any additional strings from `extra` in their original order
+ */
 function mergeUnique(base: string[], extra: string[]): string[] {
   return Array.from(new Set([...base, ...extra]));
 }
 
+/**
+ * Extracts structured mention objects and referenced entity ID lists from a text string using the provided mention triggers and entity collections.
+ *
+ * @param value - The text to scan for mention tokens.
+ * @param settings - Mention trigger tokens for character, location, item, and tag parsing.
+ * @param npcs - NPC records used to resolve character mentions and determine shadow status.
+ * @param pcs - Player character records used to distinguish PCs from NPCs.
+ * @param locations - Location records used to resolve location mentions and determine shadow status.
+ * @param items - Item records used to resolve item mentions and determine shadow status.
+ * @returns An object containing:
+ *   - `mentions`: an array of parsed Mention objects (each includes `id`, `trigger`, `entityType`, optional `entityId`, `displayLabel`, `position`, and `status`).
+ *   - `npcIds`, `playerCharacterIds`, `locationIds`, `itemIds`, `tagIds`: arrays of referenced entity IDs discovered in the text.
+ */
 function extractMentions(
   value: string,
   settings: MentionSettings,
@@ -220,6 +252,12 @@ function extractMentions(
   };
 }
 
+/**
+ * Produce a deduplicated list of shadow prompt items from mention objects, including navigation routes when an entityId is available.
+ *
+ * @param mentions - Array of mentions to process; only mentions with `status === 'shadow'` are included in the result
+ * @returns An array of `ShadowPromptItem` entries representing unique shadow mentions. Each item contains `id`, `label`, `entityType`, and a `route` when the mention has an `entityId` (route is derived from the `entityType`)
+ */
 function buildShadowPromptItems(mentions: Mention[]): ShadowPromptItem[] {
   const items: ShadowPromptItem[] = [];
   const seen = new Set<string>();
@@ -264,6 +302,18 @@ function buildShadowPromptItems(mentions: Mention[]): ShadowPromptItem[] {
   return items;
 }
 
+/**
+ * Render the session detail screen for viewing and editing a session log.
+ *
+ * Presents session metadata, the session log content with mention support, linked entities,
+ * and controls for editing, saving (with autosave of content and extracted mentions), deleting,
+ * and resolving incomplete ("shadow") entities detected in content.
+ *
+ * While editing, the component exposes UI for managing campaigns, locations, NPCs, notes,
+ * player characters, and tags; when not editing it displays resolved linked entities and read-only content.
+ *
+ * @returns The React element for the session detail screen.
+ */
 export default function SessionDetailScreen() {
   const { theme } = useTheme();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
