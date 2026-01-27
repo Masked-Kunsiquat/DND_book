@@ -9,6 +9,10 @@ export const DEFAULT_MENTION_SETTINGS: MentionSettings = {
   tag: '#',
 };
 
+function isValidTrigger(value: unknown): value is (typeof MENTION_TRIGGER_OPTIONS)[number] {
+  return typeof value === 'string' && MENTION_TRIGGER_OPTIONS.includes(value as any);
+}
+
 export function parseMentionSettings(raw?: string | null): MentionSettings {
   if (!raw) return DEFAULT_MENTION_SETTINGS;
 
@@ -17,10 +21,18 @@ export function parseMentionSettings(raw?: string | null): MentionSettings {
     if (!parsed || typeof parsed !== 'object') return DEFAULT_MENTION_SETTINGS;
 
     const merged: MentionSettings = {
-      character: typeof parsed.character === 'string' ? parsed.character : DEFAULT_MENTION_SETTINGS.character,
-      location: typeof parsed.location === 'string' ? parsed.location : DEFAULT_MENTION_SETTINGS.location,
-      item: typeof parsed.item === 'string' ? parsed.item : DEFAULT_MENTION_SETTINGS.item,
-      tag: typeof parsed.tag === 'string' ? parsed.tag : DEFAULT_MENTION_SETTINGS.tag,
+      character: isValidTrigger(parsed.character)
+        ? parsed.character
+        : DEFAULT_MENTION_SETTINGS.character,
+      location: isValidTrigger(parsed.location)
+        ? parsed.location
+        : DEFAULT_MENTION_SETTINGS.location,
+      item: isValidTrigger(parsed.item)
+        ? parsed.item
+        : DEFAULT_MENTION_SETTINGS.item,
+      tag: isValidTrigger(parsed.tag)
+        ? parsed.tag
+        : DEFAULT_MENTION_SETTINGS.tag,
     };
 
     return merged;

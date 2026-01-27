@@ -135,13 +135,9 @@ export function EntitySuggestions({
   );
 
   const activeEntry = triggerEntries.find(([, data]) => data?.keyword !== undefined);
-
-  if (!activeEntry || !activeEntry[1]) {
-    return null;
-  }
-
-  const [activeKey, activeData] = activeEntry;
-  const keyword = activeData.keyword ?? '';
+  const activeKey = activeEntry?.[0] ?? 'character';
+  const activeData = activeEntry?.[1];
+  const keyword = activeData?.keyword ?? '';
   const trimmedKeyword = keyword.trim();
 
   const baseSuggestions: SuggestionItem[] = useMemo(() => {
@@ -193,6 +189,10 @@ export function EntitySuggestions({
     () => filterSuggestions(baseSuggestions, keyword, maxSuggestions),
     [baseSuggestions, keyword, maxSuggestions]
   );
+
+  if (!activeEntry || !activeData) {
+    return null;
+  }
 
   const hasExactMatch = useMemo(() => {
     if (!trimmedKeyword) return false;
