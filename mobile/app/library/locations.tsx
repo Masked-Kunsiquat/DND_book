@@ -155,7 +155,7 @@ export default function LocationLibraryScreen() {
             <View style={styles.cardWrapper}>
               <AppCard
                 title={item.name || 'Unnamed location'}
-                subtitle={`${item.type} • ${path || 'Top level'}`}
+                subtitle={`${item.type || 'Unknown type'} • ${path || 'Top level'}`}
                 onPress={() => router.push(`/location/${item.id}`)}
                 right={
                   <Button

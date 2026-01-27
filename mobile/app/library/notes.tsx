@@ -29,6 +29,7 @@ export default function NotesLibraryScreen() {
 
   const [search, setSearch] = useState('');
   const [isUpdatingId, setIsUpdatingId] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const continuityNotes = useMemo(() => {
@@ -48,8 +49,9 @@ export default function NotesLibraryScreen() {
 
   const toggleLink = (noteId: string, linkedCampaignIds: string[]) => {
     if (!currentCampaign) return;
-    if (isUpdatingId) return;
+    if (isUpdating) return;
     setIsUpdatingId(noteId);
+    setIsUpdating(true);
     setError(null);
     const ids = new Set(linkedCampaignIds);
     if (ids.has(currentCampaign.id)) {
@@ -64,6 +66,7 @@ export default function NotesLibraryScreen() {
       setError(message);
     } finally {
       setIsUpdatingId(null);
+      setIsUpdating(false);
     }
   };
 
@@ -132,7 +135,7 @@ export default function NotesLibraryScreen() {
                         : 'link-plus'
                     }
                     compact
-                    disabled={!currentCampaign || isUpdatingId === item.id}
+                    disabled={!currentCampaign || isUpdating}
                     onPress={() => toggleLink(item.id, item.campaignIds)}
                   >
                     {currentCampaign && item.campaignIds.includes(currentCampaign.id)

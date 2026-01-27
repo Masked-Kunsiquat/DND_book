@@ -57,9 +57,9 @@ export default function NpcDetailScreen() {
   const currentCampaign = useCurrentCampaign();
   const continuityId =
     npc?.continuityId ??
-    currentCampaign?.continuityId ??
     campaigns.find((campaign) => campaign.id === npc?.campaignIds[0])?.continuityId ??
-    undefined;
+    currentCampaign?.continuityId ??
+    '';
   const locations = useLocations();
   const notes = useNotes(continuityId, currentCampaign?.id);
 
