@@ -544,9 +544,9 @@ sessionLogs: {
 
 #### 4.1 Display & Rendering
 
-- [ ] Create `MentionRenderer` for read-only display
-- [ ] Implement tap-to-navigate on mentions
-- [ ] Add shadow entity visual treatment everywhere
+- [x] Create `MentionRenderer` for read-only display
+- [x] Implement tap-to-navigate on mentions
+- [x] Add shadow entity visual treatment everywhere
 
 #### 4.2 Migration & Testing
 

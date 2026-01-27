@@ -18,6 +18,7 @@ export { TagChip, type TagChipProps } from './chips/TagChip';
 // Mentions
 export { MentionInput, type MentionInputProps, type MentionTriggerKey } from './mentions/MentionInput';
 export { EntitySuggestions, type EntitySuggestionsProps } from './mentions/EntitySuggestions';
+export { MentionRenderer, type MentionRendererProps } from './mentions/MentionRenderer';
 
 // Layout
 export { Screen, type ScreenProps } from './layout/Screen';

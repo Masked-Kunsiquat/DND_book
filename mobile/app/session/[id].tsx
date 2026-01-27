@@ -17,6 +17,7 @@ import {
   LocationMultiSelect,
   LocationCard,
   MentionInput,
+  MentionRenderer,
   NoteCard,
   NPCCard,
   Screen,
@@ -935,10 +936,12 @@ export default function SessionDetailScreen() {
                 </View>
               </View>
             </>
+          ) : session.content?.trim() ? (
+            <MentionRenderer value={session.content} mentions={session.mentions} />
           ) : (
             <View style={styles.summaryBlock}>
               <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant }}>
-                {session.content?.trim() ? session.content : 'No session log yet.'}
+                No session log yet.
               </Text>
             </View>
           )}

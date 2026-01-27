@@ -12,7 +12,8 @@ components/
 │   └── TagChip.tsx
 ├── mentions/       # Mention input wrappers
 │   ├── MentionInput.tsx
-│   └── EntitySuggestions.tsx
+│   ├── EntitySuggestions.tsx
+│   └── MentionRenderer.tsx
 ├── layout/         # Screen structure components
 │   ├── Screen.tsx
 │   └── Section.tsx
@@ -71,6 +72,11 @@ components/
   item={triggers.item}
   tag={triggers.tag}
 />
+```
+
+**MentionRenderer** - Read-only mention display with navigation:
+```tsx
+<MentionRenderer value={session.content} mentions={session.mentions} />
 ```
 
 **TagChip** - Color-coded tags:
