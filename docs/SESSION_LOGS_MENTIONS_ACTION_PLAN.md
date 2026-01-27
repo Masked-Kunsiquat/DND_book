@@ -550,9 +550,9 @@ sessionLogs: {
 
 #### 4.2 Migration & Testing
 
-- [ ] Create migration for existing session logs
+- [x] Create migration for existing session logs
 - [ ] Test P2P sync with mentions
-- [ ] Handle edge cases (deleted entities, etc.)
+- [x] Handle edge cases (deleted entities, etc.)
 
 ---
 

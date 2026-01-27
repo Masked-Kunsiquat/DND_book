@@ -38,6 +38,8 @@ export function StoreProvider({ children }: StoreProviderProps) {
       let persister: Persister | null = null;
       let didMigrateContinuity = false;
       let didMigrateMentionSettings = false;
+      let didMigrateEntityStatus = false;
+      let didMigrateSessionLogs = false;
 
       try {
         // Create persister and load existing data
@@ -121,11 +123,13 @@ export function StoreProvider({ children }: StoreProviderProps) {
         Object.entries(npcsTable).forEach(([npcId, row]) => {
           const scope = (row as { scope?: string }).scope;
           const continuityId = (row as { continuityId?: string }).continuityId;
-          if (!scope || !continuityId) {
+          const status = (row as { status?: string }).status;
+          if (!scope || !continuityId || !status) {
             appStore.setRow('npcs', npcId, {
               ...row,
               scope: scope || 'campaign',
               continuityId: continuityId || defaultContinuityId,
+              status: status || 'complete',
               originId: (row as { originId?: string }).originId || '',
               originContinuityId:
                 (row as { originContinuityId?: string }).originContinuityId || '',
@@ -133,6 +137,7 @@ export function StoreProvider({ children }: StoreProviderProps) {
               updated: now(),
             });
             didMigrateContinuity = true;
+            didMigrateEntityStatus = true;
           }
         });
 
@@ -193,11 +198,90 @@ export function StoreProvider({ children }: StoreProviderProps) {
           }
         });
 
+        // Backfill location status metadata
+        Object.entries(locationsTable).forEach(([locationId, row]) => {
+          const status = (row as { status?: string }).status;
+          if (!status) {
+            appStore.setRow('locations', locationId, {
+              ...row,
+              status: 'complete',
+              updated: now(),
+            });
+            didMigrateEntityStatus = true;
+          }
+        });
+
+        // Backfill item status metadata
+        const itemsTable = appStore.getTable('items');
+        Object.entries(itemsTable).forEach(([itemId, row]) => {
+          const status = (row as { status?: string }).status;
+          if (!status) {
+            appStore.setRow('items', itemId, {
+              ...row,
+              status: 'complete',
+              updated: now(),
+            });
+            didMigrateEntityStatus = true;
+          }
+        });
+
+        // Backfill session log mention fields
+        const sessionLogsTable = appStore.getTable('sessionLogs');
+        Object.entries(sessionLogsTable).forEach(([sessionId, row]) => {
+          const current = row as {
+            content?: string;
+            mentions?: string;
+            itemIds?: string;
+            summary?: string;
+            keyDecisions?: string;
+            outcomes?: string;
+          };
+
+          const updates: Record<string, string> = {};
+          if (current.content === undefined) {
+            const summary = (current.summary || '').trim();
+            const decisions = (current.keyDecisions || '').trim();
+            const outcomes = (current.outcomes || '').trim();
+            let legacyContent = summary;
+            if (!legacyContent && decisions) {
+              legacyContent = `Key decisions: ${decisions}`;
+            }
+            if (outcomes) {
+              legacyContent = legacyContent
+                ? `${legacyContent}\nOutcomes: ${outcomes}`
+                : `Outcomes: ${outcomes}`;
+            }
+            updates.content = legacyContent;
+          }
+          if (current.mentions === undefined) {
+            updates.mentions = '[]';
+          }
+          if (current.itemIds === undefined) {
+            updates.itemIds = '[]';
+          }
+
+          if (Object.keys(updates).length > 0) {
+            appStore.setRow('sessionLogs', sessionId, {
+              ...row,
+              ...updates,
+              updated: now(),
+            });
+            didMigrateSessionLogs = true;
+          }
+        });
+
         // Start auto-saving changes
         persister.startAutoSave();
 
         // Save immediately if this is first run or device ID was newly set
-        if (!hadData || didSetDeviceId || didMigrateContinuity || didMigrateMentionSettings) {
+        if (
+          !hadData ||
+          didSetDeviceId ||
+          didMigrateContinuity ||
+          didMigrateMentionSettings ||
+          didMigrateEntityStatus ||
+          didMigrateSessionLogs
+        ) {
           await persister.save();
         }
       } catch (error) {
