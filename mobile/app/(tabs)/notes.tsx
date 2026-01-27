@@ -113,13 +113,41 @@ export default function NotesScreen() {
     const scoped = selectedTagIds.length
       ? notes.filter((note) => note.tagIds.some((id) => selectedTagIds.includes(id)))
       : notes;
-    if (!normalized) return scoped;
-    return scoped.filter((note) => {
-      const title = note.title?.toLowerCase() ?? '';
-      const content = note.content?.toLowerCase() ?? '';
-      return title.includes(normalized) || content.includes(normalized);
+    const filtered = normalized
+      ? scoped.filter((note) => {
+          const title = note.title?.toLowerCase() ?? '';
+          const content = note.content?.toLowerCase() ?? '';
+          return title.includes(normalized) || content.includes(normalized);
+        })
+      : scoped;
+    return [...filtered].sort((a, b) => {
+      const aDate = a.updated || a.created;
+      const bDate = b.updated || b.created;
+      return bDate.localeCompare(aDate);
     });
   }, [notes, query, selectedTagIds]);
+
+  const appendDraftContent = (snippet: string) => {
+    setDraftContent((prev) => {
+      const trimmed = prev.trimEnd();
+      return trimmed ? `${trimmed}\n\n${snippet}` : snippet;
+    });
+  };
+
+  const buildDateHeading = () => {
+    const label = new Date().toLocaleDateString();
+    return `### Session Date — ${label}\n- `;
+  };
+
+  const quickInserts = [
+    { label: 'Date Heading', content: buildDateHeading() },
+    { label: 'Chronological Log', content: '### Session Log\n- ' },
+    { label: 'Leads / Questions', content: '### Leads & Questions\n- ' },
+    { label: 'NPCs', content: '### NPCs\n- ' },
+    { label: 'Locations', content: '### Locations\n- ' },
+    { label: 'Items / Loot', content: '### Items & Loot\n- ' },
+    { label: 'Highlights', content: '### Highlights\n- ' },
+  ];
 
   useEffect(() => {
     setSelectedTagIds(tagParam ? [tagParam] : []);
@@ -280,6 +308,21 @@ export default function NotesScreen() {
         multiline
         style={styles.modalContentInput}
       />
+      <View style={styles.quickInsertRow}>
+        {quickInserts.map((insert) => (
+          <Button
+            key={insert.label}
+            mode="outlined"
+            compact
+            onPress={() => appendDraftContent(insert.content)}
+          >
+            {insert.label}
+          </Button>
+        ))}
+      </View>
+      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+        Tip: use @Name for people/places and #tags to make details easier to scan later.
+      </Text>
       <FormMultiSelect
         label="Locations"
         value={draftLocationIds}
@@ -545,5 +588,11 @@ const styles = StyleSheet.create({
   },
   modalContentInput: {
     minHeight: 120,
+  },
+  quickInsertRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[2],
+    marginBottom: spacing[2],
   },
 });

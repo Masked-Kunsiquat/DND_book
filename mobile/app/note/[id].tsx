@@ -151,6 +151,28 @@ export default function NoteDetailScreen() {
   const showShareActions =
     note?.scope === 'campaign' || (note?.scope === 'continuity' && Boolean(currentCampaign));
 
+  const appendContent = (snippet: string) => {
+    setContent((prev) => {
+      const trimmed = prev.trimEnd();
+      return trimmed ? `${trimmed}\n\n${snippet}` : snippet;
+    });
+  };
+
+  const buildDateHeading = () => {
+    const label = new Date().toLocaleDateString();
+    return `### Session Date — ${label}\n- `;
+  };
+
+  const quickInserts = [
+    { label: 'Date Heading', content: buildDateHeading() },
+    { label: 'Chronological Log', content: '### Session Log\n- ' },
+    { label: 'Leads / Questions', content: '### Leads & Questions\n- ' },
+    { label: 'NPCs', content: '### NPCs\n- ' },
+    { label: 'Locations', content: '### Locations\n- ' },
+    { label: 'Items / Loot', content: '### Items & Loot\n- ' },
+    { label: 'Highlights', content: '### Highlights\n- ' },
+  ];
+
   const handleCampaignChange = (value: string) => {
     if (note?.scope === 'continuity') return;
     setCampaignId(value);
@@ -264,10 +286,15 @@ export default function NoteDetailScreen() {
     }
     setIsSharing(true);
     try {
+      const linkedCampaignIds = new Set(note.campaignIds);
+      if (currentCampaign?.id) {
+        linkedCampaignIds.add(currentCampaign.id);
+      }
       updateNote(note.id, {
         scope: 'continuity',
         continuityId,
         campaignId: '',
+        campaignIds: [...linkedCampaignIds],
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to share note.';
@@ -352,13 +379,30 @@ export default function NoteDetailScreen() {
 
         <Section title="Content" icon="note-text-outline">
           {isEditing ? (
-            <FormTextInput
-              label="Content"
-              value={content}
-              onChangeText={setContent}
-              multiline
-              style={styles.contentInput}
-            />
+            <>
+              <FormTextInput
+                label="Content"
+                value={content}
+                onChangeText={setContent}
+                multiline
+                style={styles.contentInput}
+              />
+              <View style={styles.quickInsertRow}>
+                {quickInserts.map((insert) => (
+                  <Button
+                    key={insert.label}
+                    mode="outlined"
+                    compact
+                    onPress={() => appendContent(insert.content)}
+                  >
+                    {insert.label}
+                  </Button>
+                ))}
+              </View>
+              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                Tip: use @Name for people/places and #tags to make details easier to scan later.
+              </Text>
+            </>
           ) : (
             <>
               <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant }}>
@@ -552,6 +596,12 @@ const styles = StyleSheet.create({
   },
   contentInput: {
     minHeight: 180,
+  },
+  quickInsertRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[2],
+    marginTop: spacing[2],
   },
   tagsRow: {
     flexDirection: 'row',
