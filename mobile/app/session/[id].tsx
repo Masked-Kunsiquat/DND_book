@@ -356,8 +356,13 @@ export default function SessionDetailScreen() {
     'participants' | 'campaigns' | 'locations' | 'npcs' | 'notes' | 'tags' | null
   >(null);
 
+  const normalizeCampaignIds = (ids: string[]) => (ids.length > 0 ? [ids[0]] : []);
+
   const displayCampaignIds = useMemo(
-    () => (isEditing ? campaignIds : session?.campaignIds ?? []),
+    () =>
+      isEditing
+        ? campaignIds
+        : normalizeCampaignIds(session?.campaignIds ?? []),
     [campaignIds, isEditing, session?.campaignIds]
   );
 
@@ -405,7 +410,7 @@ export default function SessionDetailScreen() {
       setKeyDecisions(session.keyDecisions);
       setOutcomes(session.outcomes);
       setContent(session.content || '');
-      setCampaignIds(session.campaignIds);
+      setCampaignIds(normalizeCampaignIds(session.campaignIds));
       setLocationIds(session.locationIds);
       setNpcIds(session.npcIds);
       setNoteIds(session.noteIds);
@@ -585,9 +590,10 @@ export default function SessionDetailScreen() {
   };
 
   const handleCampaignChange = (value: string[]) => {
-    setCampaignIds(value);
-    if (value.length === 0) return;
-    const allowedCampaigns = new Set(value);
+    const nextCampaignIds = value.length > 0 ? [value[value.length - 1]] : [];
+    setCampaignIds(nextCampaignIds);
+    if (nextCampaignIds.length === 0) return;
+    const allowedCampaigns = new Set(nextCampaignIds);
     const allowedLocations = new Set(
       locations
         .filter((location) => location.campaignIds.some((id) => allowedCampaigns.has(id)))
@@ -630,7 +636,7 @@ export default function SessionDetailScreen() {
     setKeyDecisions(session.keyDecisions);
     setOutcomes(session.outcomes);
     setContent(session.content || '');
-    setCampaignIds(session.campaignIds);
+    setCampaignIds(normalizeCampaignIds(session.campaignIds));
     setLocationIds(session.locationIds);
     setNpcIds(session.npcIds);
     setNoteIds(session.noteIds);
@@ -650,7 +656,7 @@ export default function SessionDetailScreen() {
       setKeyDecisions(session.keyDecisions);
       setOutcomes(session.outcomes);
       setContent(session.content || '');
-      setCampaignIds(session.campaignIds);
+      setCampaignIds(normalizeCampaignIds(session.campaignIds));
       setLocationIds(session.locationIds);
       setNpcIds(session.npcIds);
       setNoteIds(session.noteIds);
@@ -942,7 +948,7 @@ export default function SessionDetailScreen() {
               </View>
             </>
           ) : session.content?.trim() ? (
-            <MentionRenderer value={session.content} mentions={session.mentions} />
+            <MentionRenderer value={session.content} mentions={mentionDerived.mentions} />
           ) : (
             <View style={styles.summaryBlock}>
               <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant }}>
