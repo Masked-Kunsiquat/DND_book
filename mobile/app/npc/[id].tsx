@@ -34,6 +34,12 @@ import {
 } from '../../src/hooks';
 import { now } from '../../src/utils/id';
 
+/**
+ * Convert a date/time string into a localized, human-readable date and time.
+ *
+ * @param value - The date/time string to format; if omitted or not a valid date, it is treated as unknown.
+ * @returns The localized date and time string, or `'Unknown'` if `value` is missing or cannot be parsed.
+ */
 function formatDate(value?: string): string {
   if (!value) return 'Unknown';
   const parsed = new Date(value);
@@ -42,15 +48,9 @@ function formatDate(value?: string): string {
 }
 
 /**
- * Display and manage an NPC's details, links, and lifecycle actions.
+ * Display and manage an NPC's profile, linked resources, and lifecycle actions (view, edit, share, fork, remove, delete, and complete shadow NPCs).
  *
- * Renders a screen that shows an NPC's profile, linked campaigns/locations/notes/tags,
- * and metadata; supports toggling between view and edit modes, creating/updating/deleting
- * or removing the NPC, sharing to a continuity, forking into a campaign, and completing
- * "shadow" NPCs. Synchronizes local form state with the NPC data and uses routing/hooks
- * for navigation and persistence.
- *
- * @returns The React element for the NPC detail screen
+ * @returns The React element rendering the NPC detail screen
  */
 export default function NpcDetailScreen() {
   const { theme } = useTheme();
