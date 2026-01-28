@@ -39,6 +39,17 @@ interface Segment {
   mention?: RenderableMention;
 }
 
+/**
+ * Append an alpha channel to a hex color string, returning a hex color with opacity.
+ *
+ * Normalizes shorthand `#RGB` to `#RRGGBB`, clamps `alpha` to the range 0–1, and appends
+ * the corresponding two-digit alpha hex to produce `#RRGGBBAA`. If `color` is not a
+ * valid `#RGB` or `#RRGGBB` hex string, the input is returned unchanged.
+ *
+ * @param color - A hex color string in `#RGB` or `#RRGGBB` form
+ * @param alpha - Opacity value between 0 and 1 (values outside this range are clamped)
+ * @returns A hex color string with an appended alpha channel (`#RRGGBBAA`) or the original `color` if invalid
+ */
 function withAlpha(color: string, alpha: number): string {
   if (!color.startsWith('#') || (color.length !== 7 && color.length !== 4)) {
     return color;
@@ -57,6 +68,13 @@ function withAlpha(color: string, alpha: number): string {
   return `${normalized}${alphaHex}`;
 }
 
+/**
+ * Map a mention trigger string to its corresponding entity type using the provided settings.
+ *
+ * @param trigger - The trigger token extracted from a mention (e.g., '@', '#')
+ * @param settings - Configuration specifying which triggers represent location, item, and tag
+ * @returns The resolved entity type: `location`, `item`, `tag`, or `npc` (default)
+ */
 function resolveEntityType(trigger: string, settings: MentionSettings): Mention['entityType'] {
   if (trigger === settings.location) return 'location';
   if (trigger === settings.item) return 'item';
@@ -64,6 +82,14 @@ function resolveEntityType(trigger: string, settings: MentionSettings): Mention[
   return 'npc';
 }
 
+/**
+ * Compute the text style for a mention token based on its status.
+ *
+ * @param mention - The renderable mention whose `status` determines styling.
+ * @param baseColor - Color used for active/normal mention styling.
+ * @param shadowColor - Color used when the mention's status is `'shadow'`.
+ * @returns A TextStyle for the mention: if `mention.status === 'shadow'` the style uses `shadowColor`, a dashed underline, and a translucent background; otherwise the style uses `baseColor`, heavier font weight, and a translucent background.
+ */
 function getMentionStyle(
   mention: RenderableMention,
   baseColor: string,
@@ -85,6 +111,14 @@ function getMentionStyle(
   };
 }
 
+/**
+ * Convert a mention-marked string into an ordered array of text and mention segments for rendering.
+ *
+ * @param value - Input string containing mention tokens that match the library's `triggerRegEx`
+ * @param mentions - Optional array of stored Mention metadata used to enrich segments when a mention's position matches
+ * @param settings - MentionSettings used to infer an entityType when not provided by matched metadata
+ * @returns An array of segments where each element is either a plain text segment or a mention segment containing a `RenderableMention` (`trigger`, `label`, `entityId`, `entityType`, `status`, and `position`)
+ */
 function buildSegments(
   value: string,
   mentions: Mention[] | undefined,
@@ -139,6 +173,16 @@ function buildSegments(
   return segments;
 }
 
+/**
+ * Render read-only text with styled mention tokens and optional interaction.
+ *
+ * @param value - The content string containing mention tokens to render.
+ * @param mentions - Optional metadata used to resolve mention identities and statuses.
+ * @param onPressMention - Optional callback invoked when a mention with an `entityId` is pressed; receives a mapped Mention-like object.
+ * @param containerStyle - Optional style overrides for the outer container View.
+ * @param textStyle - Optional base Text style applied to the rendered content.
+ * @returns A React element that displays the input text with mention tokens styled; mentions that have an `entityId` are interactive and will either invoke `onPressMention` or navigate to the corresponding in-app route.
+ */
 export function MentionRenderer({
   value,
   mentions,

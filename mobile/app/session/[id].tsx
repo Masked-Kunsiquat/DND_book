@@ -57,6 +57,12 @@ function formatDate(value?: string): string {
   return parsed.toLocaleString();
 }
 
+/**
+ * Formats an ISO-8601 or other date-parsable string as a locale-specific date.
+ *
+ * @param value - A date string parsable by Date (e.g., ISO-8601). If omitted or not a valid date, the function will not format a date.
+ * @returns A locale-formatted date string when `value` is valid, `'Unknown'` otherwise.
+ */
 function formatSessionDate(value?: string): string {
   if (!value) return 'Unknown';
   const parsed = new Date(value);
@@ -304,16 +310,12 @@ function buildShadowPromptItems(mentions: Mention[]): ShadowPromptItem[] {
 }
 
 /**
- * Render the session detail screen for viewing and editing a session log.
+ * Display a session's details and provide UI to view and edit its log, linked entities, and metadata.
  *
- * Presents session metadata, the session log content with mention support, linked entities,
- * and controls for editing, saving (with autosave of content and extracted mentions), deleting,
- * and resolving incomplete ("shadow") entities detected in content.
+ * Supports mention-aware content editing with autosave, management of campaigns/locations/NPCs/notes/tags,
+ * resolving incomplete ("shadow") entities, and deleting the session.
  *
- * While editing, the component exposes UI for managing campaigns, locations, NPCs, notes,
- * player characters, and tags; when not editing it displays resolved linked entities and read-only content.
- *
- * @returns The React element for the session detail screen.
+ * @returns A React element representing the session detail screen
  */
 export default function SessionDetailScreen() {
   const { theme } = useTheme();
