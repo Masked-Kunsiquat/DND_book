@@ -19,8 +19,12 @@ interface StoreProviderProps {
 }
 
 /**
- * Provides the TinyBase store to the component tree.
- * Initializes the store, loads persisted data, and sets up auto-save.
+ * Renders a context provider that initializes and supplies the application store to its children.
+ *
+ * Initializes the store, loads persisted data, performs required backfills and migrations, starts persistence (auto-save), and ensures essential defaults (device ID, mention settings, and a continuity) before rendering children.
+ *
+ * @param children - Elements to render inside the provider
+ * @returns A React element that provides the initialized AppStore via context (or `null` while initializing)
  */
 export function StoreProvider({ children }: StoreProviderProps) {
   const [store, setStore] = useState<AppStore | null>(null);
@@ -29,9 +33,9 @@ export function StoreProvider({ children }: StoreProviderProps) {
 
   useEffect(() => {
     /**
-     * Initialize the application store: load persisted data, perform necessary migrations/backfills, and start persistence.
+     * Initialize the application store by loading persisted data, performing migrations/backfills, and starting persistence.
      *
-     * Ensures a device ID and mention settings exist, creates a default continuity when none are present, backfills continuity and scope metadata for campaigns, locations, NPCs, notes, and tags, and starts the persister's auto-save. If this is a first run or any migrations occurred, triggers an immediate save. On completion the initialized store is placed into component state and readiness is marked; on error a device ID will still be ensured.
+     * Ensures a device ID and mention settings exist, creates a default continuity if none exist, backfills continuity/scope/status/related metadata for campaigns, locations, NPCs, notes, tags, items, and session logs, and starts the persister's auto-save. If this is the first run or any migration occurred, triggers an immediate save. On completion the initialized store is placed into component state and readiness is marked; on error a device ID will still be ensured.
      */
     async function initStore() {
       const appStore = createAppStore();
@@ -319,8 +323,10 @@ export function StoreProvider({ children }: StoreProviderProps) {
 }
 
 /**
- * Hook to access the TinyBase store.
- * Must be used within a StoreProvider.
+ * Accesses the current AppStore from React context.
+ *
+ * @returns The current AppStore instance
+ * @throws Error if called outside of a StoreProvider
  */
 export function useStore(): AppStore {
   const store = useContext(StoreContext);
