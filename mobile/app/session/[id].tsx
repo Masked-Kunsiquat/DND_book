@@ -26,7 +26,7 @@ import {
   TagInput,
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
-import { spacing } from '../../src/theme';
+import { iconSizes, spacing } from '../../src/theme';
 import {
   useCampaigns,
   useDeleteSessionLog,
@@ -417,7 +417,7 @@ export default function SessionDetailScreen() {
 
   useEffect(() => {
     if (!isEditing || !session) return;
-    if (content === session.content) return;
+    if ((content ?? '') === (session.content ?? '')) return;
 
     const handle = setTimeout(() => {
       updateSessionLog(session.id, {
@@ -920,7 +920,7 @@ export default function SessionDetailScreen() {
                     <IconButton
                       key={item.label}
                       icon={item.icon}
-                      size={18}
+                      size={iconSizes.md}
                       mode="outlined"
                       onPress={() => handleInsertTrigger(item.trigger)}
                       accessibilityLabel={`Insert ${item.label} trigger`}
@@ -1074,7 +1074,7 @@ export default function SessionDetailScreen() {
                     />
                     <MaterialCommunityIcons
                       name="chevron-right"
-                      size={18}
+                      size={iconSizes.md}
                       color={theme.colors.onSurfaceVariant}
                     />
                   </View>
