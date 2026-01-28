@@ -753,7 +753,7 @@ export default function SessionDetailScreen() {
       case 'participants':
         return 'Participants';
       case 'campaigns':
-        return 'Campaigns';
+        return 'Campaign';
       case 'locations':
         return 'Locations';
       case 'npcs':
@@ -782,7 +782,7 @@ export default function SessionDetailScreen() {
       case 'campaigns':
         return (
           <FormMultiSelect
-            label="Campaigns"
+            label="Campaign"
             value={campaignIds}
             options={campaignOptions}
             onChange={handleCampaignChange}
@@ -1068,8 +1068,8 @@ export default function SessionDetailScreen() {
           {isEditing ? (
             <View style={styles.linkList}>
               <AppCard
-                title="Campaigns"
-                subtitle={`${campaignIds.length} selected`}
+                title="Campaign"
+                subtitle={campaignIds.length > 0 ? '1 selected' : 'Not linked'}
                 onPress={() => openLinkModal('campaigns')}
                 right={
                   <View style={styles.editCardRight}>

@@ -52,14 +52,11 @@ export default function NpcLibraryScreen() {
     if (isUpdatingId) return;
     setIsUpdatingId(npc.id);
     setError(null);
-    const ids = new Set(npc.campaignIds);
-    if (ids.has(currentCampaign.id)) {
-      ids.delete(currentCampaign.id);
-    } else {
-      ids.add(currentCampaign.id);
-    }
     try {
-      updateNpc(npc.id, { campaignIds: [...ids] });
+      const nextCampaignIds = npc.campaignIds.includes(currentCampaign.id)
+        ? []
+        : [currentCampaign.id];
+      updateNpc(npc.id, { campaignIds: nextCampaignIds });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update NPC.';
       setError(message);

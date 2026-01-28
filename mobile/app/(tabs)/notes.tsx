@@ -312,7 +312,7 @@ export default function NotesScreen() {
           { label: 'Shared in continuity', value: 'continuity' },
         ]}
         onChange={(value) => handleScopeChange(value as EntityScope)}
-        helperText="Shared notes are visible to every campaign in this continuity."
+        helperText="Shared notes live in the continuity but stay linked to one campaign."
       />
       {draftScope === 'campaign' && (
         <FormSelect

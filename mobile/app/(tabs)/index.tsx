@@ -9,6 +9,7 @@ import { useCurrentCampaign } from '../../src/hooks/useCampaigns';
 import { useNotes } from '../../src/hooks/useNotes';
 import { useNpcs } from '../../src/hooks/useNpcs';
 import { useLocations } from '../../src/hooks/useLocations';
+import { useItems } from '../../src/hooks/useItems';
 import { useTags } from '../../src/hooks/useTags';
 import { iconSizes, spacing, semanticColors } from '../../src/theme';
 
@@ -18,6 +19,7 @@ export default function Home() {
   const notes = useNotes(currentCampaign?.continuityId, currentCampaign?.id);
   const npcs = useNpcs(currentCampaign?.id);
   const locations = useLocations(currentCampaign?.id);
+  const items = useItems(currentCampaign?.id);
   const tags = useTags(currentCampaign?.continuityId, currentCampaign?.id);
 
   const recentNotes = useMemo(() => {
@@ -127,6 +129,21 @@ export default function Home() {
               />
             }
           />
+          <StatCard
+            label="Items"
+            value={items.length}
+            onPress={() => router.push('/items')}
+            layout="compact"
+            icon={
+              <MaterialCommunityIcons
+                name="treasure-chest-outline"
+                size={iconSizes.md}
+                color={theme.colors.primary}
+              />
+            }
+          />
+        </View>
+        <View style={styles.statsRow}>
           <StatCard
             label="Tags"
             value={tags.length}

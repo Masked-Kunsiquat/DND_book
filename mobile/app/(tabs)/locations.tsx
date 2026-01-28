@@ -365,14 +365,7 @@ export default function LocationsScreen() {
     setCreateError(null);
     try {
       const continuityId = currentCampaign?.continuityId ?? '';
-      const sharedCampaignIds =
-        draftScope === 'continuity'
-          ? campaigns
-              .filter((campaign) => campaign.continuityId === continuityId)
-              .map((campaign) => campaign.id)
-          : currentCampaign
-            ? [currentCampaign.id]
-            : [];
+      const sharedCampaignIds = currentCampaign ? [currentCampaign.id] : [];
       await Promise.resolve(
         createLocation({
           name: trimmed,
@@ -433,7 +426,7 @@ export default function LocationsScreen() {
         value={draftScope}
         options={LOCATION_SCOPE_OPTIONS}
         onChange={(value) => setDraftScope(value as EntityScope)}
-        helperText="Shared locations appear in every campaign in this continuity."
+        helperText="Shared locations live in the continuity but stay linked to one campaign."
       />
       <LocationMultiSelect
         locations={parentCandidates}

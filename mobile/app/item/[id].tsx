@@ -55,14 +55,6 @@ export default function ItemDetailScreen() {
     currentCampaign?.continuityId ||
     '';
 
-  const tagCampaignId = item?.campaignIds?.[0] || currentCampaign?.id;
-  const tags = useTags(continuityId, tagCampaignId);
-  const getOrCreateTag = useGetOrCreateTag({
-    continuityId,
-    campaignId: tagCampaignId,
-    scope: item?.scope,
-  });
-
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -73,12 +65,23 @@ export default function ItemDetailScreen() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
+  const tagCampaignId =
+    (isEditing ? campaignIds[0] : item?.campaignIds?.[0]) || currentCampaign?.id;
+  const tags = useTags(continuityId, tagCampaignId);
+  const getOrCreateTag = useGetOrCreateTag({
+    continuityId,
+    campaignId: tagCampaignId,
+    scope: item?.scope,
+  });
+
+  const normalizeCampaignIds = (ids: string[]) => (ids.length > 0 ? [ids[0]] : []);
+
   useEffect(() => {
     if (item && !isEditing) {
       setName(item.name);
       setDescription(item.description);
       setValue(item.value);
-      setCampaignIds(item.campaignIds);
+      setCampaignIds(normalizeCampaignIds(item.campaignIds));
       setTagIds(item.tagIds);
     }
   }, [item, isEditing]);
@@ -111,7 +114,7 @@ export default function ItemDetailScreen() {
     setName(item.name);
     setDescription(item.description);
     setValue(item.value);
-    setCampaignIds(item.campaignIds);
+    setCampaignIds(normalizeCampaignIds(item.campaignIds));
     setTagIds(item.tagIds);
     setError(null);
     setIsEditing(true);
@@ -122,7 +125,7 @@ export default function ItemDetailScreen() {
     setName(item.name);
     setDescription(item.description);
     setValue(item.value);
-    setCampaignIds(item.campaignIds);
+    setCampaignIds(normalizeCampaignIds(item.campaignIds));
     setTagIds(item.tagIds);
     setError(null);
     setIsEditing(false);
@@ -260,11 +263,13 @@ export default function ItemDetailScreen() {
         {isEditing ? (
           <View style={styles.formStack}>
             <FormMultiSelect
-              label="Campaigns"
+              label="Campaign"
               value={campaignIds}
               options={campaignOptions}
-              onChange={setCampaignIds}
-              helperText="Assign this item to one or more campaigns."
+              onChange={(value) =>
+                setCampaignIds(value.length > 0 ? [value[value.length - 1]] : [])
+              }
+              helperText="Assign this item to a campaign."
             />
             {continuityId ? (
               <TagInput
@@ -283,7 +288,7 @@ export default function ItemDetailScreen() {
           <View style={styles.detailStack}>
             {linkedCampaigns.length === 0 ? (
               <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                No campaigns linked.
+                No campaign linked.
               </Text>
             ) : (
               linkedCampaigns.map((campaign) => (

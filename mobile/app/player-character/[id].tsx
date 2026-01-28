@@ -68,6 +68,8 @@ export default function PlayerCharacterDetailScreen() {
   const [isTemplateSaving, setIsTemplateSaving] = useState(false);
   const [activeLinkModal, setActiveLinkModal] = useState<'campaigns' | 'notes' | null>(null);
 
+  const normalizeCampaignIds = (ids: string[]) => (ids.length > 0 ? [ids[0]] : []);
+
   useEffect(() => {
     if (character && !isEditing) {
       setName(character.name);
@@ -76,13 +78,16 @@ export default function PlayerCharacterDetailScreen() {
       setClassName(character.class);
       setBackground(character.background);
       setImage(character.image || null);
-      setCampaignIds(character.campaignIds);
+      setCampaignIds(normalizeCampaignIds(character.campaignIds));
       setNoteIds(character.noteIds);
     }
   }, [character, isEditing]);
 
   const displayCampaignIds = useMemo(
-    () => (isEditing ? campaignIds : character?.campaignIds ?? []),
+    () =>
+      isEditing
+        ? campaignIds
+        : normalizeCampaignIds(character?.campaignIds ?? []),
     [campaignIds, character?.campaignIds, isEditing]
   );
   const displayNoteIds = useMemo(
@@ -183,9 +188,10 @@ export default function PlayerCharacterDetailScreen() {
   };
 
   const handleCampaignChange = (value: string[]) => {
-    setCampaignIds(value);
-    if (value.length === 0) return;
-    const allowed = new Set(value);
+    const nextCampaignIds = value.length > 0 ? [value[value.length - 1]] : [];
+    setCampaignIds(nextCampaignIds);
+    if (nextCampaignIds.length === 0) return;
+    const allowed = new Set(nextCampaignIds);
     const allowedNotes = new Set(
       notes
         .filter((note) => {
@@ -210,7 +216,7 @@ export default function PlayerCharacterDetailScreen() {
     setClassName(character.class);
     setBackground(character.background);
     setImage(character.image || null);
-    setCampaignIds(character.campaignIds);
+    setCampaignIds(normalizeCampaignIds(character.campaignIds));
     setNoteIds(character.noteIds);
     setError(null);
     setIsEditing(true);
@@ -222,7 +228,7 @@ export default function PlayerCharacterDetailScreen() {
 
   const closeLinkModal = () => setActiveLinkModal(null);
 
-  const linkModalTitle = activeLinkModal === 'notes' ? 'Notes' : 'Campaigns';
+  const linkModalTitle = activeLinkModal === 'notes' ? 'Notes' : 'Campaign';
 
   const linkModalBody =
     activeLinkModal === 'notes' ? (
@@ -234,7 +240,7 @@ export default function PlayerCharacterDetailScreen() {
       />
     ) : (
       <FormMultiSelect
-        label="Campaigns"
+        label="Campaign"
         value={campaignIds}
         options={campaignOptions}
         onChange={handleCampaignChange}
@@ -249,7 +255,7 @@ export default function PlayerCharacterDetailScreen() {
       setClassName(character.class);
       setBackground(character.background);
       setImage(character.image || null);
-      setCampaignIds(character.campaignIds);
+      setCampaignIds(normalizeCampaignIds(character.campaignIds));
       setNoteIds(character.noteIds);
     }
     setError(null);
@@ -404,8 +410,8 @@ export default function PlayerCharacterDetailScreen() {
           {isEditing ? (
             <View style={styles.linkList}>
               <AppCard
-                title="Campaigns"
-                subtitle={`${campaignIds.length} selected`}
+                title="Campaign"
+                subtitle={campaignIds.length > 0 ? '1 selected' : 'Not linked'}
                 onPress={() => openLinkModal('campaigns')}
                 right={
                   <View style={styles.editCardRight}>

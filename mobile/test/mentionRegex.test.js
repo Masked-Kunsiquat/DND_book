@@ -1,8 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-test('triggerRegEx capture groups map trigger, name, and id', async () => {
-  const { triggerRegEx } = await import('react-native-controlled-mentions');
+test('triggerRegEx capture groups map trigger, name, and id', () => {
+  const { triggerRegEx } = require('react-native-controlled-mentions/dist/utils/constraints');
   const regex = new RegExp(triggerRegEx.source, 'gi');
   const value =
     'Met {@}[David Tabaka](123), fought {#}[Goblin](null), found {@}[Ada Lovelace](abc-123).';

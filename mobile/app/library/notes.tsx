@@ -53,14 +53,11 @@ export default function NotesLibraryScreen() {
     setIsUpdatingId(noteId);
     setIsUpdating(true);
     setError(null);
-    const ids = new Set(linkedCampaignIds);
-    if (ids.has(currentCampaign.id)) {
-      ids.delete(currentCampaign.id);
-    } else {
-      ids.add(currentCampaign.id);
-    }
     try {
-      updateNote(noteId, { campaignIds: [...ids] });
+      const nextCampaignIds = linkedCampaignIds.includes(currentCampaign.id)
+        ? []
+        : [currentCampaign.id];
+      updateNote(noteId, { campaignIds: nextCampaignIds });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update note.';
       setError(message);

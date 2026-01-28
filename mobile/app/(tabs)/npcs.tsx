@@ -201,9 +201,7 @@ export default function NpcsScreen() {
     setCreateError(null);
     try {
       const sharedCampaignIds =
-        draftScope === 'continuity'
-          ? continuityCampaigns.map((campaign) => campaign.id)
-          : draftCampaignIds;
+        draftCampaignIds.length > 0 ? [draftCampaignIds[0]] : [];
       createNpc({
         name: trimmed,
         race: draftRace,
@@ -240,7 +238,7 @@ export default function NpcsScreen() {
   const linkModalTitle = (() => {
     switch (activeLinkModal) {
       case 'campaigns':
-        return 'Campaigns';
+        return 'Campaign';
       case 'locations':
         return 'Locations';
       case 'notes':
@@ -257,16 +255,17 @@ export default function NpcsScreen() {
       case 'campaigns':
         return (
           <FormMultiSelect
-            label="Campaigns"
+            label="Campaign"
             value={draftCampaignIds}
             options={campaignOptions}
-            onChange={setDraftCampaignIds}
+            onChange={(value) =>
+              setDraftCampaignIds(value.length > 0 ? [value[value.length - 1]] : [])
+            }
             helperText={
               draftScope === 'continuity'
-                ? 'Automatically linked to all campaigns in this continuity.'
+                ? 'Shared NPCs live in continuity; link to a campaign to show in lists.'
                 : undefined
             }
-            disabled={draftScope === 'continuity'}
           />
         );
       case 'locations':
@@ -351,18 +350,16 @@ export default function NpcsScreen() {
         onChange={(value) => {
           const nextScope = value as EntityScope;
           setDraftScope(nextScope);
-          if (nextScope === 'continuity') {
-            setDraftCampaignIds(continuityCampaigns.map((campaign) => campaign.id));
-          } else if (currentCampaign?.id) {
+          if (currentCampaign?.id) {
             setDraftCampaignIds([currentCampaign.id]);
           }
         }}
-        helperText="Shared NPCs appear in every campaign in this continuity."
+        helperText="Shared NPCs live in the continuity but stay linked to one campaign."
       />
       <View style={styles.linkList}>
         <AppCard
-          title="Campaigns"
-          subtitle={`${draftCampaignIds.length} selected`}
+          title="Campaign"
+          subtitle={draftCampaignIds.length > 0 ? '1 selected' : 'Not linked'}
           onPress={() => openLinkModal('campaigns')}
           right={
             <View style={styles.editCardRight}>

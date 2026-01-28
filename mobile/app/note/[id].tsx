@@ -346,15 +346,12 @@ export default function NoteDetailScreen() {
     }
     setIsSharing(true);
     try {
-      const linkedCampaignIds = new Set(note.campaignIds);
-      if (currentCampaign?.id) {
-        linkedCampaignIds.add(currentCampaign.id);
-      }
+      const linkedCampaignIds = currentCampaign?.id ? [currentCampaign.id] : [];
       updateNote(note.id, {
         scope: 'continuity',
         continuityId,
         campaignId: '',
-        campaignIds: [...linkedCampaignIds],
+        campaignIds: linkedCampaignIds,
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to share note.';
@@ -546,7 +543,7 @@ export default function NoteDetailScreen() {
               ) : (
                 <>
                   <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    Shared notes are available to every campaign in this continuity.
+                    Shared notes live in the continuity but stay linked to one campaign.
                   </Text>
                   <View style={styles.linkList}>
                     <AppCard
@@ -712,7 +709,7 @@ export default function NoteDetailScreen() {
       <ConfirmDialog
         visible={isShareOpen}
         title="Share to continuity?"
-        description="Shared notes are visible to every campaign in this continuity."
+        description="Shared notes live in the continuity but stay linked to one campaign."
         confirmLabel="Share"
         onCancel={closeShareDialog}
         onConfirm={confirmShare}

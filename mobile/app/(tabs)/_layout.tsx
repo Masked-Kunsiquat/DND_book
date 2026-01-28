@@ -42,6 +42,11 @@ const TAB_ICONS: Record<string, TabIconConfig> = {
     active: 'map-marker',
     inactive: 'map-marker-outline',
   },
+  items: {
+    label: 'Items',
+    active: 'treasure-chest',
+    inactive: 'treasure-chest-outline',
+  },
 };
 
 function HeaderMenu() {
