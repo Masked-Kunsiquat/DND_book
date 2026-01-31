@@ -54,9 +54,13 @@ export default function NotesLibraryScreen() {
     setIsUpdating(true);
     setError(null);
     try {
-      const nextCampaignIds = linkedCampaignIds.includes(currentCampaign.id)
-        ? []
-        : [currentCampaign.id];
+      const ids = new Set(linkedCampaignIds);
+      if (ids.has(currentCampaign.id)) {
+        ids.delete(currentCampaign.id);
+      } else {
+        ids.add(currentCampaign.id);
+      }
+      const nextCampaignIds = [...ids];
       updateNote(noteId, { campaignIds: nextCampaignIds });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update note.';
@@ -117,44 +121,44 @@ export default function NotesLibraryScreen() {
             />
           </View>
         }
-          renderItem={({ item }) => (
-            <View style={styles.cardWrapper}>
-              <AppCard
-                title={item.title || 'Untitled note'}
-                subtitle={item.content?.trim() ? item.content.slice(0, 80) : 'No content yet.'}
-                onPress={() => router.push(`/note/${item.id}`)}
-                right={
-                  <Button
-                    mode="text"
-                    icon={
-                      currentCampaign && item.campaignIds.includes(currentCampaign.id)
-                        ? 'link-off'
-                        : 'link-plus'
-                    }
-                    compact
-                    disabled={!currentCampaign || isUpdating}
-                    onPress={() => toggleLink(item.id, item.campaignIds)}
-                  >
-                    {currentCampaign && item.campaignIds.includes(currentCampaign.id)
-                      ? 'Remove'
-                      : 'Add'}
-                  </Button>
-                }
-              />
-              {!currentCampaign && (
-                <View style={styles.noticeRow}>
-                  <MaterialCommunityIcons
-                    name="alert-circle-outline"
-                    size={18}
-                    color={theme.colors.onSurfaceVariant}
-                  />
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    Select a campaign to link shared notes.
-                  </Text>
-                </View>
-              )}
-            </View>
-          )}
+        renderItem={({ item }) => (
+          <View style={styles.cardWrapper}>
+            <AppCard
+              title={item.title || 'Untitled note'}
+              subtitle={item.content?.trim() ? item.content.slice(0, 80) : 'No content yet.'}
+              onPress={() => router.push(`/note/${item.id}`)}
+              right={
+                <Button
+                  mode="text"
+                  icon={
+                    currentCampaign && item.campaignIds.includes(currentCampaign.id)
+                      ? 'link-off'
+                      : 'link-plus'
+                  }
+                  compact
+                  disabled={!currentCampaign || isUpdating}
+                  onPress={() => toggleLink(item.id, item.campaignIds)}
+                >
+                  {currentCampaign && item.campaignIds.includes(currentCampaign.id)
+                    ? 'Remove'
+                    : 'Add'}
+                </Button>
+              }
+            />
+            {!currentCampaign && (
+              <View style={styles.noticeRow}>
+                <MaterialCommunityIcons
+                  name="alert-circle-outline"
+                  size={18}
+                  color={theme.colors.onSurfaceVariant}
+                />
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  Select a campaign to link shared notes.
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
         ListEmptyComponent={
           <EmptyState
             title="No results"

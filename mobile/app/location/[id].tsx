@@ -131,10 +131,12 @@ export default function LocationDetailScreen() {
   const [activeLinkModal, setActiveLinkModal] = useState<'campaigns' | 'tags' | null>(null);
 
   const normalizeCampaignIds = (ids: string[]) => (ids.length > 0 ? [ids[0]] : []);
+  const resolveEditableCampaignIds = (ids: string[], scope?: string) =>
+    scope === 'continuity' ? ids : normalizeCampaignIds(ids);
 
   const linkedCampaigns = useMemo(() => {
     if (!location) return [];
-    const ids = new Set(normalizeCampaignIds(location.campaignIds));
+    const ids = new Set(resolveEditableCampaignIds(location.campaignIds, location.scope));
     return campaigns.filter((campaign) => ids.has(campaign.id));
   }, [campaigns, location]);
 
@@ -267,7 +269,7 @@ export default function LocationDetailScreen() {
       setType(location.type);
       setDescription(location.description);
       setParentId(location.parentId || '');
-      setCampaignIds(normalizeCampaignIds(location.campaignIds));
+      setCampaignIds(resolveEditableCampaignIds(location.campaignIds, location.scope));
       setTagIds(location.tagIds);
       setMapImage(location.map || null);
       setGalleryImages(location.images);
@@ -280,7 +282,7 @@ export default function LocationDetailScreen() {
     setType(location.type);
     setDescription(location.description);
     setParentId(location.parentId || '');
-    setCampaignIds(normalizeCampaignIds(location.campaignIds));
+    setCampaignIds(resolveEditableCampaignIds(location.campaignIds, location.scope));
     setTagIds(location.tagIds);
     setMapImage(location.map || null);
     setGalleryImages(location.images);
@@ -294,7 +296,14 @@ export default function LocationDetailScreen() {
 
   const closeLinkModal = () => setActiveLinkModal(null);
 
-  const linkModalTitle = activeLinkModal === 'tags' ? 'Tags' : 'Campaign';
+  const linkModalTitle =
+    activeLinkModal === 'tags'
+      ? 'Tags'
+      : location?.scope === 'continuity'
+        ? 'Visible in campaigns'
+        : 'Campaign';
+  const campaignSectionTitle =
+    location?.scope === 'continuity' ? 'Campaign visibility' : 'Campaign';
 
   const linkModalBody =
     activeLinkModal === 'tags' ? (
@@ -306,11 +315,17 @@ export default function LocationDetailScreen() {
       />
     ) : (
       <FormMultiSelect
-        label="Campaign"
+        label={location?.scope === 'continuity' ? 'Visible in campaigns' : 'Campaign'}
         value={campaignIds}
         options={campaignOptions}
         onChange={(value) =>
-          setCampaignIds(value.length > 0 ? [value[value.length - 1]] : [])
+          setCampaignIds(
+            location?.scope === 'continuity'
+              ? value
+              : value.length > 0
+                ? [value[value.length - 1]]
+                : []
+          )
         }
       />
     );
@@ -321,7 +336,7 @@ export default function LocationDetailScreen() {
       setType(location.type);
       setDescription(location.description);
       setParentId(location.parentId || '');
-      setCampaignIds(normalizeCampaignIds(location.campaignIds));
+      setCampaignIds(resolveEditableCampaignIds(location.campaignIds, location.scope));
       setTagIds(location.tagIds);
       setMapImage(location.map || null);
       setGalleryImages(location.images);
@@ -517,9 +532,12 @@ export default function LocationDetailScreen() {
 
     setIsSharing(true);
     try {
-      const sharedCampaignIds = normalizeCampaignIds(
-        currentCampaign ? [currentCampaign.id] : location.campaignIds
-      );
+      const sharedCampaignIds =
+        location.campaignIds.length > 0
+          ? location.campaignIds
+          : currentCampaign
+            ? [currentCampaign.id]
+            : [];
       updateLocation(location.id, {
         scope: 'continuity',
         continuityId,
@@ -763,7 +781,7 @@ export default function LocationDetailScreen() {
                 </Text>
                 {location.scope === 'continuity' && (
                   <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    Editing shared locations affects every campaign linked to this continuity.
+                    Editing shared locations affects every campaign this location is linked to.
                   </Text>
                 )}
                 <View style={styles.metaRow}>
@@ -807,11 +825,17 @@ export default function LocationDetailScreen() {
             )}
           </Section>
 
-        <Section title="Campaign" icon="folder-outline">
+        <Section title={campaignSectionTitle} icon="folder-outline">
           {isEditing ? (
             <AppCard
-              title="Campaign"
-              subtitle={campaignIds.length > 0 ? '1 selected' : 'Not linked'}
+              title={location?.scope === 'continuity' ? 'Visible in campaigns' : 'Campaign'}
+              subtitle={
+                location?.scope === 'continuity'
+                  ? `${campaignIds.length} selected`
+                  : campaignIds.length > 0
+                    ? '1 selected'
+                    : 'Not linked'
+              }
               onPress={() => openLinkModal('campaigns')}
               right={
                 <View style={styles.editCardRight}>
@@ -988,7 +1012,7 @@ export default function LocationDetailScreen() {
         title="Delete location?"
         description={
           location?.scope === 'continuity'
-            ? 'This deletes the shared location for any campaign linked to this continuity.'
+            ? 'This deletes the shared location for any campaign it is linked to.'
             : 'This will remove the location and leave any children orphaned.'
         }
         confirmLabel="Delete"
@@ -1009,7 +1033,7 @@ export default function LocationDetailScreen() {
       <ConfirmDialog
         visible={isShareOpen}
         title="Share to continuity?"
-        description="Shared locations live in the continuity and can be linked to a campaign."
+        description="Shared locations live in the continuity and can be linked to multiple campaigns."
         confirmLabel="Share"
         onCancel={closeShareDialog}
         onConfirm={confirmShare}

@@ -197,11 +197,19 @@ export default function NpcsScreen() {
       setCreateError('NPC name is required.');
       return;
     }
+    if (draftScope === 'continuity' && draftCampaignIds.length === 0) {
+      setCreateError('Select at least one campaign for this shared NPC.');
+      return;
+    }
     setIsCreating(true);
     setCreateError(null);
     try {
       const sharedCampaignIds =
-        draftCampaignIds.length > 0 ? [draftCampaignIds[0]] : [];
+        draftScope === 'continuity'
+          ? draftCampaignIds
+          : currentCampaign
+            ? [currentCampaign.id]
+            : [];
       createNpc({
         name: trimmed,
         race: draftRace,
@@ -238,7 +246,7 @@ export default function NpcsScreen() {
   const linkModalTitle = (() => {
     switch (activeLinkModal) {
       case 'campaigns':
-        return 'Campaign';
+        return draftScope === 'continuity' ? 'Visible in campaigns' : 'Campaign';
       case 'locations':
         return 'Locations';
       case 'notes':
@@ -255,15 +263,21 @@ export default function NpcsScreen() {
       case 'campaigns':
         return (
           <FormMultiSelect
-            label="Campaign"
+            label={draftScope === 'continuity' ? 'Visible in campaigns' : 'Campaign'}
             value={draftCampaignIds}
             options={campaignOptions}
             onChange={(value) =>
-              setDraftCampaignIds(value.length > 0 ? [value[value.length - 1]] : [])
+              setDraftCampaignIds(
+                draftScope === 'continuity'
+                  ? value
+                  : value.length > 0
+                    ? [value[value.length - 1]]
+                    : []
+              )
             }
             helperText={
               draftScope === 'continuity'
-                ? 'Shared NPCs live in continuity; link to a campaign to show in lists.'
+                ? 'Select which campaigns should see this NPC.'
                 : undefined
             }
           />
@@ -350,16 +364,24 @@ export default function NpcsScreen() {
         onChange={(value) => {
           const nextScope = value as EntityScope;
           setDraftScope(nextScope);
-          if (currentCampaign?.id) {
+          if (nextScope === 'campaign' && currentCampaign?.id) {
             setDraftCampaignIds([currentCampaign.id]);
+          } else if (nextScope === 'continuity' && draftCampaignIds.length === 0) {
+            setDraftCampaignIds(currentCampaign?.id ? [currentCampaign.id] : []);
           }
         }}
-        helperText="Shared NPCs live in the continuity but stay linked to one campaign."
+        helperText="Shared NPCs live in the continuity and can be linked to multiple campaigns."
       />
       <View style={styles.linkList}>
         <AppCard
-          title="Campaign"
-          subtitle={draftCampaignIds.length > 0 ? '1 selected' : 'Not linked'}
+          title={draftScope === 'continuity' ? 'Visible in campaigns' : 'Campaign'}
+          subtitle={
+            draftScope === 'continuity'
+              ? `${draftCampaignIds.length} selected`
+              : draftCampaignIds.length > 0
+                ? '1 selected'
+                : 'Not linked'
+          }
           onPress={() => openLinkModal('campaigns')}
           right={
             <View style={styles.editCardRight}>

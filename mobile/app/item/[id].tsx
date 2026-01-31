@@ -64,9 +64,13 @@ export default function ItemDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
 
   const tagCampaignId =
-    (isEditing ? campaignIds[0] : item?.campaignIds?.[0]) || currentCampaign?.id;
+    item?.scope === 'continuity'
+      ? currentCampaign?.id || campaignIds[0] || item?.campaignIds?.[0]
+      : (isEditing ? campaignIds[0] : item?.campaignIds?.[0]) || currentCampaign?.id;
   const tags = useTags(continuityId, tagCampaignId);
   const getOrCreateTag = useGetOrCreateTag({
     continuityId,
@@ -75,28 +79,43 @@ export default function ItemDetailScreen() {
   });
 
   const normalizeCampaignIds = (ids: string[]) => (ids.length > 0 ? [ids[0]] : []);
+  const resolveEditableCampaignIds = (ids: string[], scope?: string) =>
+    scope === 'continuity' ? ids : normalizeCampaignIds(ids);
 
   useEffect(() => {
     if (item && !isEditing) {
       setName(item.name);
       setDescription(item.description);
       setValue(item.value);
-      setCampaignIds(normalizeCampaignIds(item.campaignIds));
+      setCampaignIds(resolveEditableCampaignIds(item.campaignIds, item.scope));
       setTagIds(item.tagIds);
     }
   }, [item, isEditing]);
 
+  const continuityCampaigns = useMemo(() => {
+    if (!continuityId) return campaigns;
+    return campaigns.filter((campaign) => campaign.continuityId === continuityId);
+  }, [campaigns, continuityId]);
+
   const campaignOptions = useMemo(() => {
-    return campaigns.map((campaign) => ({
+    return continuityCampaigns.map((campaign) => ({
       label: campaign.name || 'Untitled campaign',
       value: campaign.id,
     }));
-  }, [campaigns]);
+  }, [continuityCampaigns]);
+
+  const displayCampaignIds = useMemo(
+    () =>
+      isEditing
+        ? campaignIds
+        : resolveEditableCampaignIds(item?.campaignIds ?? [], item?.scope),
+    [campaignIds, isEditing, item?.campaignIds, item?.scope]
+  );
 
   const linkedCampaigns = useMemo(() => {
-    const ids = new Set(campaignIds);
-    return campaigns.filter((campaign) => ids.has(campaign.id));
-  }, [campaignIds, campaigns]);
+    const ids = new Set(displayCampaignIds);
+    return continuityCampaigns.filter((campaign) => ids.has(campaign.id));
+  }, [displayCampaignIds, continuityCampaigns]);
 
   const resolvedTags = useMemo(() => {
     const tagById = new Map(tags.map((tag) => [tag.id, tag]));
@@ -114,7 +133,7 @@ export default function ItemDetailScreen() {
     setName(item.name);
     setDescription(item.description);
     setValue(item.value);
-    setCampaignIds(normalizeCampaignIds(item.campaignIds));
+    setCampaignIds(resolveEditableCampaignIds(item.campaignIds, item.scope));
     setTagIds(item.tagIds);
     setError(null);
     setIsEditing(true);
@@ -125,7 +144,7 @@ export default function ItemDetailScreen() {
     setName(item.name);
     setDescription(item.description);
     setValue(item.value);
-    setCampaignIds(normalizeCampaignIds(item.campaignIds));
+    setCampaignIds(resolveEditableCampaignIds(item.campaignIds, item.scope));
     setTagIds(item.tagIds);
     setError(null);
     setIsEditing(false);
@@ -188,6 +207,46 @@ export default function ItemDetailScreen() {
       const message = err instanceof Error ? err.message : 'Failed to delete item.';
       setError(message);
       setIsDeleting(false);
+    }
+  };
+
+  const showShareActions = item?.scope === 'campaign' && Boolean(currentCampaign);
+
+  const handleShare = () => {
+    if (!item || isSharing) return;
+    setIsShareOpen(true);
+  };
+
+  const closeShareDialog = () => {
+    setIsShareOpen(false);
+  };
+
+  const confirmShare = () => {
+    if (!item || isSharing) return;
+    if (!continuityId) {
+      setError('Select a continuity before sharing this item.');
+      setIsShareOpen(false);
+      return;
+    }
+    setIsSharing(true);
+    try {
+      const sharedCampaignIds =
+        item.campaignIds.length > 0
+          ? item.campaignIds
+          : currentCampaign?.id
+            ? [currentCampaign.id]
+            : [];
+      updateItem(item.id, {
+        scope: 'continuity',
+        continuityId,
+        campaignIds: sharedCampaignIds,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to share item.';
+      setError(message);
+    } finally {
+      setIsSharing(false);
+      setIsShareOpen(false);
     }
   };
 
@@ -263,13 +322,23 @@ export default function ItemDetailScreen() {
         {isEditing ? (
           <View style={styles.formStack}>
             <FormMultiSelect
-              label="Campaign"
+              label={item?.scope === 'continuity' ? 'Visible in campaigns' : 'Campaign'}
               value={campaignIds}
               options={campaignOptions}
               onChange={(value) =>
-                setCampaignIds(value.length > 0 ? [value[value.length - 1]] : [])
+                setCampaignIds(
+                  item?.scope === 'continuity'
+                    ? value
+                    : value.length > 0
+                      ? [value[value.length - 1]]
+                      : []
+                )
               }
-              helperText="Assign this item to a campaign."
+              helperText={
+                item?.scope === 'continuity'
+                  ? 'Select which campaigns should see this item.'
+                  : 'Assign this item to a campaign.'
+              }
             />
             {continuityId ? (
               <TagInput
@@ -337,15 +406,36 @@ export default function ItemDetailScreen() {
           </Button>
         </View>
       )}
+      {!isEditing && showShareActions && (
+        <View style={styles.shareRow}>
+          <Button
+            mode="outlined"
+            icon="share-variant"
+            onPress={handleShare}
+            disabled={isSharing}
+          >
+            Share to Continuity
+          </Button>
+        </View>
+      )}
 
       <ConfirmDialog
         visible={isDeleteOpen}
         title="Delete item?"
-        message="This will remove the item from your library."
+        description="This will remove the item from your library."
         confirmLabel="Delete"
         onConfirm={confirmDelete}
         onCancel={closeDeleteDialog}
-        isLoading={isDeleting}
+        confirmLoading={isDeleting}
+      />
+      <ConfirmDialog
+        visible={isShareOpen}
+        title="Share to continuity?"
+        description="Shared items live in the continuity and can be linked to multiple campaigns."
+        confirmLabel="Share"
+        onCancel={closeShareDialog}
+        onConfirm={confirmShare}
+        confirmLoading={isSharing}
       />
     </Screen>
   );
@@ -382,6 +472,12 @@ const styles = StyleSheet.create({
   actionRow: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
+    gap: spacing[2],
+    marginTop: spacing[2],
+  },
+  shareRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing[2],
     marginTop: spacing[2],
   },

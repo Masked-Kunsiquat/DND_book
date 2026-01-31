@@ -76,11 +76,14 @@ export default function LocationLibraryScreen() {
     if (isUpdatingId) return;
     setIsUpdatingId(location.id);
     setError(null);
+    const ids = new Set(location.campaignIds);
+    if (ids.has(currentCampaign.id)) {
+      ids.delete(currentCampaign.id);
+    } else {
+      ids.add(currentCampaign.id);
+    }
     try {
-      const nextCampaignIds = location.campaignIds.includes(currentCampaign.id)
-        ? []
-        : [currentCampaign.id];
-      updateLocation(location.id, { campaignIds: nextCampaignIds });
+      updateLocation(location.id, { campaignIds: [...ids] });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update location.';
       setError(message);

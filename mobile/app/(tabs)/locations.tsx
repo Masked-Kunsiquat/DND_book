@@ -5,6 +5,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
   FormModal,
+  FormMultiSelect,
   FormSelect,
   FormTextInput,
   LocationMultiSelect,
@@ -82,6 +83,7 @@ export default function LocationsScreen() {
   const [draftName, setDraftName] = useState('');
   const [draftType, setDraftType] = useState<LocationType>('Locale');
   const [draftScope, setDraftScope] = useState<EntityScope>('campaign');
+  const [draftCampaignIds, setDraftCampaignIds] = useState<string[]>([]);
   const [draftParentId, setDraftParentId] = useState('');
   const [draftDescription, setDraftDescription] = useState('');
   const createLocation = useCreateLocation();
@@ -99,6 +101,18 @@ export default function LocationsScreen() {
       (location) => location.continuityId === currentCampaign.continuityId
     );
   }, [allLocations, currentCampaign]);
+
+  const continuityCampaigns = useMemo(() => {
+    if (!continuityId) return [];
+    return campaigns.filter((campaign) => campaign.continuityId === continuityId);
+  }, [campaigns, continuityId]);
+
+  const campaignOptions = useMemo(() => {
+    return continuityCampaigns.map((campaign) => ({
+      label: campaign.name || 'Untitled campaign',
+      value: campaign.id,
+    }));
+  }, [continuityCampaigns]);
 
   const tagParam = useMemo(() => {
     const raw = params.tagId;
@@ -317,6 +331,7 @@ export default function LocationsScreen() {
     setDraftName(`New Location ${continuityLocations.length + 1}`);
     setDraftType('Locale');
     setDraftScope('campaign');
+    setDraftCampaignIds(currentCampaign?.id ? [currentCampaign.id] : []);
     setDraftParentId('');
     setDraftDescription('');
     setCreateError(null);
@@ -357,6 +372,10 @@ export default function LocationsScreen() {
       setCreateError('Location name is required.');
       return;
     }
+    if (draftScope === 'continuity' && draftCampaignIds.length === 0) {
+      setCreateError('Select at least one campaign for this shared location.');
+      return;
+    }
     if (draftParentId && !allowedParentIds.has(draftParentId)) {
       setCreateError('Parent must be higher in the location hierarchy.');
       return;
@@ -365,7 +384,12 @@ export default function LocationsScreen() {
     setCreateError(null);
     try {
       const continuityId = currentCampaign?.continuityId ?? '';
-      const sharedCampaignIds = currentCampaign ? [currentCampaign.id] : [];
+      const sharedCampaignIds =
+        draftScope === 'continuity'
+          ? draftCampaignIds
+          : currentCampaign
+            ? [currentCampaign.id]
+            : [];
       await Promise.resolve(
         createLocation({
           name: trimmed,
@@ -425,9 +449,24 @@ export default function LocationsScreen() {
         label="Scope"
         value={draftScope}
         options={LOCATION_SCOPE_OPTIONS}
-        onChange={(value) => setDraftScope(value as EntityScope)}
-        helperText="Shared locations live in the continuity but stay linked to one campaign."
+        onChange={(value) => {
+          const nextScope = value as EntityScope;
+          setDraftScope(nextScope);
+          if (nextScope === 'campaign') {
+            setDraftCampaignIds(currentCampaign?.id ? [currentCampaign.id] : []);
+          }
+        }}
+        helperText="Shared locations live in the continuity and can be linked to multiple campaigns."
       />
+      {draftScope === 'continuity' && (
+        <FormMultiSelect
+          label="Visible in campaigns"
+          value={draftCampaignIds}
+          options={campaignOptions}
+          onChange={setDraftCampaignIds}
+          helperText="Select which campaigns should see this location."
+        />
+      )}
       <LocationMultiSelect
         locations={parentCandidates}
         value={draftParentId ? [draftParentId] : []}

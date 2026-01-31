@@ -9,6 +9,7 @@ import {
   EmptyState,
   LocationMultiSelect,
   FormModal,
+  FormMultiSelect,
   FormSelect,
   FormTextInput,
   Screen,
@@ -67,6 +68,7 @@ export default function NoteDetailScreen() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [campaignId, setCampaignId] = useState('');
+  const [campaignIds, setCampaignIds] = useState<string[]>([]);
   const [locationIds, setLocationIds] = useState<string[]>([]);
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -84,6 +86,7 @@ export default function NoteDetailScreen() {
       setTitle(note.title);
       setContent(note.content);
       setCampaignId(note.campaignId);
+      setCampaignIds(note.campaignIds);
       setLocationIds(note.locationIds);
       setTagIds(note.tagIds);
     }
@@ -134,10 +137,27 @@ export default function NoteDetailScreen() {
     return note?.tagIds ?? [];
   }, [isEditing, note?.tagIds, tagIds]);
 
+  const campaignVisibilityIds = useMemo(() => {
+    if (note?.scope === 'campaign') {
+      const id = isEditing ? campaignId : note?.campaignId;
+      return id ? [id] : [];
+    }
+    return isEditing ? campaignIds : note?.campaignIds ?? [];
+  }, [campaignId, campaignIds, isEditing, note?.campaignId, note?.campaignIds, note?.scope]);
+
   const selectedCampaignLabel = useMemo(() => {
+    if (note?.scope === 'continuity') {
+      if (campaignVisibilityIds.length === 0) return 'Not linked';
+      return `${campaignVisibilityIds.length} selected`;
+    }
     if (!campaignId) return 'Not linked';
     return campaignOptions.find((option) => option.value === campaignId)?.label ?? 'Linked campaign';
-  }, [campaignId, campaignOptions]);
+  }, [campaignId, campaignOptions, campaignVisibilityIds, note?.scope]);
+
+  const linkedCampaigns = useMemo(() => {
+    const ids = new Set(campaignVisibilityIds);
+    return continuityCampaigns.filter((campaignItem) => ids.has(campaignItem.id));
+  }, [campaignVisibilityIds, continuityCampaigns]);
 
   const linkedLocations = useMemo(() => {
     const ids = new Set(displayLocationIds);
@@ -183,7 +203,7 @@ export default function NoteDetailScreen() {
   const linkModalTitle = (() => {
     switch (activeLinkModal) {
       case 'campaign':
-        return 'Campaign';
+        return note?.scope === 'continuity' ? 'Visible in campaigns' : 'Campaign';
       case 'locations':
         return 'Locations';
       case 'tags':
@@ -196,7 +216,15 @@ export default function NoteDetailScreen() {
   const linkModalBody = (() => {
     switch (activeLinkModal) {
       case 'campaign':
-        return (
+        return note?.scope === 'continuity' ? (
+          <FormMultiSelect
+            label="Visible in campaigns"
+            value={campaignIds}
+            options={campaignOptions}
+            onChange={setCampaignIds}
+            helperText="Select which campaigns should see this note."
+          />
+        ) : (
           <FormSelect
             label="Campaign"
             value={campaignId}
@@ -258,6 +286,7 @@ export default function NoteDetailScreen() {
     setTitle(note.title);
     setContent(note.content);
     setCampaignId(note.campaignId);
+    setCampaignIds(note.campaignIds);
     setLocationIds(note.locationIds);
     setTagIds(note.tagIds);
     setError(null);
@@ -269,6 +298,7 @@ export default function NoteDetailScreen() {
       setTitle(note.title);
       setContent(note.content);
       setCampaignId(note.campaignId);
+      setCampaignIds(note.campaignIds);
       setLocationIds(note.locationIds);
       setTagIds(note.tagIds);
     }
@@ -282,6 +312,10 @@ export default function NoteDetailScreen() {
       setError('Select a campaign before saving.');
       return;
     }
+    if (note.scope === 'continuity' && campaignIds.length === 0) {
+      setError('Select at least one campaign before saving.');
+      return;
+    }
     setError(null);
     try {
       updateNote(note.id, {
@@ -293,7 +327,7 @@ export default function NoteDetailScreen() {
             ? campaignId
               ? [campaignId]
               : []
-            : note.campaignIds,
+            : campaignIds,
         locationIds,
         tagIds,
       });
@@ -477,121 +511,90 @@ export default function NoteDetailScreen() {
         <Section title="Links" icon="link-variant">
           {isEditing ? (
             <>
-              {note.scope === 'campaign' ? (
-                <View style={styles.linkList}>
-                  <AppCard
-                    title="Campaign"
-                    subtitle={selectedCampaignLabel}
-                    onPress={() => openLinkModal('campaign')}
-                    right={
-                      <View style={styles.editCardRight}>
-                        <MaterialCommunityIcons
-                          name="folder-outline"
-                          size={18}
-                          color={theme.colors.primary}
-                        />
-                        <MaterialCommunityIcons
-                          name="chevron-right"
-                          size={18}
-                          color={theme.colors.onSurfaceVariant}
-                        />
-                      </View>
-                    }
-                    style={styles.editCard}
-                  />
-                  <AppCard
-                    title="Locations"
-                    subtitle={`${locationIds.length} selected`}
-                    onPress={() => openLinkModal('locations')}
-                    right={
-                      <View style={styles.editCardRight}>
-                        <MaterialCommunityIcons
-                          name="map-marker-outline"
-                          size={18}
-                          color={theme.colors.primary}
-                        />
-                        <MaterialCommunityIcons
-                          name="chevron-right"
-                          size={18}
-                          color={theme.colors.onSurfaceVariant}
-                        />
-                      </View>
-                    }
-                    style={styles.editCard}
-                  />
-                  <AppCard
-                    title="Tags"
-                    subtitle={`${tagIds.length} selected`}
-                    onPress={() => openLinkModal('tags')}
-                    right={
-                      <View style={styles.editCardRight}>
-                        <MaterialCommunityIcons
-                          name="tag-outline"
-                          size={18}
-                          color={theme.colors.primary}
-                        />
-                        <MaterialCommunityIcons
-                          name="chevron-right"
-                          size={18}
-                          color={theme.colors.onSurfaceVariant}
-                        />
-                      </View>
-                    }
-                    style={styles.editCard}
-                  />
-                </View>
-              ) : (
-                <>
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    Shared notes live in the continuity but stay linked to one campaign.
-                  </Text>
-                  <View style={styles.linkList}>
-                    <AppCard
-                      title="Locations"
-                      subtitle={`${locationIds.length} selected`}
-                      onPress={() => openLinkModal('locations')}
-                      right={
-                        <View style={styles.editCardRight}>
-                          <MaterialCommunityIcons
-                            name="map-marker-outline"
-                            size={18}
-                            color={theme.colors.primary}
-                          />
-                          <MaterialCommunityIcons
-                            name="chevron-right"
-                            size={18}
-                            color={theme.colors.onSurfaceVariant}
-                          />
-                        </View>
-                      }
-                      style={styles.editCard}
-                    />
-                    <AppCard
-                      title="Tags"
-                      subtitle={`${tagIds.length} selected`}
-                      onPress={() => openLinkModal('tags')}
-                      right={
-                        <View style={styles.editCardRight}>
-                          <MaterialCommunityIcons
-                            name="tag-outline"
-                            size={18}
-                            color={theme.colors.primary}
-                          />
-                          <MaterialCommunityIcons
-                            name="chevron-right"
-                            size={18}
-                            color={theme.colors.onSurfaceVariant}
-                          />
-                        </View>
-                      }
-                      style={styles.editCard}
-                    />
-                  </View>
-                </>
+              {note.scope === 'continuity' && (
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  Shared notes live in the continuity and can be linked to multiple campaigns.
+                </Text>
               )}
+              <View style={styles.linkList}>
+                <AppCard
+                  title={note.scope === 'continuity' ? 'Visible in campaigns' : 'Campaign'}
+                  subtitle={selectedCampaignLabel}
+                  onPress={() => openLinkModal('campaign')}
+                  right={
+                    <View style={styles.editCardRight}>
+                      <MaterialCommunityIcons
+                        name="folder-outline"
+                        size={18}
+                        color={theme.colors.primary}
+                      />
+                      <MaterialCommunityIcons
+                        name="chevron-right"
+                        size={18}
+                        color={theme.colors.onSurfaceVariant}
+                      />
+                    </View>
+                  }
+                  style={styles.editCard}
+                />
+                <AppCard
+                  title="Locations"
+                  subtitle={`${locationIds.length} selected`}
+                  onPress={() => openLinkModal('locations')}
+                  right={
+                    <View style={styles.editCardRight}>
+                      <MaterialCommunityIcons
+                        name="map-marker-outline"
+                        size={18}
+                        color={theme.colors.primary}
+                      />
+                      <MaterialCommunityIcons
+                        name="chevron-right"
+                        size={18}
+                        color={theme.colors.onSurfaceVariant}
+                      />
+                    </View>
+                  }
+                  style={styles.editCard}
+                />
+                <AppCard
+                  title="Tags"
+                  subtitle={`${tagIds.length} selected`}
+                  onPress={() => openLinkModal('tags')}
+                  right={
+                    <View style={styles.editCardRight}>
+                      <MaterialCommunityIcons
+                        name="tag-outline"
+                        size={18}
+                        color={theme.colors.primary}
+                      />
+                      <MaterialCommunityIcons
+                        name="chevron-right"
+                        size={18}
+                        color={theme.colors.onSurfaceVariant}
+                      />
+                    </View>
+                  }
+                  style={styles.editCard}
+                />
+              </View>
             </>
           ) : (
             <>
+              {linkedCampaigns.length === 0 ? (
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  No campaigns linked.
+                </Text>
+              ) : (
+                linkedCampaigns.map((campaignItem) => (
+                  <AppCard
+                    key={campaignItem.id}
+                    title={campaignItem.name || 'Untitled campaign'}
+                    onPress={() => router.push(`/campaign/${campaignItem.id}`)}
+                    style={styles.inlineCard}
+                  />
+                ))
+              )}
               {linkedLocations.length === 0 ? (
                 <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
                   No locations linked.
@@ -709,7 +712,7 @@ export default function NoteDetailScreen() {
       <ConfirmDialog
         visible={isShareOpen}
         title="Share to continuity?"
-        description="Shared notes live in the continuity but stay linked to one campaign."
+        description="Shared notes live in the continuity and can be linked to multiple campaigns."
         confirmLabel="Share"
         onCancel={closeShareDialog}
         onConfirm={confirmShare}

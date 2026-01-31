@@ -7,14 +7,22 @@ import {
   AppCard,
   EmptyState,
   FormModal,
+  FormMultiSelect,
+  FormSelect,
   FormTextInput,
   Screen,
   Section,
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { iconSizes, layout, spacing } from '../../src/theme';
-import { useCreateItem, useCurrentCampaign, useItems, usePullToRefresh } from '../../src/hooks';
-import type { Item } from '../../src/types/schema';
+import {
+  useCampaigns,
+  useCreateItem,
+  useCurrentCampaign,
+  useItems,
+  usePullToRefresh,
+} from '../../src/hooks';
+import type { EntityScope, Item } from '../../src/types/schema';
 
 function buildSubtitle(item: Item): string {
   const parts: string[] = [];
@@ -33,6 +41,7 @@ function buildSubtitle(item: Item): string {
 export default function ItemsScreen() {
   const { theme } = useTheme();
   const currentCampaign = useCurrentCampaign();
+  const campaigns = useCampaigns();
   const continuityId = currentCampaign?.continuityId ?? '';
   const items = useItems(currentCampaign?.id);
   const createItem = useCreateItem();
@@ -45,6 +54,20 @@ export default function ItemsScreen() {
   const [draftName, setDraftName] = useState('');
   const [draftDescription, setDraftDescription] = useState('');
   const [draftValue, setDraftValue] = useState('');
+  const [draftScope, setDraftScope] = useState<EntityScope>('campaign');
+  const [draftCampaignIds, setDraftCampaignIds] = useState<string[]>([]);
+
+  const continuityCampaigns = useMemo(() => {
+    if (!continuityId) return campaigns;
+    return campaigns.filter((campaign) => campaign.continuityId === continuityId);
+  }, [campaigns, continuityId]);
+
+  const campaignOptions = useMemo(() => {
+    return continuityCampaigns.map((campaign) => ({
+      label: campaign.name || 'Untitled campaign',
+      value: campaign.id,
+    }));
+  }, [continuityCampaigns]);
 
   const filteredItems = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -66,6 +89,8 @@ export default function ItemsScreen() {
     setDraftName(`New Item ${items.length + 1}`);
     setDraftDescription('');
     setDraftValue('');
+    setDraftScope('campaign');
+    setDraftCampaignIds(currentCampaign?.id ? [currentCampaign.id] : []);
     setCreateError(null);
     setIsCreateOpen(true);
   };
@@ -82,16 +107,26 @@ export default function ItemsScreen() {
       setCreateError('Item name is required.');
       return;
     }
+    if (draftScope === 'continuity' && !continuityId) {
+      setCreateError('Select a continuity before creating a shared item.');
+      return;
+    }
+    if (draftScope === 'continuity' && draftCampaignIds.length === 0) {
+      setCreateError('Select at least one campaign for this shared item.');
+      return;
+    }
     setIsCreating(true);
     setCreateError(null);
     try {
+      const sharedCampaignIds =
+        draftScope === 'continuity' ? draftCampaignIds : [currentCampaign.id];
       const id = createItem({
         name: trimmed,
         description: draftDescription.trim(),
         value: draftValue.trim(),
-        scope: 'campaign',
+        scope: draftScope,
         continuityId,
-        campaignIds: [currentCampaign.id],
+        campaignIds: sharedCampaignIds,
         status: 'complete',
       });
       setIsCreateOpen(false);
@@ -138,6 +173,33 @@ export default function ItemsScreen() {
         </>
       }
     >
+      <FormSelect
+        label="Scope"
+        value={draftScope}
+        options={[
+          { label: 'Campaign item', value: 'campaign' },
+          { label: 'Shared in continuity', value: 'continuity' },
+        ]}
+        onChange={(value) => {
+          const nextScope = value as EntityScope;
+          setDraftScope(nextScope);
+          if (nextScope === 'campaign') {
+            setDraftCampaignIds(currentCampaign?.id ? [currentCampaign.id] : []);
+          } else if (draftCampaignIds.length === 0) {
+            setDraftCampaignIds(currentCampaign?.id ? [currentCampaign.id] : []);
+          }
+        }}
+        helperText="Shared items live in the continuity and can be linked to multiple campaigns."
+      />
+      {draftScope === 'continuity' && (
+        <FormMultiSelect
+          label="Visible in campaigns"
+          value={draftCampaignIds}
+          options={campaignOptions}
+          onChange={setDraftCampaignIds}
+          helperText="Select which campaigns should see this item."
+        />
+      )}
       <FormTextInput label="Name" value={draftName} onChangeText={setDraftName} />
       <FormTextInput
         label="Description"
