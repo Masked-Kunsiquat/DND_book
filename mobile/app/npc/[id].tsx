@@ -193,11 +193,11 @@ export default function NpcDetailScreen() {
     setIsEditing(true);
   };
 
-  const handleMarkComplete = async () => {
+  const handleMarkComplete = () => {
     if (!npc) return;
     setError(null);
     try {
-      await Promise.resolve(updateNpc(npc.id, { status: 'complete' }));
+      updateNpc(npc.id, { status: 'complete' });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to mark NPC complete.';
       setError(message);
