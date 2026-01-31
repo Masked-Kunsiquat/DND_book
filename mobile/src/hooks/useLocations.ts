@@ -8,22 +8,10 @@ import { useStore } from '../store';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
 import { removeManagedImage } from '../utils/files';
+import { parseJsonArray } from '../utils/parsing';
 import type { Location, LocationRow, LocationType, RecordId } from '../types/schema';
 
 const log = createLogger('locations');
-
-/**
- * Safely parses a JSON array string, returning empty array on failure.
- */
-function parseJsonArray(value: string): string[] {
-  if (!value) return [];
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
 
 /**
  * Create a Location object from a TinyBase row.

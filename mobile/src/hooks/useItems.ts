@@ -7,25 +7,10 @@ import { useRow, useTable } from 'tinybase/ui-react';
 import { useStore } from '../store';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
+import { parseJsonArray } from '../utils/parsing';
 import type { Item, ItemRow, RecordId } from '../types/schema';
 
 const log = createLogger('items');
-
-/**
- * Parses a JSON-encoded array string and returns its array value.
- *
- * @param value - JSON string expected to represent an array
- * @returns The parsed array of strings, or an empty array if `value` is falsy, parsing fails, or the parsed value is not an array
- */
-function parseJsonArray(value: string): string[] {
-  if (!value) return [];
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
 
 /**
  * Convert a TinyBase ItemRow into an Item.

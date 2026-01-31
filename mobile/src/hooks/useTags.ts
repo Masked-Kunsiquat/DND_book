@@ -7,6 +7,7 @@ import { useTable } from 'tinybase/ui-react';
 import { useStore } from '../store';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
+import { parseJsonArray } from '../utils/parsing';
 import { getTagColor } from '../theme';
 import type { Tag, TagRow } from '../types/schema';
 
@@ -29,19 +30,6 @@ function rowToTag(row: TagRow): Tag {
     created: row.created,
     updated: row.updated,
   };
-}
-
-/**
- * Safely parses a JSON array string, returning empty array on failure.
- */
-function parseJsonArray(value: string): string[] {
-  if (!value) return [];
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
 }
 
 /**

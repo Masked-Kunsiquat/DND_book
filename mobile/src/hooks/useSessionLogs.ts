@@ -7,25 +7,10 @@ import { useRow, useTable } from 'tinybase/ui-react';
 import { useStore } from '../store';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
+import { parseJsonArray } from '../utils/parsing';
 import type { Mention, RecordId, SessionLog, SessionLogRow } from '../types/schema';
 
 const log = createLogger('session-logs');
-
-/**
- * Parse a JSON string into an array, returning an empty array for missing or invalid input.
- *
- * @param value - JSON string expected to represent an array
- * @returns The parsed array as `T[]`, or an empty array if `value` is missing, invalid JSON, or does not represent an array
- */
-function parseJsonArray<T = string>(value?: string): T[] {
-  if (!value) return [];
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
 
 /**
  * Create a SessionLog object from a TinyBase session log row.
