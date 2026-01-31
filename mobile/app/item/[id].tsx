@@ -150,7 +150,7 @@ export default function ItemDetailScreen() {
     setIsEditing(false);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!item) return;
     const trimmedName = name.trim();
     if (!trimmedName) {
@@ -159,13 +159,15 @@ export default function ItemDetailScreen() {
     }
     setError(null);
     try {
-      updateItem(item.id, {
-        name: trimmedName,
-        description: description.trim(),
-        value: value.trim(),
-        campaignIds,
-        tagIds,
-      });
+      await Promise.resolve(
+        updateItem(item.id, {
+          name: trimmedName,
+          description: description.trim(),
+          value: value.trim(),
+          campaignIds,
+          tagIds,
+        })
+      );
       setIsEditing(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update item.';
@@ -222,7 +224,7 @@ export default function ItemDetailScreen() {
     setIsShareOpen(false);
   };
 
-  const confirmShare = () => {
+  const confirmShare = async () => {
     if (!item || isSharing) return;
     if (!continuityId) {
       setError('Select a continuity before sharing this item.');
@@ -237,11 +239,13 @@ export default function ItemDetailScreen() {
           : currentCampaign?.id
             ? [currentCampaign.id]
             : [];
-      updateItem(item.id, {
-        scope: 'continuity',
-        continuityId,
-        campaignIds: sharedCampaignIds,
-      });
+      await Promise.resolve(
+        updateItem(item.id, {
+          scope: 'continuity',
+          continuityId,
+          campaignIds: sharedCampaignIds,
+        })
+      );
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to share item.';
       setError(message);

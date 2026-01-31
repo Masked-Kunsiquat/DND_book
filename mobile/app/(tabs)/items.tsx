@@ -100,7 +100,7 @@ export default function ItemsScreen() {
     setCreateError(null);
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!currentCampaign || isCreating) return;
     const trimmed = draftName.trim();
     if (!trimmed) {
@@ -120,15 +120,17 @@ export default function ItemsScreen() {
     try {
       const sharedCampaignIds =
         draftScope === 'continuity' ? draftCampaignIds : [currentCampaign.id];
-      const id = createItem({
-        name: trimmed,
-        description: draftDescription.trim(),
-        value: draftValue.trim(),
-        scope: draftScope,
-        continuityId,
-        campaignIds: sharedCampaignIds,
-        status: 'complete',
-      });
+      const id = await Promise.resolve(
+        createItem({
+          name: trimmed,
+          description: draftDescription.trim(),
+          value: draftValue.trim(),
+          scope: draftScope,
+          continuityId,
+          campaignIds: sharedCampaignIds,
+          status: 'complete',
+        })
+      );
       setIsCreateOpen(false);
       router.push(`/item/${id}`);
     } catch (error) {
@@ -235,11 +237,13 @@ export default function ItemsScreen() {
 
   return (
     <>
-      <Screen scroll={false} onRefresh={onRefresh} refreshing={refreshing}>
+      <Screen scroll={false}>
         <FlatList
           data={filteredItems}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
           ListHeaderComponent={
             <View style={styles.header}>
               <Section title="Items" icon="treasure-chest-outline">
