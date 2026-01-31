@@ -48,9 +48,11 @@ function formatDate(value?: string): string {
 }
 
 /**
- * Display and manage an NPC's profile, linked resources, and lifecycle actions (view, edit, share, fork, remove, delete, and complete shadow NPCs).
+ * Render the NPC detail screen and provide UI for viewing, editing, linking, sharing, forking, removing, deleting, and completing shadow NPCs.
  *
- * @returns The React element rendering the NPC detail screen
+ * Presents NPC profile and linked resources, manages edit form state and modals, and performs CRUD and sharing/forking actions via injected hooks.
+ *
+ * @returns The React element that renders the NPC detail screen
  */
 export default function NpcDetailScreen() {
   const { theme } = useTheme();

@@ -26,6 +26,12 @@ import {
   useUpdateItem,
 } from '../../src/hooks';
 
+/**
+ * Format a date string into a locale-aware date and time representation.
+ *
+ * @param value - The date string to format (e.g., ISO 8601). If omitted or not a valid date, the function treats it as unknown.
+ * @returns `'Unknown'` if `value` is falsy or cannot be parsed as a valid date; otherwise the localized date and time string.
+ */
 function formatDate(value?: string): string {
   if (!value) return 'Unknown';
   const parsed = new Date(value);

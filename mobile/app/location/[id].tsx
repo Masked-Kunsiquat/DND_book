@@ -74,9 +74,9 @@ const ALLOWED_LOCATION_TYPES = new Set<LocationType>(
 );
 
 /**
- * Renders the Location detail screen with viewing, editing, moving, sharing, tagging, media, and child-management UI for a single location.
+ * Display the detail screen for a single location, including viewing, editing, moving, sharing, tagging, media, and child-management flows.
  *
- * The component loads location, campaign, tag, and related data; enforces parent/child type constraints; and provides flows to create, update, move, share, fork, remove from campaign, and delete a location, including confirmation dialogs and inline validation messages.
+ * Loads location, campaign, tag, and related data; enforces parent/child type constraints; and provides UI and handlers to create, update, move, share, fork, remove from campaign, and delete a location with confirmation dialogs and inline validation.
  *
  * @returns The React element for the Location detail screen
  */
