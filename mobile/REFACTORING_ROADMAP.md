@@ -73,11 +73,13 @@ Analysis identified **~400+ lines of duplicated code** across hooks and componen
   - [x] `src/hooks/usePlayerCharacters.ts`
   - [x] `src/hooks/useCampaigns.ts`
 
-### 2.2 Row-to-Entity Defaults Helper
-- **Status:** Pending
-- **Impact:** Simplifies `rowToX()` functions
-- **Location:** `src/utils/entityHelpers.ts`
-- **Functions:**
+### 2.2 Row-to-Entity Defaults Helper ⏭️
+- **Status:** Skipped
+- **Reason:** After analysis, the `rowToX()` patterns are already concise:
+  - String defaults use `row.field || ''` (3 chars overhead)
+  - Enum defaults require type casts that a generic helper can't simplify
+  - Adding helpers would increase imports without meaningful line reduction
+- **Original proposal:**
   - `applyStringDefault(value, fallback)` - Handle undefined strings
   - `applyEnumDefault(value, fallback, validValues)` - Type-safe enum defaults
 
@@ -85,9 +87,9 @@ Analysis identified **~400+ lines of duplicated code** across hooks and componen
 
 ## Phase 3: Custom Hooks (Medium Priority)
 
-### 3.1 `useEntityCounts()` Hook
-- **Status:** Pending
-- **Impact:** Eliminates 3 duplicate counting patterns in campaigns.tsx
+### 3.1 `useEntityCounts()` Hook ✅
+- **Status:** Complete
+- **Impact:** Eliminated 3 duplicate counting patterns (~24 lines)
 - **Location:** `src/hooks/useEntityCounts.ts`
 - **Usage:**
   ```typescript
@@ -95,6 +97,10 @@ Analysis identified **~400+ lines of duplicated code** across hooks and componen
     n.scope === 'campaign' ? [n.campaignId] : n.campaignIds
   );
   ```
+- **Files updated:**
+  - [x] Create `src/hooks/useEntityCounts.ts`
+  - [x] Export from `src/hooks/index.ts`
+  - [x] `app/(tabs)/campaigns.tsx` - Use for note, NPC, and location counts
 
 ### 3.2 `useFormModal()` Hook
 - **Status:** Pending
@@ -140,8 +146,8 @@ Analysis identified **~400+ lines of duplicated code** across hooks and componen
 | 1.2 | Date utilities | ✅ Complete | - |
 | 1.3 | Array serialization | ✅ Complete | - |
 | 2.1 | Generic update builder | ✅ Complete | - |
-| 2.2 | Row defaults helper | ⏳ Pending | - |
-| 3.1 | `useEntityCounts()` | ⏳ Pending | - |
+| 2.2 | Row defaults helper | ⏭️ Skipped | - |
+| 3.1 | `useEntityCounts()` | ✅ Complete | - |
 | 3.2 | `useFormModal()` | ⏳ Pending | - |
 | 4.1 | Hook factory | ⏳ Pending | - |
 | 4.2 | Naming conventions | ⏳ Pending | - |

@@ -5,6 +5,9 @@
 // UI
 export { usePullToRefresh, type PullToRefreshState } from './usePullToRefresh';
 
+// Utilities
+export { useEntityCounts } from './useEntityCounts';
+
 // Sync
 export { useSync, type UseSyncReturn } from './useSync';
 
