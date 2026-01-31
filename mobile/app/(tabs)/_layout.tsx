@@ -49,6 +49,14 @@ const TAB_ICONS: Record<string, TabIconConfig> = {
   },
 };
 
+/**
+ * Renders a header menu button that opens a themed modal menu with navigation actions.
+ *
+ * The menu contains "Settings" and "Continuity" items that navigate to their respective routes when tapped.
+ * The modal is positioned using safe area insets and the navigation header height, and its colors are driven by the active theme.
+ *
+ * @returns A React element containing the header menu button and its modal menu.
+ */
 function HeaderMenu() {
   const { theme } = useTheme();
   const [visible, setVisible] = useState(false);

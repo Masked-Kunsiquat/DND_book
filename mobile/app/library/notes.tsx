@@ -14,6 +14,13 @@ import { layout, spacing } from '../../src/theme';
 import { useCurrentCampaign, useNotes, useUpdateNote } from '../../src/hooks';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
+/**
+ * Render the Notes Library screen for a continuity, allowing browsing, searching, and linking notes to the current campaign.
+ *
+ * Shows an empty state when no continuity is selected or when there are no shared continuity notes; otherwise displays a searchable list of continuity-scoped notes with controls to add or remove the current campaign from a note's linked campaigns.
+ *
+ * @returns The Notes Library screen as a React element.
+ */
 export default function NotesLibraryScreen() {
   const { theme } = useTheme();
   const params = useLocalSearchParams<{ continuityId?: string | string[] }>();

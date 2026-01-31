@@ -62,12 +62,12 @@ const pluralizeLocationType = (type: LocationType, count: number) => {
 };
 
 /**
- * Renders the Locations screen for the current campaign, providing filtered views, grouping, and creation tools.
+ * Render the Locations screen for the current campaign, providing filtering, grouping, and creation tools.
  *
- * Displays a searchable and filterable list of locations (by type, tag, and "shadow" status), groups items by root
- * location, shows hierarchy and issue counts, and exposes UI for creating new locations or importing from continuity.
+ * Shows a list of locations grouped by root, supports filtering by type, tags, and shadow status, displays
+ * hierarchy and issue counts, and exposes UI to create new locations or import from continuity.
  *
- * @returns The Locations screen React element containing the list, filters, and create-location modal.
+ * @returns The React element for the Locations screen
  */
 export default function LocationsScreen() {
   const { theme } = useTheme();

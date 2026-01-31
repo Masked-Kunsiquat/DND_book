@@ -111,17 +111,18 @@ function mergeUnique(base: string[], extra: string[]): string[] {
 }
 
 /**
- * Extracts structured mention objects and referenced entity ID lists from a text string using the provided mention triggers and entity collections.
+ * Parse mention tokens from text and resolve them into structured mention objects and referenced ID lists.
  *
- * @param value - The text to scan for mention tokens.
- * @param settings - Mention trigger tokens for character, location, item, and tag parsing.
- * @param npcs - NPC records used to resolve character mentions and determine shadow status.
+ * Scans `value` for mention patterns using the provided trigger tokens, resolves matches against the supplied entity collections, and marks mentions whose referenced entity is missing or flagged as shadow. Resolved entity IDs are collected into per-type arrays.
+ *
+ * @param settings - Trigger tokens to identify mention types (`character`, `location`, `item`, `tag`).
+ * @param npcs - NPC records used to resolve character mentions and detect shadow NPCs.
  * @param pcs - Player character records used to distinguish PCs from NPCs.
- * @param locations - Location records used to resolve location mentions and determine shadow status.
- * @param items - Item records used to resolve item mentions and determine shadow status.
- * @returns An object containing:
- *   - `mentions`: an array of parsed Mention objects (each includes `id`, `trigger`, `entityType`, optional `entityId`, `displayLabel`, `position`, and `status`).
- *   - `npcIds`, `playerCharacterIds`, `locationIds`, `itemIds`, `tagIds`: arrays of referenced entity IDs discovered in the text.
+ * @param locations - Location records used to resolve location mentions and detect shadow locations.
+ * @param items - Item records used to resolve item mentions and detect shadow items.
+ * @returns An object with:
+ *  - `mentions`: parsed Mention objects (each includes `id`, `trigger`, `entityType`, optional `entityId`, `displayLabel`, `position`, and `status`).
+ *  - `npcIds`, `playerCharacterIds`, `locationIds`, `itemIds`, `tagIds`: arrays of referenced entity IDs discovered in the text.
  */
 function extractMentions(
   value: string,

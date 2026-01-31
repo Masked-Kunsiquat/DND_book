@@ -40,6 +40,13 @@ function formatDate(value?: string): string {
   return parsed.toLocaleString();
 }
 
+/**
+ * Render the note detail screen for viewing and managing a single note.
+ *
+ * The screen displays note content, linked campaigns, locations, and tags; supports editing those fields, sharing a campaign-scoped note to continuity (making it visible to multiple campaigns), forking a continuity-scoped note into the current campaign, and deleting the note. Validation ensures a campaign is selected for campaign-scoped notes and at least one campaign is selected for continuity-scoped notes. The component uses application hooks to load data and to perform create, update, and delete operations and performs navigation on actions like fork and delete.
+ *
+ * @returns A React element that renders the note detail screen.
+ */
 export default function NoteDetailScreen() {
   const { theme } = useTheme();
   const params = useLocalSearchParams<{ id?: string | string[] }>();

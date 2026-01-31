@@ -35,6 +35,16 @@ function formatDate(value?: string): string {
   return parsed.toLocaleString();
 }
 
+/**
+ * Screen component that displays a player character's details and provides UI for editing,
+ * linking to campaigns and notes, viewing related sessions, saving the character as a template,
+ * and deleting the character.
+ *
+ * The component loads required data via hooks, manages local form and modal state for edits,
+ * enforces a single-linked campaign when editing, and handles save/delete/template actions.
+ *
+ * @returns The rendered React element for the player character detail screen.
+ */
 export default function PlayerCharacterDetailScreen() {
   const { theme } = useTheme();
   const params = useLocalSearchParams<{ id?: string | string[] }>();

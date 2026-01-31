@@ -106,12 +106,14 @@ function fuzzyScore(query: string, target: string): number {
 }
 
 /**
- * Produce up to `max` suggestion items that best match the provided query, ordered by relevance and name.
+ * Selects and orders up to `max` suggestion items that best match the provided query.
  *
- * @param items - Candidate suggestion items to score and filter
- * @param query - The user-entered text used for fuzzy matching
+ * If `query` is empty (after trimming/normalizing), all items are considered; otherwise items with non-positive fuzzy scores are excluded. Results are sorted by descending relevance score and alphabetically by item name as a tiebreaker.
+ *
+ * @param items - Candidate suggestion items to evaluate
+ * @param query - The user-entered text used for fuzzy matching (normalized internally)
  * @param max - Maximum number of suggestions to return
- * @returns An array of up to `max` suggestion items that match `query`, ordered by descending relevance then by item name
+ * @returns An array of matching SuggestionItem objects ordered by descending relevance, then by name, limited to at most `max` items
  */
 function filterSuggestions(items: SuggestionItem[], query: string, max: number): SuggestionItem[] {
   const normalizedQuery = normalize(query);

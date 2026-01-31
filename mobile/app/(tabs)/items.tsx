@@ -24,6 +24,12 @@ import {
 } from '../../src/hooks';
 import type { EntityScope, Item } from '../../src/types/schema';
 
+/**
+ * Builds a user-facing subtitle for an item based on its status, value, and description.
+ *
+ * @param item - The item to generate a subtitle for.
+ * @returns A subtitle string: includes "Shadow item" if the item's status is `shadow`, "Value: {trimmed value}" if a non-empty value exists, or the trimmed description if neither is present; parts are joined with " • ". Returns "No details yet." when no detail is available.
+ */
 function buildSubtitle(item: Item): string {
   const parts: string[] = [];
   if (item.status === 'shadow') {
@@ -38,6 +44,14 @@ function buildSubtitle(item: Item): string {
   return parts.length > 0 ? parts.join(' • ') : 'No details yet.';
 }
 
+/**
+ * Screen that displays and manages items for the currently selected campaign.
+ *
+ * Renders a searchable, refreshable list of items, supports creating new items
+ * (campaign-scoped or continuity-shared via a modal), and navigates to item details.
+ *
+ * @returns The rendered Items screen component.
+ */
 export default function ItemsScreen() {
   const { theme } = useTheme();
   const currentCampaign = useCurrentCampaign();

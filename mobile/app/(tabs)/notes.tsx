@@ -30,6 +30,13 @@ import {
   useTags,
 } from '../../src/hooks';
 
+/**
+ * Screen that displays and manages notes for the current campaign and continuity, including search, tag filtering, linking, and note creation.
+ *
+ * Renders a searchable, filterable list of notes scoped to the active campaign/continuity, empty states when no notes or campaigns exist, and modals for creating notes and linking tags/locations.
+ *
+ * @returns A React element containing the notes list UI, filter controls, FAB to create notes, and associated modals.
+ */
 export default function NotesScreen() {
   const { theme } = useTheme();
   const campaigns = useCampaigns();
