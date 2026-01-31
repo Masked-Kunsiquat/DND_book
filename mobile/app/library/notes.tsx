@@ -10,7 +10,7 @@ import {
   Section,
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
-import { layout, spacing } from '../../src/theme';
+import { iconSizes, layout, spacing } from '../../src/theme';
 import { useCurrentCampaign, useNotes, useUpdateNote } from '../../src/hooks';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -154,11 +154,11 @@ export default function NotesLibraryScreen() {
             />
             {!currentCampaign && (
               <View style={styles.noticeRow}>
-                <MaterialCommunityIcons
-                  name="alert-circle-outline"
-                  size={18}
-                  color={theme.colors.onSurfaceVariant}
-                />
+                  <MaterialCommunityIcons
+                    name="alert-circle-outline"
+                    size={iconSizes.sm}
+                    color={theme.colors.onSurfaceVariant}
+                  />
                 <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
                   Select a campaign to link shared notes.
                 </Text>
@@ -178,7 +178,7 @@ export default function NotesLibraryScreen() {
         <View style={styles.errorRow}>
           <MaterialCommunityIcons
             name="alert-circle-outline"
-            size={18}
+            size={iconSizes.sm}
             color={theme.colors.error}
           />
           <Text variant="bodySmall" style={{ color: theme.colors.error }}>

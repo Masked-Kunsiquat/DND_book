@@ -134,17 +134,15 @@ export default function ItemsScreen() {
     try {
       const sharedCampaignIds =
         draftScope === 'continuity' ? draftCampaignIds : [currentCampaign.id];
-      const id = await Promise.resolve(
-        createItem({
-          name: trimmed,
-          description: draftDescription.trim(),
-          value: draftValue.trim(),
-          scope: draftScope,
-          continuityId,
-          campaignIds: sharedCampaignIds,
-          status: 'complete',
-        })
-      );
+      const id = createItem({
+        name: trimmed,
+        description: draftDescription.trim(),
+        value: draftValue.trim(),
+        scope: draftScope,
+        continuityId,
+        campaignIds: sharedCampaignIds,
+        status: 'complete',
+      });
       setIsCreateOpen(false);
       router.push(`/item/${id}`);
     } catch (error) {
