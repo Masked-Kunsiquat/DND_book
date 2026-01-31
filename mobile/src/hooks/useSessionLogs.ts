@@ -5,6 +5,7 @@
 import { useCallback, useMemo } from 'react';
 import { useRow, useTable } from 'tinybase/ui-react';
 import { useStore } from '../store';
+import { sortByDateDesc } from '../utils/date';
 import { buildUpdates, type FieldSchema } from '../utils/entityHelpers';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
@@ -88,13 +89,7 @@ export function useSessionLogsByDate(campaignId?: string): SessionLog[] {
   const logs = useSessionLogs(campaignId);
 
   return useMemo(() => {
-    return [...logs].sort((a, b) => {
-      const bTime = Date.parse(b.date);
-      const aTime = Date.parse(a.date);
-      const safeB = Number.isNaN(bTime) ? 0 : bTime;
-      const safeA = Number.isNaN(aTime) ? 0 : aTime;
-      return safeB - safeA;
-    });
+    return [...logs].sort(sortByDateDesc((s) => s.date));
   }, [logs]);
 }
 

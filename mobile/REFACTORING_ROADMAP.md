@@ -24,14 +24,26 @@ Analysis identified **~400+ lines of duplicated code** across hooks and componen
   - [x] `src/hooks/useSessionLogs.ts`
   - [x] `src/hooks/usePlayerCharacters.ts`
 
-### 1.2 Extract Date Utilities
-- **Status:** Pending
-- **Impact:** Consolidates date parsing/formatting scattered across components
+### 1.2 Extract Date Utilities ✅
+- **Status:** Complete
+- **Impact:** Eliminated ~60 lines of duplicate date handling across 5 files
 - **Location:** `src/utils/date.ts`
 - **Functions:**
-  - `formatDate(isoString, options?)` - Consistent date display
-  - `parseDate(isoString)` - Safe date parsing with null fallback
-  - `sortByDate(items, field, descending?)` - Generic date sorting
+  - [x] `parseDate(value)` - Safe date parsing with null fallback
+  - [x] `formatDisplayDate(value, fallback)` - Locale-specific date display
+  - [x] `formatShortDate(value, fallback)` - Short date format (Jan 15, 2024)
+  - [x] `formatDateTime(value, fallback)` - Full date and time display
+  - [x] `formatDateInput(date)` - YYYY-MM-DD for form inputs
+  - [x] `getTodayDateInput()` - Today's date in YYYY-MM-DD
+  - [x] `safeDateTimestamp(value)` - Timestamp for sorting (returns 0 on invalid)
+  - [x] `sortByDateDesc(extractor)` - Generic comparator (newest first)
+  - [x] `sortByDateAsc(extractor)` - Generic comparator (oldest first)
+- **Files updated:**
+  - [x] `src/hooks/useSessionLogs.ts` - Use `sortByDateDesc`
+  - [x] `src/components/cards/CampaignCard.tsx` - Use `formatShortDate`
+  - [x] `app/(tabs)/sessions.tsx` - Use `formatDisplayDate`, `getTodayDateInput`
+  - [x] `app/session/[id].tsx` - Use `formatDateTime`, `formatDisplayDate`, `getTodayDateInput`
+  - [x] `app/campaign/[id]/sessions.tsx` - Use `formatDisplayDate`, `getTodayDateInput`
 
 ### 1.3 Extract Array Serialization Helpers ✅
 - **Status:** Complete (included with 1.1)
@@ -125,7 +137,7 @@ Analysis identified **~400+ lines of duplicated code** across hooks and componen
 | Phase | Item | Status | PR |
 |-------|------|--------|-----|
 | 1.1 | Extract `parseJsonArray()` | ✅ Complete | - |
-| 1.2 | Date utilities | ⏳ Pending | - |
+| 1.2 | Date utilities | ✅ Complete | - |
 | 1.3 | Array serialization | ✅ Complete | - |
 | 2.1 | Generic update builder | ✅ Complete | - |
 | 2.2 | Row defaults helper | ⏳ Pending | - |
