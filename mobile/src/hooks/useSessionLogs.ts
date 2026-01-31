@@ -5,12 +5,31 @@
 import { useCallback, useMemo } from 'react';
 import { useRow, useTable } from 'tinybase/ui-react';
 import { useStore } from '../store';
+import { buildUpdates, type FieldSchema } from '../utils/entityHelpers';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
 import { parseJsonArray } from '../utils/parsing';
 import type { Mention, RecordId, SessionLog, SessionLogRow } from '../types/schema';
 
 const log = createLogger('session-logs');
+
+/** Field schema for SessionLog updates */
+const SESSION_LOG_UPDATE_SCHEMA: FieldSchema = {
+  title: 'string',
+  date: 'string',
+  content: 'string',
+  mentions: 'json',
+  summary: 'string',
+  keyDecisions: 'string',
+  outcomes: 'string',
+  campaignIds: 'array',
+  locationIds: 'array',
+  npcIds: 'array',
+  noteIds: 'array',
+  playerCharacterIds: 'array',
+  itemIds: 'array',
+  tagIds: 'array',
+};
 
 /**
  * Create a SessionLog object from a TinyBase session log row.
@@ -187,29 +206,8 @@ export function useUpdateSessionLog(): (id: string, data: UpdateSessionLogInput)
         throw new Error(`SessionLog ${id} not found`);
       }
 
-      const updates: Record<string, string> = { updated: now() };
-
-      if (data.title !== undefined) updates.title = data.title;
-      if (data.date !== undefined) updates.date = data.date;
-      if (data.content !== undefined) updates.content = data.content;
-      if (data.mentions !== undefined) updates.mentions = JSON.stringify(data.mentions);
-      if (data.summary !== undefined) updates.summary = data.summary;
-      if (data.keyDecisions !== undefined) updates.keyDecisions = data.keyDecisions;
-      if (data.outcomes !== undefined) updates.outcomes = data.outcomes;
-      if (data.campaignIds !== undefined) updates.campaignIds = JSON.stringify(data.campaignIds);
-      if (data.locationIds !== undefined) updates.locationIds = JSON.stringify(data.locationIds);
-      if (data.npcIds !== undefined) updates.npcIds = JSON.stringify(data.npcIds);
-      if (data.noteIds !== undefined) updates.noteIds = JSON.stringify(data.noteIds);
-      if (data.playerCharacterIds !== undefined)
-        updates.playerCharacterIds = JSON.stringify(data.playerCharacterIds);
-      if (data.itemIds !== undefined) updates.itemIds = JSON.stringify(data.itemIds);
-      if (data.tagIds !== undefined) updates.tagIds = JSON.stringify(data.tagIds);
-
-      store.setRow('sessionLogs', id, {
-        ...existing,
-        ...updates,
-      });
-
+      const updates = buildUpdates(data, SESSION_LOG_UPDATE_SCHEMA);
+      store.setRow('sessionLogs', id, { ...existing, ...updates });
       log.debug('Updated session log', id);
     },
     [store]

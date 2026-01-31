@@ -5,6 +5,7 @@
 import { useCallback, useMemo } from 'react';
 import { useRow, useTable } from 'tinybase/ui-react';
 import { useStore } from '../store';
+import { buildUpdates, type FieldSchema } from '../utils/entityHelpers';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
 import { removeManagedImage } from '../utils/files';
@@ -12,6 +13,24 @@ import { parseJsonArray } from '../utils/parsing';
 import type { Location, LocationRow, LocationType, RecordId } from '../types/schema';
 
 const log = createLogger('locations');
+
+/** Field schema for Location updates */
+const LOCATION_UPDATE_SCHEMA: FieldSchema = {
+  name: 'string',
+  type: 'string',
+  description: 'string',
+  status: 'string',
+  parentId: 'string',
+  scope: 'string',
+  continuityId: 'string',
+  originId: 'string',
+  originContinuityId: 'string',
+  forkedAt: 'string',
+  campaignIds: 'array',
+  tagIds: 'array',
+  map: 'string',
+  images: 'array',
+};
 
 /**
  * Create a Location object from a TinyBase row.
@@ -253,29 +272,8 @@ export function useUpdateLocation(): (id: string, data: UpdateLocationInput) => 
         throw new Error(`Location ${id} not found`);
       }
 
-      const updates: Record<string, string> = { updated: now() };
-
-      if (data.name !== undefined) updates.name = data.name;
-      if (data.type !== undefined) updates.type = data.type;
-      if (data.description !== undefined) updates.description = data.description;
-      if (data.status !== undefined) updates.status = data.status;
-      if (data.parentId !== undefined) updates.parentId = data.parentId;
-      if (data.scope !== undefined) updates.scope = data.scope;
-      if (data.continuityId !== undefined) updates.continuityId = data.continuityId;
-      if (data.originId !== undefined) updates.originId = data.originId;
-      if (data.originContinuityId !== undefined)
-        updates.originContinuityId = data.originContinuityId;
-      if (data.forkedAt !== undefined) updates.forkedAt = data.forkedAt;
-      if (data.campaignIds !== undefined) updates.campaignIds = JSON.stringify(data.campaignIds);
-      if (data.tagIds !== undefined) updates.tagIds = JSON.stringify(data.tagIds);
-      if (data.map !== undefined) updates.map = data.map;
-      if (data.images !== undefined) updates.images = JSON.stringify(data.images);
-
-      store.setRow('locations', id, {
-        ...existing,
-        ...updates,
-      });
-
+      const updates = buildUpdates(data, LOCATION_UPDATE_SCHEMA);
+      store.setRow('locations', id, { ...existing, ...updates });
       log.debug('Updated location', id);
     },
     [store]

@@ -5,10 +5,26 @@
 import { useCallback, useMemo } from 'react';
 import { useRow, useTable } from 'tinybase/ui-react';
 import { useStore } from '../store';
+import { buildUpdates, type FieldSchema } from '../utils/entityHelpers';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
 import { parseJsonArray } from '../utils/parsing';
 import type { Note, NoteRow, RecordId } from '../types/schema';
+
+/** Field schema for Note updates */
+const NOTE_UPDATE_SCHEMA: FieldSchema = {
+  title: 'string',
+  content: 'string',
+  scope: 'string',
+  continuityId: 'string',
+  campaignId: 'string',
+  campaignIds: 'array',
+  originId: 'string',
+  originContinuityId: 'string',
+  forkedAt: 'string',
+  locationIds: 'array',
+  tagIds: 'array',
+};
 
 const log = createLogger('notes');
 
@@ -226,27 +242,8 @@ export function useUpdateNote(): (id: string, data: UpdateNoteInput) => void {
         throw new Error(`Note ${id} not found`);
       }
 
-      const updates: Record<string, string> = { updated: now() };
-
-      if (data.title !== undefined) updates.title = data.title;
-      if (data.content !== undefined) updates.content = data.content;
-      if (data.scope !== undefined) updates.scope = data.scope;
-      if (data.continuityId !== undefined) updates.continuityId = data.continuityId;
-      if (data.campaignId !== undefined) updates.campaignId = data.campaignId;
-      if (data.campaignIds !== undefined)
-        updates.campaignIds = JSON.stringify(data.campaignIds);
-      if (data.originId !== undefined) updates.originId = data.originId;
-      if (data.originContinuityId !== undefined)
-        updates.originContinuityId = data.originContinuityId;
-      if (data.forkedAt !== undefined) updates.forkedAt = data.forkedAt;
-      if (data.locationIds !== undefined) updates.locationIds = JSON.stringify(data.locationIds);
-      if (data.tagIds !== undefined) updates.tagIds = JSON.stringify(data.tagIds);
-
-      store.setRow('notes', id, {
-        ...existing,
-        ...updates,
-      });
-
+      const updates = buildUpdates(data, NOTE_UPDATE_SCHEMA);
+      store.setRow('notes', id, { ...existing, ...updates });
       log.debug('Updated note', id);
     },
     [store]

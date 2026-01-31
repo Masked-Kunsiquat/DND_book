@@ -5,6 +5,7 @@
 import { useCallback, useMemo } from 'react';
 import { useTable } from 'tinybase/ui-react';
 import { useStore } from '../store';
+import { buildUpdates, type FieldSchema } from '../utils/entityHelpers';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
 import { removeManagedImage } from '../utils/files';
@@ -12,6 +13,25 @@ import { parseJsonArray } from '../utils/parsing';
 import type { Npc, NpcRow, RecordId } from '../types/schema';
 
 const log = createLogger('npcs');
+
+/** Field schema for NPC updates */
+const NPC_UPDATE_SCHEMA: FieldSchema = {
+  name: 'string',
+  race: 'string',
+  role: 'string',
+  background: 'string',
+  status: 'string',
+  image: 'string',
+  scope: 'string',
+  continuityId: 'string',
+  originId: 'string',
+  originContinuityId: 'string',
+  forkedAt: 'string',
+  campaignIds: 'array',
+  locationIds: 'array',
+  noteIds: 'array',
+  tagIds: 'array',
+};
 
 /**
  * Convert a TinyBase NpcRow into a normalized Npc object.
@@ -205,30 +225,8 @@ export function useUpdateNpc(): (id: string, data: UpdateNpcInput) => void {
         throw new Error(`NPC ${id} not found`);
       }
 
-      const updates: Record<string, string> = { updated: now() };
-
-      if (data.name !== undefined) updates.name = data.name;
-      if (data.race !== undefined) updates.race = data.race;
-      if (data.role !== undefined) updates.role = data.role;
-      if (data.background !== undefined) updates.background = data.background;
-      if (data.status !== undefined) updates.status = data.status;
-      if (data.image !== undefined) updates.image = data.image;
-      if (data.scope !== undefined) updates.scope = data.scope;
-      if (data.continuityId !== undefined) updates.continuityId = data.continuityId;
-      if (data.originId !== undefined) updates.originId = data.originId;
-      if (data.originContinuityId !== undefined)
-        updates.originContinuityId = data.originContinuityId;
-      if (data.forkedAt !== undefined) updates.forkedAt = data.forkedAt;
-      if (data.campaignIds !== undefined) updates.campaignIds = JSON.stringify(data.campaignIds);
-      if (data.locationIds !== undefined) updates.locationIds = JSON.stringify(data.locationIds);
-      if (data.noteIds !== undefined) updates.noteIds = JSON.stringify(data.noteIds);
-      if (data.tagIds !== undefined) updates.tagIds = JSON.stringify(data.tagIds);
-
-      store.setRow('npcs', id, {
-        ...existing,
-        ...updates,
-      });
-
+      const updates = buildUpdates(data, NPC_UPDATE_SCHEMA);
+      store.setRow('npcs', id, { ...existing, ...updates });
       log.debug('Updated npc', id);
     },
     [store]

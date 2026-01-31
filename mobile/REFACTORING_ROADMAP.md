@@ -44,16 +44,22 @@ Analysis identified **~400+ lines of duplicated code** across hooks and componen
 
 ## Phase 2: Hook Helpers (High Priority)
 
-### 2.1 Generic Update Builder
-- **Status:** Pending
-- **Impact:** Reduces ~180 lines of repetitive update logic
+### 2.1 Generic Update Builder ✅
+- **Status:** Complete
+- **Impact:** Reduced ~180 lines of repetitive update logic
 - **Location:** `src/utils/entityHelpers.ts`
-- **Pattern to replace:**
-  ```typescript
-  const updates: Record<string, string> = { updated: now() };
-  if (data.field !== undefined) updates.field = data.field;
-  // ... repeated for every field
-  ```
+- **Functions:**
+  - [x] `buildUpdates(data, schema)` - Builds update object from partial input data
+  - [x] `FieldSchema` type - Defines field types ('string' | 'array' | 'json')
+- **Files updated:**
+  - [x] `src/hooks/useNotes.ts`
+  - [x] `src/hooks/useNpcs.ts`
+  - [x] `src/hooks/useLocations.ts`
+  - [x] `src/hooks/useItems.ts`
+  - [x] `src/hooks/useTags.ts`
+  - [x] `src/hooks/useSessionLogs.ts`
+  - [x] `src/hooks/usePlayerCharacters.ts`
+  - [x] `src/hooks/useCampaigns.ts`
 
 ### 2.2 Row-to-Entity Defaults Helper
 - **Status:** Pending
@@ -121,7 +127,7 @@ Analysis identified **~400+ lines of duplicated code** across hooks and componen
 | 1.1 | Extract `parseJsonArray()` | ✅ Complete | - |
 | 1.2 | Date utilities | ⏳ Pending | - |
 | 1.3 | Array serialization | ✅ Complete | - |
-| 2.1 | Generic update builder | ⏳ Pending | - |
+| 2.1 | Generic update builder | ✅ Complete | - |
 | 2.2 | Row defaults helper | ⏳ Pending | - |
 | 3.1 | `useEntityCounts()` | ⏳ Pending | - |
 | 3.2 | `useFormModal()` | ⏳ Pending | - |

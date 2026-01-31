@@ -5,12 +5,28 @@
 import { useCallback, useMemo } from 'react';
 import { useRow, useTable } from 'tinybase/ui-react';
 import { useStore } from '../store';
+import { buildUpdates, type FieldSchema } from '../utils/entityHelpers';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
 import { parseJsonArray } from '../utils/parsing';
 import type { Item, ItemRow, RecordId } from '../types/schema';
 
 const log = createLogger('items');
+
+/** Field schema for Item updates */
+const ITEM_UPDATE_SCHEMA: FieldSchema = {
+  name: 'string',
+  description: 'string',
+  status: 'string',
+  scope: 'string',
+  continuityId: 'string',
+  campaignIds: 'array',
+  ownerId: 'string',
+  ownerType: 'string',
+  locationId: 'string',
+  value: 'string',
+  tagIds: 'array',
+};
 
 /**
  * Convert a TinyBase ItemRow into an Item.
@@ -167,25 +183,8 @@ export function useUpdateItem(): (id: string, data: UpdateItemInput) => void {
         throw new Error(`Item ${id} not found`);
       }
 
-      const updates: Record<string, string> = { updated: now() };
-
-      if (data.name !== undefined) updates.name = data.name;
-      if (data.description !== undefined) updates.description = data.description;
-      if (data.status !== undefined) updates.status = data.status;
-      if (data.scope !== undefined) updates.scope = data.scope;
-      if (data.continuityId !== undefined) updates.continuityId = data.continuityId;
-      if (data.campaignIds !== undefined) updates.campaignIds = JSON.stringify(data.campaignIds);
-      if (data.ownerId !== undefined) updates.ownerId = data.ownerId;
-      if (data.ownerType !== undefined) updates.ownerType = data.ownerType || '';
-      if (data.locationId !== undefined) updates.locationId = data.locationId;
-      if (data.value !== undefined) updates.value = data.value;
-      if (data.tagIds !== undefined) updates.tagIds = JSON.stringify(data.tagIds);
-
-      store.setRow('items', id, {
-        ...existing,
-        ...updates,
-      });
-
+      const updates = buildUpdates(data, ITEM_UPDATE_SCHEMA);
+      store.setRow('items', id, { ...existing, ...updates });
       log.debug('Updated item', id);
     },
     [store]
