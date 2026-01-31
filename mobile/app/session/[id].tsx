@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, IconButton, Text } from 'react-native-paper';
+import { triggerRegEx } from 'react-native-controlled-mentions';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import {
@@ -8,12 +9,15 @@ import {
   AvatarGroup,
   ConfirmDialog,
   EmptyState,
+  EntitySuggestions,
   FormDateTimePicker,
   FormModal,
   FormMultiSelect,
   FormTextInput,
   LocationMultiSelect,
   LocationCard,
+  MentionInput,
+  MentionRenderer,
   NoteCard,
   NPCCard,
   Screen,
@@ -22,12 +26,14 @@ import {
   TagInput,
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
-import { spacing } from '../../src/theme';
+import { iconSizes, spacing } from '../../src/theme';
 import {
   useCampaigns,
   useDeleteSessionLog,
   useGetOrCreateTag,
+  useItems,
   useLocations,
+  useMentionSettings,
   useNotes,
   useNpcs,
   usePlayerCharacters,
@@ -35,7 +41,15 @@ import {
   useTags,
   useUpdateSessionLog,
 } from '../../src/hooks';
+import { generateId } from '../../src/utils/id';
+import type { Item, Location, Mention, MentionSettings, Npc, PlayerCharacter } from '../../src/types/schema';
 
+/**
+ * Format a date string into a locale-specific date and time, or provide a fallback when missing or invalid.
+ *
+ * @param value - The date/time string to format (may be undefined or any string parseable by the JavaScript Date constructor)
+ * @returns `'Unknown'` if `value` is falsy or cannot be parsed as a valid date, otherwise the date/time formatted using the runtime's locale
+ */
 function formatDate(value?: string): string {
   if (!value) return 'Unknown';
   const parsed = new Date(value);
@@ -43,6 +57,12 @@ function formatDate(value?: string): string {
   return parsed.toLocaleString();
 }
 
+/**
+ * Formats an ISO-8601 or other date-parsable string as a locale-specific date.
+ *
+ * @param value - A date string parsable by Date (e.g., ISO-8601). If omitted or not a valid date, the function will not format a date.
+ * @returns A locale-formatted date string when `value` is valid, `'Unknown'` otherwise.
+ */
 function formatSessionDate(value?: string): string {
   if (!value) return 'Unknown';
   const parsed = new Date(value);
@@ -50,6 +70,12 @@ function formatSessionDate(value?: string): string {
   return parsed.toLocaleDateString();
 }
 
+/**
+ * Format a Date as a calendar date string in `YYYY-MM-DD` format.
+ *
+ * @param value - The Date to format
+ * @returns The formatted date string in `YYYY-MM-DD` form
+ */
 function formatDateOnly(value: Date): string {
   const year = value.getFullYear();
   const month = String(value.getMonth() + 1).padStart(2, '0');
@@ -57,6 +83,241 @@ function formatDateOnly(value: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+interface MentionExtractionResult {
+  mentions: Mention[];
+  npcIds: string[];
+  playerCharacterIds: string[];
+  locationIds: string[];
+  itemIds: string[];
+  tagIds: string[];
+}
+
+interface ShadowPromptItem {
+  id: string | null;
+  label: string;
+  entityType: Mention['entityType'];
+  route?: string;
+}
+
+/**
+ * Combine two arrays of strings into a single array with duplicates removed while preserving element order.
+ *
+ * @param base - The primary array whose element order is preserved first
+ * @param extra - The secondary array; elements not already present in `base` are appended in order
+ * @returns A new array containing the unique strings from `base` followed by any additional strings from `extra` in their original order
+ */
+function mergeUnique(base: string[], extra: string[]): string[] {
+  return Array.from(new Set([...base, ...extra]));
+}
+
+/**
+ * Parse mention tokens from text and resolve them into structured mention objects and referenced ID lists.
+ *
+ * Scans `value` for mention patterns using the provided trigger tokens, resolves matches against the supplied entity collections, and marks mentions whose referenced entity is missing or flagged as shadow. Resolved entity IDs are collected into per-type arrays.
+ *
+ * @param settings - Trigger tokens to identify mention types (`character`, `location`, `item`, `tag`).
+ * @param npcs - NPC records used to resolve character mentions and detect shadow NPCs.
+ * @param pcs - Player character records used to distinguish PCs from NPCs.
+ * @param locations - Location records used to resolve location mentions and detect shadow locations.
+ * @param items - Item records used to resolve item mentions and detect shadow items.
+ * @returns An object with:
+ *  - `mentions`: parsed Mention objects (each includes `id`, `trigger`, `entityType`, optional `entityId`, `displayLabel`, `position`, and `status`).
+ *  - `npcIds`, `playerCharacterIds`, `locationIds`, `itemIds`, `tagIds`: arrays of referenced entity IDs discovered in the text.
+ */
+function extractMentions(
+  value: string,
+  settings: MentionSettings,
+  npcs: Npc[],
+  pcs: PlayerCharacter[],
+  locations: Location[],
+  items: Item[]
+): MentionExtractionResult {
+  if (!value) {
+    return {
+      mentions: [],
+      npcIds: [],
+      playerCharacterIds: [],
+      locationIds: [],
+      itemIds: [],
+      tagIds: [],
+    };
+  }
+
+  const triggerToKey = new Map<string, 'character' | 'location' | 'item' | 'tag'>([
+    [settings.character, 'character'],
+    [settings.location, 'location'],
+    [settings.item, 'item'],
+    [settings.tag, 'tag'],
+  ]);
+
+  const npcById = new Map(npcs.map((npc) => [npc.id, npc]));
+  const pcIdSet = new Set(pcs.map((pc) => pc.id));
+  const locationById = new Map(locations.map((location) => [location.id, location]));
+  const itemById = new Map(items.map((item) => [item.id, item]));
+
+  const mentionList: Mention[] = [];
+  const npcIds = new Set<string>();
+  const playerCharacterIds = new Set<string>();
+  const locationIds = new Set<string>();
+  const itemIds = new Set<string>();
+  const tagIds = new Set<string>();
+
+  const regex = new RegExp(triggerRegEx.source, 'gi');
+
+  for (const match of value.matchAll(regex)) {
+    const trigger = match[2] ?? '';
+    const name = match[3] ?? '';
+    const rawId = match[4] ?? '';
+    if (!trigger || !name) continue;
+
+    const triggerKey = triggerToKey.get(trigger);
+    if (!triggerKey) continue;
+
+    const entityId = rawId && rawId !== 'null' ? rawId : null;
+    let entityType: Mention['entityType'] = 'tag';
+    let status: Mention['status'] = 'resolved';
+
+    switch (triggerKey) {
+      case 'character': {
+        if (entityId && pcIdSet.has(entityId)) {
+          entityType = 'pc';
+          playerCharacterIds.add(entityId);
+        } else {
+          entityType = 'npc';
+          if (entityId) {
+            npcIds.add(entityId);
+            const npc = npcById.get(entityId);
+            if (!npc || npc.status === 'shadow') {
+              status = 'shadow';
+            }
+          } else {
+            status = 'shadow';
+          }
+        }
+        break;
+      }
+      case 'location': {
+        entityType = 'location';
+        if (entityId) {
+          locationIds.add(entityId);
+          const location = locationById.get(entityId);
+          if (!location || location.status === 'shadow') {
+            status = 'shadow';
+          }
+        } else {
+          status = 'shadow';
+        }
+        break;
+      }
+      case 'item': {
+        entityType = 'item';
+        if (entityId) {
+          itemIds.add(entityId);
+          const item = itemById.get(entityId);
+          if (!item || item.status === 'shadow') {
+            status = 'shadow';
+          }
+        } else {
+          status = 'shadow';
+        }
+        break;
+      }
+      case 'tag': {
+        entityType = 'tag';
+        if (entityId) {
+          tagIds.add(entityId);
+        }
+        if (!entityId) {
+          status = 'shadow';
+        }
+        break;
+      }
+      default:
+        break;
+    }
+
+    const start = match.index ?? 0;
+    const end = start + (match[0]?.length ?? 0);
+
+    mentionList.push({
+      id: generateId(),
+      trigger,
+      entityType,
+      entityId,
+      displayLabel: name,
+      position: { start, end },
+      status,
+    });
+  }
+
+  return {
+    mentions: mentionList,
+    npcIds: Array.from(npcIds),
+    playerCharacterIds: Array.from(playerCharacterIds),
+    locationIds: Array.from(locationIds),
+    itemIds: Array.from(itemIds),
+    tagIds: Array.from(tagIds),
+  };
+}
+
+/**
+ * Produce a deduplicated list of shadow prompt items from mention objects, including navigation routes when an entityId is available.
+ *
+ * @param mentions - Array of mentions to process; only mentions with `status === 'shadow'` are included in the result
+ * @returns An array of `ShadowPromptItem` entries representing unique shadow mentions. Each item contains `id`, `label`, `entityType`, and a `route` when the mention has an `entityId` (route is derived from the `entityType`)
+ */
+function buildShadowPromptItems(mentions: Mention[]): ShadowPromptItem[] {
+  const items: ShadowPromptItem[] = [];
+  const seen = new Set<string>();
+
+  mentions.forEach((mention) => {
+    if (mention.status !== 'shadow') return;
+    const key = `${mention.entityType}:${mention.entityId ?? mention.displayLabel.toLowerCase()}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+
+    let route: string | undefined;
+    if (mention.entityId) {
+      switch (mention.entityType) {
+        case 'npc':
+          route = `/npc/${mention.entityId}`;
+          break;
+        case 'pc':
+          route = `/player-character/${mention.entityId}`;
+          break;
+        case 'location':
+          route = `/location/${mention.entityId}`;
+          break;
+        case 'item':
+          route = `/item/${mention.entityId}`;
+          break;
+        case 'tag':
+          route = `/tag/${mention.entityId}`;
+          break;
+        default:
+          route = undefined;
+      }
+    }
+
+    items.push({
+      id: mention.entityId,
+      label: mention.displayLabel || 'Unnamed',
+      entityType: mention.entityType,
+      route,
+    });
+  });
+
+  return items;
+}
+
+/**
+ * Display a session's details and provide UI to view and edit its log, linked entities, and metadata.
+ *
+ * Supports mention-aware content editing with autosave, management of campaigns/locations/NPCs/notes/tags,
+ * resolving incomplete ("shadow") entities, and deleting the session.
+ *
+ * @returns A React element representing the session detail screen
+ */
 export default function SessionDetailScreen() {
   const { theme } = useTheme();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
@@ -69,6 +330,7 @@ export default function SessionDetailScreen() {
   const campaigns = useCampaigns();
   const locations = useLocations();
   const npcs = useNpcs();
+  const items = useItems();
   const notes = useNotes();
   const playerCharacters = usePlayerCharacters();
   const updateSessionLog = useUpdateSessionLog();
@@ -81,11 +343,14 @@ export default function SessionDetailScreen() {
   const [summary, setSummary] = useState('');
   const [keyDecisions, setKeyDecisions] = useState('');
   const [outcomes, setOutcomes] = useState('');
+  const [content, setContent] = useState('');
+  const [shadowPromptOpen, setShadowPromptOpen] = useState(false);
   const [campaignIds, setCampaignIds] = useState<string[]>([]);
   const [locationIds, setLocationIds] = useState<string[]>([]);
   const [npcIds, setNpcIds] = useState<string[]>([]);
   const [noteIds, setNoteIds] = useState<string[]>([]);
   const [playerCharacterIds, setPlayerCharacterIds] = useState<string[]>([]);
+  const [itemIds, setItemIds] = useState<string[]>([]);
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -94,8 +359,13 @@ export default function SessionDetailScreen() {
     'participants' | 'campaigns' | 'locations' | 'npcs' | 'notes' | 'tags' | null
   >(null);
 
+  const normalizeCampaignIds = (ids: string[]) => (ids.length > 0 ? [ids[0]] : []);
+
   const displayCampaignIds = useMemo(
-    () => (isEditing ? campaignIds : session?.campaignIds ?? []),
+    () =>
+      isEditing
+        ? campaignIds
+        : normalizeCampaignIds(session?.campaignIds ?? []),
     [campaignIds, isEditing, session?.campaignIds]
   );
 
@@ -123,6 +393,17 @@ export default function SessionDetailScreen() {
   const getOrCreateTag = useGetOrCreateTag(
     tagContinuityId ? { continuityId: tagContinuityId, scope: 'continuity' } : undefined
   );
+  const { settings: mentionSettings } = useMentionSettings();
+
+  const mentionDerived = useMemo(
+    () => extractMentions(content, mentionSettings, npcs, playerCharacters, locations, items),
+    [content, mentionSettings, npcs, playerCharacters, locations, items]
+  );
+
+  const shadowPromptItems = useMemo(
+    () => buildShadowPromptItems(mentionDerived.mentions),
+    [mentionDerived.mentions]
+  );
 
   useEffect(() => {
     if (session && !isEditing) {
@@ -131,14 +412,49 @@ export default function SessionDetailScreen() {
       setSummary(session.summary);
       setKeyDecisions(session.keyDecisions);
       setOutcomes(session.outcomes);
-      setCampaignIds(session.campaignIds);
+      setContent(session.content || '');
+      setCampaignIds(normalizeCampaignIds(session.campaignIds));
       setLocationIds(session.locationIds);
       setNpcIds(session.npcIds);
       setNoteIds(session.noteIds);
       setPlayerCharacterIds(session.playerCharacterIds);
+      setItemIds(session.itemIds);
       setTagIds(session.tagIds);
     }
   }, [session, isEditing]);
+
+  useEffect(() => {
+    if (!isEditing || !session) return;
+    if ((content ?? '') === (session.content ?? '')) return;
+
+    const handle = setTimeout(() => {
+      updateSessionLog(session.id, {
+        content,
+        mentions: mentionDerived.mentions,
+        locationIds: mergeUnique(locationIds, mentionDerived.locationIds),
+        npcIds: mergeUnique(npcIds, mentionDerived.npcIds),
+        playerCharacterIds: mergeUnique(
+          playerCharacterIds,
+          mentionDerived.playerCharacterIds
+        ),
+        itemIds: mergeUnique(itemIds, mentionDerived.itemIds),
+        tagIds: mergeUnique(tagIds, mentionDerived.tagIds),
+      });
+    }, 600);
+
+    return () => clearTimeout(handle);
+  }, [
+    content,
+    isEditing,
+    itemIds,
+    locationIds,
+    mentionDerived,
+    npcIds,
+    playerCharacterIds,
+    session,
+    tagIds,
+    updateSessionLog,
+  ]);
 
   const displayLocationIds = useMemo(
     () => (isEditing ? locationIds : session?.locationIds ?? []),
@@ -277,9 +593,10 @@ export default function SessionDetailScreen() {
   };
 
   const handleCampaignChange = (value: string[]) => {
-    setCampaignIds(value);
-    if (value.length === 0) return;
-    const allowedCampaigns = new Set(value);
+    const nextCampaignIds = value.length > 0 ? [value[value.length - 1]] : [];
+    setCampaignIds(nextCampaignIds);
+    if (nextCampaignIds.length === 0) return;
+    const allowedCampaigns = new Set(nextCampaignIds);
     const allowedLocations = new Set(
       locations
         .filter((location) => location.campaignIds.some((id) => allowedCampaigns.has(id)))
@@ -321,11 +638,13 @@ export default function SessionDetailScreen() {
     setSummary(session.summary);
     setKeyDecisions(session.keyDecisions);
     setOutcomes(session.outcomes);
-    setCampaignIds(session.campaignIds);
+    setContent(session.content || '');
+    setCampaignIds(normalizeCampaignIds(session.campaignIds));
     setLocationIds(session.locationIds);
     setNpcIds(session.npcIds);
     setNoteIds(session.noteIds);
     setPlayerCharacterIds(session.playerCharacterIds);
+    setItemIds(session.itemIds);
     setTagIds(session.tagIds);
     setError(null);
     setShowAdvanced(false);
@@ -339,11 +658,13 @@ export default function SessionDetailScreen() {
       setSummary(session.summary);
       setKeyDecisions(session.keyDecisions);
       setOutcomes(session.outcomes);
-      setCampaignIds(session.campaignIds);
+      setContent(session.content || '');
+      setCampaignIds(normalizeCampaignIds(session.campaignIds));
       setLocationIds(session.locationIds);
       setNpcIds(session.npcIds);
       setNoteIds(session.noteIds);
       setPlayerCharacterIds(session.playerCharacterIds);
+      setItemIds(session.itemIds);
       setTagIds(session.tagIds);
     }
     setError(null);
@@ -354,14 +675,6 @@ export default function SessionDetailScreen() {
   const handleSave = () => {
     if (!session) return;
     const trimmedTitle = title.trim();
-    if (!trimmedTitle) {
-      setError('Session title is required.');
-      return;
-    }
-    if (hasContinuityMismatch) {
-      setError('Sessions must belong to a single continuity before saving.');
-      return;
-    }
     const resolvedDate = date.trim() || formatDateOnly(new Date());
     setError(null);
     try {
@@ -371,17 +684,53 @@ export default function SessionDetailScreen() {
         summary: summary.trim(),
         keyDecisions: keyDecisions.trim(),
         outcomes: outcomes.trim(),
+        content,
         campaignIds,
-        locationIds,
-        npcIds,
+        mentions: mentionDerived.mentions,
+        locationIds: mergeUnique(locationIds, mentionDerived.locationIds),
+        npcIds: mergeUnique(npcIds, mentionDerived.npcIds),
         noteIds,
-        playerCharacterIds,
-        tagIds,
+        playerCharacterIds: mergeUnique(
+          playerCharacterIds,
+          mentionDerived.playerCharacterIds
+        ),
+        itemIds: mergeUnique(itemIds, mentionDerived.itemIds),
+        tagIds: mergeUnique(tagIds, mentionDerived.tagIds),
       });
       setIsEditing(false);
+      if (shadowPromptItems.length > 0) {
+        setShadowPromptOpen(true);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update session.';
       setError(message);
+    }
+  };
+
+  const quickInsertItems = useMemo(
+    () => [
+      { label: 'Character', trigger: mentionSettings.character, icon: 'account-outline' },
+      { label: 'Location', trigger: mentionSettings.location, icon: 'map-marker-outline' },
+      { label: 'Item', trigger: mentionSettings.item, icon: 'treasure-chest-outline' },
+      { label: 'Tag', trigger: mentionSettings.tag, icon: 'tag-outline' },
+    ],
+    [mentionSettings]
+  );
+
+  const handleInsertTrigger = (trigger: string) => {
+    setContent((prev) => {
+      const next = prev && !prev.endsWith(' ') ? `${prev} ` : prev;
+      return `${next}${trigger}`;
+    });
+  };
+
+  const closeShadowPrompt = () => setShadowPromptOpen(false);
+
+  const handleCompleteAll = () => {
+    const firstRoute = shadowPromptItems.find((item) => item.route)?.route;
+    setShadowPromptOpen(false);
+    if (firstRoute) {
+      router.push(firstRoute);
     }
   };
 
@@ -407,7 +756,7 @@ export default function SessionDetailScreen() {
       case 'participants':
         return 'Participants';
       case 'campaigns':
-        return 'Campaigns';
+        return 'Campaign';
       case 'locations':
         return 'Locations';
       case 'npcs':
@@ -436,7 +785,7 @@ export default function SessionDetailScreen() {
       case 'campaigns':
         return (
           <FormMultiSelect
-            label="Campaigns"
+            label="Campaign"
             value={campaignIds}
             options={campaignOptions}
             onChange={handleCampaignChange}
@@ -525,9 +874,14 @@ export default function SessionDetailScreen() {
           <View style={styles.headerText}>
             {isEditing ? (
               <>
-                <FormTextInput label="Title" value={title} onChangeText={setTitle} />
+                <FormTextInput
+                  label="Title (optional)"
+                  value={title}
+                  onChangeText={setTitle}
+                  placeholder="Session title"
+                />
                 <FormDateTimePicker
-                  label="Date"
+                  label="Date (optional)"
                   value={date}
                   onChange={setDate}
                   mode="date"
@@ -549,6 +903,63 @@ export default function SessionDetailScreen() {
             <IconButton icon="pencil" onPress={handleEdit} accessibilityLabel="Edit session" />
           )}
         </View>
+
+        <Section title="Session Log" icon="text-box-outline">
+          {isEditing ? (
+            <>
+              <MentionInput
+                value={content}
+                onChangeText={setContent}
+                placeholder="Capture what happens in the moment..."
+                renderSuggestions={(triggers) => (
+                  <EntitySuggestions
+                    character={triggers.character}
+                    location={triggers.location}
+                    item={triggers.item}
+                    tag={triggers.tag}
+                  />
+                )}
+              />
+              <View style={styles.quickInsertBlock}>
+                <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  Quick insert
+                </Text>
+                <View style={styles.quickInsertRow}>
+                  {quickInsertItems.map((item) => (
+                    <IconButton
+                      key={item.label}
+                      icon={item.icon}
+                      size={iconSizes.md}
+                      mode="outlined"
+                      onPress={() => handleInsertTrigger(item.trigger)}
+                      accessibilityLabel={`Insert ${item.label} trigger`}
+                      iconColor={theme.colors.primary}
+                    />
+                  ))}
+                </View>
+                <View style={styles.quickInsertLabels}>
+                  {quickInsertItems.map((item) => (
+                    <Text
+                      key={`${item.label}-label`}
+                      variant="labelSmall"
+                      style={{ color: theme.colors.onSurfaceVariant }}
+                    >
+                      {item.trigger} {item.label}
+                    </Text>
+                  ))}
+                </View>
+              </View>
+            </>
+          ) : session.content?.trim() ? (
+            <MentionRenderer value={session.content} mentions={mentionDerived.mentions} />
+          ) : (
+            <View style={styles.summaryBlock}>
+              <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant }}>
+                No session log yet.
+              </Text>
+            </View>
+          )}
+        </Section>
 
         <Section title="Summary" icon="clipboard-text-outline">
           {isEditing ? (
@@ -660,8 +1071,8 @@ export default function SessionDetailScreen() {
           {isEditing ? (
             <View style={styles.linkList}>
               <AppCard
-                title="Campaigns"
-                subtitle={`${campaignIds.length} selected`}
+                title="Campaign"
+                subtitle={campaignIds.length > 0 ? '1 selected' : 'Not linked'}
                 onPress={() => openLinkModal('campaigns')}
                 right={
                   <View style={styles.editCardRight}>
@@ -672,7 +1083,7 @@ export default function SessionDetailScreen() {
                     />
                     <MaterialCommunityIcons
                       name="chevron-right"
-                      size={18}
+                      size={iconSizes.md}
                       color={theme.colors.onSurfaceVariant}
                     />
                   </View>
@@ -869,6 +1280,50 @@ export default function SessionDetailScreen() {
         confirmLoading={isDeleting}
         destructive
       />
+      {shadowPromptOpen && (
+        <FormModal
+          title="Incomplete entities"
+          visible={shadowPromptOpen}
+          onDismiss={closeShadowPrompt}
+          actions={
+            <View style={styles.shadowActions}>
+              <Button mode="contained" onPress={handleCompleteAll}>
+                Complete All Now
+              </Button>
+              <Button mode="text" onPress={closeShadowPrompt}>
+                Remind Me Later
+              </Button>
+            </View>
+          }
+        >
+          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+            You mentioned new entities during this session. Tap any to fill in details.
+          </Text>
+          <View style={styles.shadowList}>
+            {shadowPromptItems.map((item) => (
+              <AppCard
+                key={`${item.entityType}-${item.id ?? item.label}`}
+                title={item.label}
+                subtitle={item.entityType.toUpperCase()}
+                onPress={item.route ? () => router.push(item.route!) : undefined}
+                right={
+                  item.route ? (
+                    <MaterialCommunityIcons
+                      name="chevron-right"
+                      size={18}
+                      color={theme.colors.onSurfaceVariant}
+                    />
+                  ) : (
+                    <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                      Coming soon
+                    </Text>
+                  )
+                }
+              />
+            ))}
+          </View>
+        </FormModal>
+      )}
       {activeLinkModal && (
         <FormModal
           title={linkModalTitle}
@@ -901,6 +1356,26 @@ const styles = StyleSheet.create({
   },
   summaryInput: {
     minHeight: 120,
+  },
+  quickInsertBlock: {
+    gap: spacing[1],
+  },
+  quickInsertRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[1],
+  },
+  quickInsertLabels: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[2],
+  },
+  shadowActions: {
+    gap: spacing[2],
+  },
+  shadowList: {
+    marginTop: spacing[2],
+    gap: spacing[2],
   },
   summaryBlock: {
     gap: spacing[3],

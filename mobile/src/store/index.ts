@@ -19,8 +19,12 @@ interface StoreProviderProps {
 }
 
 /**
- * Provides the TinyBase store to the component tree.
- * Initializes the store, loads persisted data, and sets up auto-save.
+ * Renders a context provider that initializes and supplies the application store to its children.
+ *
+ * Initializes the store, loads persisted data, performs required backfills and migrations, starts persistence (auto-save), and ensures essential defaults (device ID, mention settings, and a continuity) before rendering children.
+ *
+ * @param children - Elements to render inside the provider
+ * @returns A React element that provides the initialized AppStore via context (or `null` while initializing)
  */
 export function StoreProvider({ children }: StoreProviderProps) {
   const [store, setStore] = useState<AppStore | null>(null);
@@ -29,15 +33,17 @@ export function StoreProvider({ children }: StoreProviderProps) {
 
   useEffect(() => {
     /**
-     * Initialize the application store: load persisted data, perform necessary migrations/backfills, and start persistence.
+     * Initialize the application store by loading persisted data, performing migrations/backfills, and starting persistence.
      *
-     * Ensures a device ID and mention settings exist, creates a default continuity when none are present, backfills continuity and scope metadata for campaigns, locations, NPCs, notes, and tags, and starts the persister's auto-save. If this is a first run or any migrations occurred, triggers an immediate save. On completion the initialized store is placed into component state and readiness is marked; on error a device ID will still be ensured.
+     * Ensures a device ID and mention settings exist, creates a default continuity if none exist, backfills continuity/scope/status/related metadata for campaigns, locations, NPCs, notes, tags, items, and session logs, and starts the persister's auto-save. If this is the first run or any migration occurred, triggers an immediate save. On completion the initialized store is placed into component state and readiness is marked; on error a device ID will still be ensured.
      */
     async function initStore() {
       const appStore = createAppStore();
       let persister: Persister | null = null;
       let didMigrateContinuity = false;
       let didMigrateMentionSettings = false;
+      let didMigrateEntityStatus = false;
+      let didMigrateSessionLogs = false;
 
       try {
         // Create persister and load existing data
@@ -121,11 +127,13 @@ export function StoreProvider({ children }: StoreProviderProps) {
         Object.entries(npcsTable).forEach(([npcId, row]) => {
           const scope = (row as { scope?: string }).scope;
           const continuityId = (row as { continuityId?: string }).continuityId;
-          if (!scope || !continuityId) {
+          const status = (row as { status?: string }).status;
+          if (!scope || !continuityId || !status) {
             appStore.setRow('npcs', npcId, {
               ...row,
               scope: scope || 'campaign',
               continuityId: continuityId || defaultContinuityId,
+              status: status || 'complete',
               originId: (row as { originId?: string }).originId || '',
               originContinuityId:
                 (row as { originContinuityId?: string }).originContinuityId || '',
@@ -133,6 +141,7 @@ export function StoreProvider({ children }: StoreProviderProps) {
               updated: now(),
             });
             didMigrateContinuity = true;
+            didMigrateEntityStatus = true;
           }
         });
 
@@ -193,11 +202,90 @@ export function StoreProvider({ children }: StoreProviderProps) {
           }
         });
 
+        // Backfill location status metadata
+        Object.entries(locationsTable).forEach(([locationId, row]) => {
+          const status = (row as { status?: string }).status;
+          if (!status) {
+            appStore.setRow('locations', locationId, {
+              ...row,
+              status: 'complete',
+              updated: now(),
+            });
+            didMigrateEntityStatus = true;
+          }
+        });
+
+        // Backfill item status metadata
+        const itemsTable = appStore.getTable('items');
+        Object.entries(itemsTable).forEach(([itemId, row]) => {
+          const status = (row as { status?: string }).status;
+          if (!status) {
+            appStore.setRow('items', itemId, {
+              ...row,
+              status: 'complete',
+              updated: now(),
+            });
+            didMigrateEntityStatus = true;
+          }
+        });
+
+        // Backfill session log mention fields
+        const sessionLogsTable = appStore.getTable('sessionLogs');
+        Object.entries(sessionLogsTable).forEach(([sessionId, row]) => {
+          const current = row as {
+            content?: string;
+            mentions?: string;
+            itemIds?: string;
+            summary?: string;
+            keyDecisions?: string;
+            outcomes?: string;
+          };
+
+          const updates: Record<string, string> = {};
+          if (current.content === undefined) {
+            const summary = (current.summary || '').trim();
+            const decisions = (current.keyDecisions || '').trim();
+            const outcomes = (current.outcomes || '').trim();
+            let legacyContent = summary;
+            if (!legacyContent && decisions) {
+              legacyContent = `Key decisions: ${decisions}`;
+            }
+            if (outcomes) {
+              legacyContent = legacyContent
+                ? `${legacyContent}\nOutcomes: ${outcomes}`
+                : `Outcomes: ${outcomes}`;
+            }
+            updates.content = legacyContent;
+          }
+          if (current.mentions === undefined) {
+            updates.mentions = '[]';
+          }
+          if (current.itemIds === undefined) {
+            updates.itemIds = '[]';
+          }
+
+          if (Object.keys(updates).length > 0) {
+            appStore.setRow('sessionLogs', sessionId, {
+              ...row,
+              ...updates,
+              updated: now(),
+            });
+            didMigrateSessionLogs = true;
+          }
+        });
+
         // Start auto-saving changes
         persister.startAutoSave();
 
         // Save immediately if this is first run or device ID was newly set
-        if (!hadData || didSetDeviceId || didMigrateContinuity || didMigrateMentionSettings) {
+        if (
+          !hadData ||
+          didSetDeviceId ||
+          didMigrateContinuity ||
+          didMigrateMentionSettings ||
+          didMigrateEntityStatus ||
+          didMigrateSessionLogs
+        ) {
           await persister.save();
         }
       } catch (error) {
@@ -235,8 +323,10 @@ export function StoreProvider({ children }: StoreProviderProps) {
 }
 
 /**
- * Hook to access the TinyBase store.
- * Must be used within a StoreProvider.
+ * Accesses the current AppStore from React context.
+ *
+ * @returns The current AppStore instance
+ * @throws Error if called outside of a StoreProvider
  */
 export function useStore(): AppStore {
   const store = useContext(StoreContext);

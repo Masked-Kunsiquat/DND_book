@@ -32,12 +32,22 @@ import {
   useTags,
 } from '../../src/hooks';
 
+/**
+ * Render the NPC management screen including search, filters, list, and creation/linking modals.
+ *
+ * Renders a searchable, tag- and status-filterable list of NPCs scoped to the current campaign/continuity,
+ * provides UI to create new NPCs (including linking to campaigns, locations, notes, and tags),
+ * and exposes a continuity library navigation. Handles creation state and client-side filtering.
+ *
+ * @returns The React element for the NPCs screen containing the list, filter controls, and modals.
+ */
 export default function NpcsScreen() {
   const { theme } = useTheme();
   const currentCampaign = useCurrentCampaign();
   const [query, setQuery] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [showShadowOnly, setShowShadowOnly] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [activeLinkModal, setActiveLinkModal] = useState<
@@ -95,14 +105,15 @@ export default function NpcsScreen() {
     const scoped = selectedTagIds.length
       ? npcs.filter((npc) => npc.tagIds.some((id) => selectedTagIds.includes(id)))
       : npcs;
-    if (!normalized) return scoped;
-    return scoped.filter((npc) => {
+    const shadowFiltered = showShadowOnly ? scoped.filter((npc) => npc.status === 'shadow') : scoped;
+    if (!normalized) return shadowFiltered;
+    return shadowFiltered.filter((npc) => {
       const name = npc.name?.toLowerCase() ?? '';
       const race = npc.race?.toLowerCase() ?? '';
       const role = npc.role?.toLowerCase() ?? '';
       return name.includes(normalized) || race.includes(normalized) || role.includes(normalized);
     });
-  }, [npcs, query, selectedTagIds]);
+  }, [npcs, query, selectedTagIds, showShadowOnly]);
 
   useEffect(() => {
     setSelectedTagIds(tagParam ? [tagParam] : []);
@@ -186,13 +197,19 @@ export default function NpcsScreen() {
       setCreateError('NPC name is required.');
       return;
     }
+    if (draftScope === 'continuity' && draftCampaignIds.length === 0) {
+      setCreateError('Select at least one campaign for this shared NPC.');
+      return;
+    }
     setIsCreating(true);
     setCreateError(null);
     try {
       const sharedCampaignIds =
         draftScope === 'continuity'
-          ? continuityCampaigns.map((campaign) => campaign.id)
-          : draftCampaignIds;
+          ? draftCampaignIds
+          : currentCampaign
+            ? [currentCampaign.id]
+            : [];
       createNpc({
         name: trimmed,
         race: draftRace,
@@ -229,7 +246,7 @@ export default function NpcsScreen() {
   const linkModalTitle = (() => {
     switch (activeLinkModal) {
       case 'campaigns':
-        return 'Campaigns';
+        return draftScope === 'continuity' ? 'Visible in campaigns' : 'Campaign';
       case 'locations':
         return 'Locations';
       case 'notes':
@@ -246,16 +263,23 @@ export default function NpcsScreen() {
       case 'campaigns':
         return (
           <FormMultiSelect
-            label="Campaigns"
+            label={draftScope === 'continuity' ? 'Visible in campaigns' : 'Campaign'}
             value={draftCampaignIds}
             options={campaignOptions}
-            onChange={setDraftCampaignIds}
+            onChange={(value) =>
+              setDraftCampaignIds(
+                draftScope === 'continuity'
+                  ? value
+                  : value.length > 0
+                    ? [value[value.length - 1]]
+                    : []
+              )
+            }
             helperText={
               draftScope === 'continuity'
-                ? 'Automatically linked to all campaigns in this continuity.'
+                ? 'Select which campaigns should see this NPC.'
                 : undefined
             }
-            disabled={draftScope === 'continuity'}
           />
         );
       case 'locations':
@@ -340,18 +364,24 @@ export default function NpcsScreen() {
         onChange={(value) => {
           const nextScope = value as EntityScope;
           setDraftScope(nextScope);
-          if (nextScope === 'continuity') {
-            setDraftCampaignIds(continuityCampaigns.map((campaign) => campaign.id));
-          } else if (currentCampaign?.id) {
+          if (nextScope === 'campaign' && currentCampaign?.id) {
             setDraftCampaignIds([currentCampaign.id]);
+          } else if (nextScope === 'continuity' && draftCampaignIds.length === 0) {
+            setDraftCampaignIds(currentCampaign?.id ? [currentCampaign.id] : []);
           }
         }}
-        helperText="Shared NPCs appear in every campaign in this continuity."
+        helperText="Shared NPCs live in the continuity and can be linked to multiple campaigns."
       />
       <View style={styles.linkList}>
         <AppCard
-          title="Campaigns"
-          subtitle={`${draftCampaignIds.length} selected`}
+          title={draftScope === 'continuity' ? 'Visible in campaigns' : 'Campaign'}
+          subtitle={
+            draftScope === 'continuity'
+              ? `${draftCampaignIds.length} selected`
+              : draftCampaignIds.length > 0
+                ? '1 selected'
+                : 'Not linked'
+          }
           onPress={() => openLinkModal('campaigns')}
           right={
             <View style={styles.editCardRight}>
@@ -483,6 +513,7 @@ export default function NpcsScreen() {
               onPress: () => {
                 setQuery('');
                 setSelectedTagIds([]);
+                setShowShadowOnly(false);
               },
             }}
           />
@@ -578,6 +609,26 @@ export default function NpcsScreen() {
                         No tags yet.
                       </Text>
                     )}
+                    <View style={styles.statusHeader}>
+                      <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                        Status
+                      </Text>
+                      {showShadowOnly && (
+                        <Button mode="text" onPress={() => setShowShadowOnly(false)} compact>
+                          Clear
+                        </Button>
+                      )}
+                    </View>
+                    <View style={styles.statusRow}>
+                      <Button
+                        mode={showShadowOnly ? 'contained' : 'outlined'}
+                        onPress={() => setShowShadowOnly((prev) => !prev)}
+                        icon="circle-outline"
+                        compact
+                      >
+                        Shadow only
+                      </Button>
+                    </View>
                   </>
                 )}
               </View>
@@ -673,6 +724,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: spacing[1],
+  },
+  statusHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing[1],
+    marginTop: spacing[2],
+  },
+  statusRow: {
+    flexDirection: 'row',
+    gap: spacing[2],
   },
   tagScroll: {
     paddingBottom: spacing[2],

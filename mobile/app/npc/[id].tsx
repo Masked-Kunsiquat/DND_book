@@ -34,6 +34,12 @@ import {
 } from '../../src/hooks';
 import { now } from '../../src/utils/id';
 
+/**
+ * Convert a date/time string into a localized, human-readable date and time.
+ *
+ * @param value - The date/time string to format; if omitted or not a valid date, it is treated as unknown.
+ * @returns The localized date and time string, or `'Unknown'` if `value` is missing or cannot be parsed.
+ */
 function formatDate(value?: string): string {
   if (!value) return 'Unknown';
   const parsed = new Date(value);
@@ -41,6 +47,13 @@ function formatDate(value?: string): string {
   return parsed.toLocaleString();
 }
 
+/**
+ * Render the NPC detail screen and provide UI for viewing, editing, linking, sharing, forking, removing, deleting, and completing shadow NPCs.
+ *
+ * Presents NPC profile and linked resources, manages edit form state and modals, and performs CRUD and sharing/forking actions via injected hooks.
+ *
+ * @returns The React element that renders the NPC detail screen
+ */
 export default function NpcDetailScreen() {
   const { theme } = useTheme();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
@@ -85,6 +98,10 @@ export default function NpcDetailScreen() {
     'campaigns' | 'locations' | 'notes' | 'tags' | null
   >(null);
 
+  const normalizeCampaignIds = (ids: string[]) => (ids.length > 0 ? [ids[0]] : []);
+  const resolveEditableCampaignIds = (ids: string[], scope?: string) =>
+    scope === 'continuity' ? ids : normalizeCampaignIds(ids);
+
   useEffect(() => {
     if (npc && !isEditing) {
       setName(npc.name);
@@ -92,7 +109,7 @@ export default function NpcDetailScreen() {
       setRole(npc.role);
       setBackground(npc.background);
       setImage(npc.image || null);
-      setCampaignIds(npc.campaignIds);
+      setCampaignIds(resolveEditableCampaignIds(npc.campaignIds, npc.scope));
       setLocationIds(npc.locationIds);
       setNoteIds(npc.noteIds);
       setTagIds(npc.tagIds);
@@ -139,9 +156,9 @@ export default function NpcDetailScreen() {
   }, [continuityId, locations]);
 
   const linkedCampaigns = useMemo(() => {
-    const ids = new Set(campaignIds);
+    const ids = new Set(resolveEditableCampaignIds(campaignIds, npc?.scope));
     return continuityCampaigns.filter((campaign) => ids.has(campaign.id));
-  }, [campaignIds, continuityCampaigns]);
+  }, [campaignIds, continuityCampaigns, npc?.scope]);
 
   const linkedLocations = useMemo(() => {
     const ids = new Set(locationIds);
@@ -170,12 +187,23 @@ export default function NpcDetailScreen() {
     setRole(npc.role);
     setBackground(npc.background);
     setImage(npc.image || null);
-    setCampaignIds(npc.campaignIds);
+    setCampaignIds(resolveEditableCampaignIds(npc.campaignIds, npc.scope));
     setLocationIds(npc.locationIds);
     setNoteIds(npc.noteIds);
     setTagIds(npc.tagIds);
     setError(null);
     setIsEditing(true);
+  };
+
+  const handleMarkComplete = () => {
+    if (!npc) return;
+    setError(null);
+    try {
+      updateNpc(npc.id, { status: 'complete' });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to mark NPC complete.';
+      setError(message);
+    }
   };
 
   const openLinkModal = (target: 'campaigns' | 'locations' | 'notes' | 'tags') => {
@@ -187,7 +215,7 @@ export default function NpcDetailScreen() {
   const linkModalTitle = (() => {
     switch (activeLinkModal) {
       case 'campaigns':
-        return 'Campaigns';
+        return npc?.scope === 'continuity' ? 'Visible in campaigns' : 'Campaign';
       case 'locations':
         return 'Locations';
       case 'notes':
@@ -204,10 +232,18 @@ export default function NpcDetailScreen() {
       case 'campaigns':
         return (
           <FormMultiSelect
-            label="Campaigns"
+            label={npc?.scope === 'continuity' ? 'Visible in campaigns' : 'Campaign'}
             value={campaignIds}
             options={campaignOptions}
-            onChange={setCampaignIds}
+            onChange={(value) =>
+              setCampaignIds(
+                npc?.scope === 'continuity'
+                  ? value
+                  : value.length > 0
+                    ? [value[value.length - 1]]
+                    : []
+              )
+            }
           />
         );
       case 'locations':
@@ -248,7 +284,7 @@ export default function NpcDetailScreen() {
       setRole(npc.role);
       setBackground(npc.background);
       setImage(npc.image || null);
-      setCampaignIds(npc.campaignIds);
+      setCampaignIds(resolveEditableCampaignIds(npc.campaignIds, npc.scope));
       setLocationIds(npc.locationIds);
       setNoteIds(npc.noteIds);
       setTagIds(npc.tagIds);
@@ -272,6 +308,7 @@ export default function NpcDetailScreen() {
         role,
         background,
         image: image ?? '',
+        status: npc.status === 'shadow' ? 'complete' : npc.status,
         campaignIds,
         locationIds,
         noteIds,
@@ -352,10 +389,16 @@ export default function NpcDetailScreen() {
     }
     setIsSharing(true);
     try {
+      const sharedCampaignIds =
+        npc.campaignIds.length > 0
+          ? npc.campaignIds
+          : currentCampaign
+            ? [currentCampaign.id]
+            : [];
       updateNpc(npc.id, {
         scope: 'continuity',
         continuityId,
-        campaignIds: continuityCampaigns.map((campaign) => campaign.id),
+        campaignIds: sharedCampaignIds,
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to share NPC.';
@@ -437,16 +480,28 @@ export default function NpcDetailScreen() {
               </Text>
             )}
           </View>
-          {!isEditing && (
-            <IconButton
-              icon="pencil"
-              onPress={handleEdit}
-              accessibilityLabel="Edit NPC"
-            />
-          )}
-        </View>
+        {!isEditing && (
+          <IconButton
+            icon="pencil"
+            onPress={handleEdit}
+            accessibilityLabel="Edit NPC"
+          />
+        )}
+      </View>
 
-        <Section title="Profile" icon="account-outline">
+      {!isEditing && npc.status === 'shadow' && (
+        <AppCard
+          title="Shadow NPC"
+          subtitle="Created from a mention. Fill in details to complete."
+          style={styles.shadowCard}
+        >
+          <Button mode="contained" onPress={handleMarkComplete}>
+            Mark Complete
+          </Button>
+        </AppCard>
+      )}
+
+      <Section title="Profile" icon="account-outline">
           {isEditing ? (
             <>
               <FormImagePicker label="Portrait" value={image} onChange={setImage} />
@@ -488,7 +543,7 @@ export default function NpcDetailScreen() {
               </Text>
               {npc.scope === 'continuity' && (
                 <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                  Editing shared NPCs affects all campaigns in this continuity.
+                  Editing shared NPCs affects every campaign linked to this continuity.
                 </Text>
               )}
             </>
@@ -499,8 +554,14 @@ export default function NpcDetailScreen() {
           {isEditing ? (
             <View style={styles.linkList}>
               <AppCard
-                title="Campaigns"
-                subtitle={`${campaignIds.length} selected`}
+                title={npc?.scope === 'continuity' ? 'Visible in campaigns' : 'Campaign'}
+                subtitle={
+                  npc?.scope === 'continuity'
+                    ? `${campaignIds.length} selected`
+                    : campaignIds.length > 0
+                      ? '1 selected'
+                      : 'Not linked'
+                }
                 onPress={() => openLinkModal('campaigns')}
                 right={
                   <View style={styles.editCardRight}>
@@ -726,7 +787,7 @@ export default function NpcDetailScreen() {
         title="Delete NPC?"
         description={
           npc?.scope === 'continuity'
-            ? 'This deletes the shared NPC for every campaign in this continuity.'
+            ? 'This deletes the shared NPC for any campaign linked to this continuity.'
             : 'This action cannot be undone.'
         }
         confirmLabel="Delete"
@@ -747,7 +808,7 @@ export default function NpcDetailScreen() {
       <ConfirmDialog
         visible={isShareOpen}
         title="Share to continuity?"
-        description="Shared NPCs appear in every campaign in this continuity."
+        description="Shared NPCs live in the continuity and can be linked to multiple campaigns."
         confirmLabel="Share"
         onCancel={closeShareDialog}
         onConfirm={confirmShare}
@@ -785,6 +846,9 @@ const styles = StyleSheet.create({
   },
   titleInput: {
     marginBottom: spacing[1],
+  },
+  shadowCard: {
+    marginBottom: spacing[3],
   },
   contentInput: {
     minHeight: 140,

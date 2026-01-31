@@ -73,6 +73,13 @@ const ALLOWED_LOCATION_TYPES = new Set<LocationType>(
   LOCATION_TYPE_OPTIONS.map((option) => option.value)
 );
 
+/**
+ * Display the detail screen for a single location, including viewing, editing, moving, sharing, tagging, media, and child-management flows.
+ *
+ * Loads location, campaign, tag, and related data; enforces parent/child type constraints; and provides UI and handlers to create, update, move, share, fork, remove from campaign, and delete a location with confirmation dialogs and inline validation.
+ *
+ * @returns The React element for the Location detail screen
+ */
 export default function LocationDetailScreen() {
   const { theme } = useTheme();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
@@ -123,9 +130,13 @@ export default function LocationDetailScreen() {
   const [isForking, setIsForking] = useState(false);
   const [activeLinkModal, setActiveLinkModal] = useState<'campaigns' | 'tags' | null>(null);
 
+  const normalizeCampaignIds = (ids: string[]) => (ids.length > 0 ? [ids[0]] : []);
+  const resolveEditableCampaignIds = (ids: string[], scope?: string) =>
+    scope === 'continuity' ? ids : normalizeCampaignIds(ids);
+
   const linkedCampaigns = useMemo(() => {
     if (!location) return [];
-    const ids = new Set(location.campaignIds);
+    const ids = new Set(resolveEditableCampaignIds(location.campaignIds, location.scope));
     return campaigns.filter((campaign) => ids.has(campaign.id));
   }, [campaigns, location]);
 
@@ -143,13 +154,6 @@ export default function LocationDetailScreen() {
   const showShareActions =
     location?.scope === 'campaign' ||
     (location?.scope === 'continuity' && Boolean(currentCampaign));
-
-  const continuityCampaignIds = useMemo(() => {
-    if (!continuityId) return [] as string[];
-    return campaigns
-      .filter((campaign) => campaign.continuityId === continuityId)
-      .map((campaign) => campaign.id);
-  }, [campaigns, continuityId]);
 
   const continuityCampaignOptions = useMemo(() => {
     if (!continuityId) return campaigns;
@@ -265,7 +269,7 @@ export default function LocationDetailScreen() {
       setType(location.type);
       setDescription(location.description);
       setParentId(location.parentId || '');
-      setCampaignIds(location.campaignIds);
+      setCampaignIds(resolveEditableCampaignIds(location.campaignIds, location.scope));
       setTagIds(location.tagIds);
       setMapImage(location.map || null);
       setGalleryImages(location.images);
@@ -278,7 +282,7 @@ export default function LocationDetailScreen() {
     setType(location.type);
     setDescription(location.description);
     setParentId(location.parentId || '');
-    setCampaignIds(location.campaignIds);
+    setCampaignIds(resolveEditableCampaignIds(location.campaignIds, location.scope));
     setTagIds(location.tagIds);
     setMapImage(location.map || null);
     setGalleryImages(location.images);
@@ -292,7 +296,14 @@ export default function LocationDetailScreen() {
 
   const closeLinkModal = () => setActiveLinkModal(null);
 
-  const linkModalTitle = activeLinkModal === 'tags' ? 'Tags' : 'Campaigns';
+  const linkModalTitle =
+    activeLinkModal === 'tags'
+      ? 'Tags'
+      : location?.scope === 'continuity'
+        ? 'Visible in campaigns'
+        : 'Campaign';
+  const campaignSectionTitle =
+    location?.scope === 'continuity' ? 'Campaign visibility' : 'Campaign';
 
   const linkModalBody =
     activeLinkModal === 'tags' ? (
@@ -304,10 +315,18 @@ export default function LocationDetailScreen() {
       />
     ) : (
       <FormMultiSelect
-        label="Campaigns"
+        label={location?.scope === 'continuity' ? 'Visible in campaigns' : 'Campaign'}
         value={campaignIds}
         options={campaignOptions}
-        onChange={setCampaignIds}
+        onChange={(value) =>
+          setCampaignIds(
+            location?.scope === 'continuity'
+              ? value
+              : value.length > 0
+                ? [value[value.length - 1]]
+                : []
+          )
+        }
       />
     );
 
@@ -317,7 +336,7 @@ export default function LocationDetailScreen() {
       setType(location.type);
       setDescription(location.description);
       setParentId(location.parentId || '');
-      setCampaignIds(location.campaignIds);
+      setCampaignIds(resolveEditableCampaignIds(location.campaignIds, location.scope));
       setTagIds(location.tagIds);
       setMapImage(location.map || null);
       setGalleryImages(location.images);
@@ -407,6 +426,7 @@ export default function LocationDetailScreen() {
         type: type as LocationType,
         description,
         parentId: parentId || '',
+        status: location.status === 'shadow' ? 'complete' : location.status,
         campaignIds,
         tagIds,
         map: mapImage ?? '',
@@ -415,6 +435,21 @@ export default function LocationDetailScreen() {
       setIsEditing(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update location.';
+      setError(message);
+    }
+  };
+
+  const handleMarkComplete = async () => {
+    if (!location) return;
+    setError(null);
+    try {
+      await updateLocation(location.id, { status: 'complete' });
+    } catch (err) {
+      const context = `location ${location.id} to status complete`;
+      const message =
+        err instanceof Error
+          ? `${err.message} (while marking ${context})`
+          : `Failed to mark ${context}.`;
       setError(message);
     }
   };
@@ -498,7 +533,11 @@ export default function LocationDetailScreen() {
     setIsSharing(true);
     try {
       const sharedCampaignIds =
-        continuityCampaignIds.length > 0 ? continuityCampaignIds : location.campaignIds;
+        location.campaignIds.length > 0
+          ? location.campaignIds
+          : currentCampaign
+            ? [currentCampaign.id]
+            : [];
       updateLocation(location.id, {
         scope: 'continuity',
         continuityId,
@@ -689,16 +728,28 @@ export default function LocationDetailScreen() {
                 </Pressable>
               )}
             </View>
-            {!isEditing && (
-              <IconButton
-                icon="pencil"
-                onPress={handleEdit}
-                accessibilityLabel="Edit location"
-              />
-            )}
-          </View>
+          {!isEditing && (
+            <IconButton
+              icon="pencil"
+              onPress={handleEdit}
+              accessibilityLabel="Edit location"
+            />
+          )}
+        </View>
 
-          <Section title="Details" icon="map-marker-outline">
+        {!isEditing && location.status === 'shadow' && (
+          <AppCard
+            title="Shadow location"
+            subtitle="Created from a mention. Fill in details to complete."
+            style={styles.shadowCard}
+          >
+            <Button mode="contained" onPress={handleMarkComplete}>
+              Mark Complete
+            </Button>
+          </AppCard>
+        )}
+
+        <Section title="Details" icon="map-marker-outline">
             {isEditing ? (
               <>
                 <FormSelect
@@ -730,7 +781,7 @@ export default function LocationDetailScreen() {
                 </Text>
                 {location.scope === 'continuity' && (
                   <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    Editing shared locations affects all campaigns in this continuity.
+                    Editing shared locations affects every campaign this location is linked to.
                   </Text>
                 )}
                 <View style={styles.metaRow}>
@@ -774,11 +825,17 @@ export default function LocationDetailScreen() {
             )}
           </Section>
 
-        <Section title="Campaigns" icon="folder-outline">
+        <Section title={campaignSectionTitle} icon="folder-outline">
           {isEditing ? (
             <AppCard
-              title="Campaigns"
-              subtitle={`${campaignIds.length} selected`}
+              title={location?.scope === 'continuity' ? 'Visible in campaigns' : 'Campaign'}
+              subtitle={
+                location?.scope === 'continuity'
+                  ? `${campaignIds.length} selected`
+                  : campaignIds.length > 0
+                    ? '1 selected'
+                    : 'Not linked'
+              }
               onPress={() => openLinkModal('campaigns')}
               right={
                 <View style={styles.editCardRight}>
@@ -955,7 +1012,7 @@ export default function LocationDetailScreen() {
         title="Delete location?"
         description={
           location?.scope === 'continuity'
-            ? 'This deletes the shared location for every campaign in this continuity.'
+            ? 'This deletes the shared location for any campaign it is linked to.'
             : 'This will remove the location and leave any children orphaned.'
         }
         confirmLabel="Delete"
@@ -976,7 +1033,7 @@ export default function LocationDetailScreen() {
       <ConfirmDialog
         visible={isShareOpen}
         title="Share to continuity?"
-        description="Shared locations appear in every campaign in this continuity."
+        description="Shared locations live in the continuity and can be linked to multiple campaigns."
         confirmLabel="Share"
         onCancel={closeShareDialog}
         onConfirm={confirmShare}
@@ -1012,6 +1069,9 @@ const styles = StyleSheet.create({
   },
   titleInput: {
     marginBottom: spacing[1],
+  },
+  shadowCard: {
+    marginBottom: spacing[3],
   },
   breadcrumbHeader: {
     paddingBottom: spacing[3],

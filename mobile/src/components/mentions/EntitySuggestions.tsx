@@ -106,12 +106,14 @@ function fuzzyScore(query: string, target: string): number {
 }
 
 /**
- * Produce up to `max` suggestion items that best match the provided query, ordered by relevance and name.
+ * Selects and orders up to `max` suggestion items that best match the provided query.
  *
- * @param items - Candidate suggestion items to score and filter
- * @param query - The user-entered text used for fuzzy matching
+ * If `query` is empty (after trimming/normalizing), all items are considered; otherwise items with non-positive fuzzy scores are excluded. Results are sorted by descending relevance score and alphabetically by item name as a tiebreaker.
+ *
+ * @param items - Candidate suggestion items to evaluate
+ * @param query - The user-entered text used for fuzzy matching (normalized internally)
  * @param max - Maximum number of suggestions to return
- * @returns An array of up to `max` suggestion items that match `query`, ordered by descending relevance then by item name
+ * @returns An array of matching SuggestionItem objects ordered by descending relevance, then by name, limited to at most `max` items
  */
 function filterSuggestions(items: SuggestionItem[], query: string, max: number): SuggestionItem[] {
   const normalizedQuery = normalize(query);
@@ -131,20 +133,19 @@ function filterSuggestions(items: SuggestionItem[], query: string, max: number):
 }
 
 /**
- * Render a contextual suggestion list for characters, locations, items, or tags based on a trigger keyword.
+ * Render a contextual suggestion surface for characters, locations, items, or tags using the first active trigger.
  *
- * Displays a labeled surface containing fuzzy-matched suggestions (NPCs, PCs, locations, items, or tags)
- * for the first provided trigger prop with a `keyword`. Shows an optional "Create" row when the trimmed
- * keyword is non-empty and no existing item name exactly matches it; selecting Create attempts to create
- * a shadow entity and then calls the active trigger's `onSelect`.
+ * Shows fuzzy-matched suggestions for the active trigger's keyword and, when the trimmed keyword is non-empty
+ * and does not exactly match an existing item's name, offers a "Create" row that attempts to create a shadow entity
+ * and then invokes the active trigger's `onSelect`.
  *
- * @param character - Trigger data for characters; providing `{ keyword, onSelect }` enables character suggestions (NPCs + PCs)
- * @param location - Trigger data for locations; providing `{ keyword, onSelect }` enables location suggestions
- * @param item - Trigger data for items; providing `{ keyword, onSelect }` enables item suggestions
- * @param tag - Trigger data for tags; providing `{ keyword, onSelect }` enables tag suggestions
+ * @param character - Trigger data for characters (`{ keyword, onSelect }`), enabling NPC and PC suggestions when provided
+ * @param location - Trigger data for locations (`{ keyword, onSelect }`), enabling location suggestions when provided
+ * @param item - Trigger data for items (`{ keyword, onSelect }`), enabling item suggestions when provided
+ * @param tag - Trigger data for tags (`{ keyword, onSelect }`), enabling tag suggestions when provided
  * @param maxSuggestions - Maximum number of suggestion rows to show (default: 6)
  * @param containerStyle - Optional style overrides for the suggestion container
- * @returns The suggestion surface UI or `null` when no trigger is active
+ * @returns The rendered suggestion surface element, or `null` when no trigger is active
  */
 export function EntitySuggestions({
   character,
@@ -233,10 +234,6 @@ export function EntitySuggestions({
     [baseSuggestions, keyword, maxSuggestions]
   );
 
-  if (!activeEntry || !activeData) {
-    return null;
-  }
-
   const hasExactMatch = useMemo(() => {
     if (!trimmedKeyword) return false;
     const normalizedKeyword = normalize(trimmedKeyword);
@@ -244,6 +241,10 @@ export function EntitySuggestions({
   }, [baseSuggestions, trimmedKeyword]);
 
   const showCreate = Boolean(trimmedKeyword) && !hasExactMatch;
+
+  if (!activeEntry || !activeData) {
+    return null;
+  }
 
   return (
     <Surface

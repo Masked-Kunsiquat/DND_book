@@ -5,6 +5,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
   FormModal,
+  FormMultiSelect,
   FormSelect,
   FormTextInput,
   LocationMultiSelect,
@@ -60,6 +61,14 @@ const pluralizeLocationType = (type: LocationType, count: number) => {
   return `${type}s`;
 };
 
+/**
+ * Render the Locations screen for the current campaign, providing filtering, grouping, and creation tools.
+ *
+ * Shows a list of locations grouped by root, supports filtering by type, tags, and shadow status, displays
+ * hierarchy and issue counts, and exposes UI to create new locations or import from continuity.
+ *
+ * @returns The React element for the Locations screen
+ */
 export default function LocationsScreen() {
   const { theme } = useTheme();
   const currentCampaign = useCurrentCampaign();
@@ -67,12 +76,14 @@ export default function LocationsScreen() {
   const [typeFilter, setTypeFilter] = useState<LocationType | 'all'>('all');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [showShadowOnly, setShowShadowOnly] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [draftName, setDraftName] = useState('');
   const [draftType, setDraftType] = useState<LocationType>('Locale');
   const [draftScope, setDraftScope] = useState<EntityScope>('campaign');
+  const [draftCampaignIds, setDraftCampaignIds] = useState<string[]>([]);
   const [draftParentId, setDraftParentId] = useState('');
   const [draftDescription, setDraftDescription] = useState('');
   const createLocation = useCreateLocation();
@@ -91,6 +102,18 @@ export default function LocationsScreen() {
     );
   }, [allLocations, currentCampaign]);
 
+  const continuityCampaigns = useMemo(() => {
+    if (!continuityId) return [];
+    return campaigns.filter((campaign) => campaign.continuityId === continuityId);
+  }, [campaigns, continuityId]);
+
+  const campaignOptions = useMemo(() => {
+    return continuityCampaigns.map((campaign) => ({
+      label: campaign.name || 'Untitled campaign',
+      value: campaign.id,
+    }));
+  }, [continuityCampaigns]);
+
   const tagParam = useMemo(() => {
     const raw = params.tagId;
     return Array.isArray(raw) ? raw[0] : raw ?? '';
@@ -100,9 +123,12 @@ export default function LocationsScreen() {
     const scoped = selectedTagIds.length
       ? locations.filter((location) => location.tagIds.some((id) => selectedTagIds.includes(id)))
       : locations;
-    if (typeFilter === 'all') return scoped;
-    return scoped.filter((location) => location.type === typeFilter);
-  }, [locations, selectedTagIds, typeFilter]);
+    const shadowFiltered = showShadowOnly
+      ? scoped.filter((location) => location.status === 'shadow')
+      : scoped;
+    if (typeFilter === 'all') return shadowFiltered;
+    return shadowFiltered.filter((location) => location.type === typeFilter);
+  }, [locations, selectedTagIds, showShadowOnly, typeFilter]);
 
   const { locationById, depthById } = useMemo(() => {
     const locationMap = new Map<string, Location>();
@@ -305,6 +331,7 @@ export default function LocationsScreen() {
     setDraftName(`New Location ${continuityLocations.length + 1}`);
     setDraftType('Locale');
     setDraftScope('campaign');
+    setDraftCampaignIds(currentCampaign?.id ? [currentCampaign.id] : []);
     setDraftParentId('');
     setDraftDescription('');
     setCreateError(null);
@@ -345,6 +372,10 @@ export default function LocationsScreen() {
       setCreateError('Location name is required.');
       return;
     }
+    if (draftScope === 'continuity' && draftCampaignIds.length === 0) {
+      setCreateError('Select at least one campaign for this shared location.');
+      return;
+    }
     if (draftParentId && !allowedParentIds.has(draftParentId)) {
       setCreateError('Parent must be higher in the location hierarchy.');
       return;
@@ -355,9 +386,7 @@ export default function LocationsScreen() {
       const continuityId = currentCampaign?.continuityId ?? '';
       const sharedCampaignIds =
         draftScope === 'continuity'
-          ? campaigns
-              .filter((campaign) => campaign.continuityId === continuityId)
-              .map((campaign) => campaign.id)
+          ? draftCampaignIds
           : currentCampaign
             ? [currentCampaign.id]
             : [];
@@ -420,9 +449,24 @@ export default function LocationsScreen() {
         label="Scope"
         value={draftScope}
         options={LOCATION_SCOPE_OPTIONS}
-        onChange={(value) => setDraftScope(value as EntityScope)}
-        helperText="Shared locations appear in every campaign in this continuity."
+        onChange={(value) => {
+          const nextScope = value as EntityScope;
+          setDraftScope(nextScope);
+          if (nextScope === 'campaign') {
+            setDraftCampaignIds(currentCampaign?.id ? [currentCampaign.id] : []);
+          }
+        }}
+        helperText="Shared locations live in the continuity and can be linked to multiple campaigns."
       />
+      {draftScope === 'continuity' && (
+        <FormMultiSelect
+          label="Visible in campaigns"
+          value={draftCampaignIds}
+          options={campaignOptions}
+          onChange={setDraftCampaignIds}
+          helperText="Select which campaigns should see this location."
+        />
+      )}
       <LocationMultiSelect
         locations={parentCandidates}
         value={draftParentId ? [draftParentId] : []}
@@ -478,6 +522,7 @@ export default function LocationsScreen() {
               onPress: () => {
                 setTypeFilter('all');
                 setSelectedTagIds([]);
+                setShowShadowOnly(false);
               },
             }}
           />
@@ -679,6 +724,26 @@ export default function LocationsScreen() {
                         No tags yet.
                       </Text>
                     )}
+                    <View style={styles.statusHeader}>
+                      <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                        Status
+                      </Text>
+                      {showShadowOnly && (
+                        <Button mode="text" onPress={() => setShowShadowOnly(false)} compact>
+                          Clear
+                        </Button>
+                      )}
+                    </View>
+                    <View style={styles.statusRow}>
+                      <Button
+                        mode={showShadowOnly ? 'contained' : 'outlined'}
+                        onPress={() => setShowShadowOnly((prev) => !prev)}
+                        icon="circle-outline"
+                        compact
+                      >
+                        Shadow only
+                      </Button>
+                    </View>
                   </>
                 )}
               </View>
@@ -853,6 +918,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  statusHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing[2],
+  },
+  statusRow: {
+    flexDirection: 'row',
+    gap: spacing[2],
   },
   tagScroll: {
     paddingBottom: spacing[2],

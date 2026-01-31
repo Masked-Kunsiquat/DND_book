@@ -127,21 +127,20 @@ Recommended pool (avoiding common punctuation):
 | `~` | Available alternative |
 | `^` | Available alternative |
 | `&` | Available alternative |
-| `%` | Available (but avoid — encoding confusion) |
 
 ### B.2 Mention Data Model
 
 Mentions are **structured tokens**, not markdown syntax.
 
-#### Stored Format
+#### Stored Format (Current)
 
 ```typescript
 interface SessionLogContent {
-  // Raw text with placeholder tokens
-  text: string;
-  // Example: "I met {{@:npc:abc123}} at {{$:location:def456}}"
+  // Raw text with react-native-controlled-mentions markup
+  content: string;
+  // Example: "I met {@}[Lira](npc123) at {$}[Whispering Springs](loc456)"
 
-  // Resolved mention metadata
+  // Resolved mention metadata (source of truth for entity links)
   mentions: Mention[];
 }
 
@@ -160,9 +159,9 @@ interface Mention {
 
 | User Sees | Stored As |
 |-----------|-----------|
-| `[Whispering Springs]` (styled chip) | `{{$:location:xyz123}}` |
-| `[Lira]` (styled chip) | `{{@:npc:abc456}}` |
-| `[New Guy]` (faded chip) | `{{@:npc:null:New Guy}}` |
+| `[Whispering Springs]` (styled chip) | `{$}[Whispering Springs](xyz123)` |
+| `[Lira]` (styled chip) | `{@}[Lira](abc456)` |
+| `[New Guy]` (faded chip) | `{@}[New Guy](null)` |
 
 **Users never see encoding, tokens, or raw syntax.**
 
@@ -419,7 +418,7 @@ sessionLogs: {
   id: { type: 'string' },
   title: { type: 'string' },
   date: { type: 'string' },
-  campaignId: { type: 'string' },      // Single campaign (session belongs to one)
+  campaignIds: { type: 'string' },     // JSON array (intend single campaign selection)
 
   // PRIMARY CAPTURE FIELD
   content: { type: 'string' },         // NEW: Raw text with mention tokens
@@ -522,37 +521,37 @@ sessionLogs: {
 
 #### 3.1 Capture UI
 
-- [ ] Redesign session log create/edit screen
-- [ ] Integrate `MentionInput` component
-- [ ] Remove required fields during capture
-- [ ] Add quick-insert trigger buttons
-- [ ] Implement auto-save
+- [x] Redesign session log create/edit screen
+- [x] Integrate `MentionInput` component
+- [x] Remove required fields during capture
+- [x] Add quick-insert trigger buttons
+- [x] Implement auto-save
 
 #### 3.2 Entity Extraction
 
-- [ ] Parse mentions from content on save
-- [ ] Update `locationIds`, `npcIds`, etc. from mentions
-- [ ] Handle shadow entity references
+- [x] Parse mentions from content on save
+- [x] Update `locationIds`, `npcIds`, etc. from mentions
+- [x] Handle shadow entity references
 
 #### 3.3 Post-Session Flow
 
-- [ ] Create "Incomplete Entities" prompt
-- [ ] Add filter for shadow entities in lists
-- [ ] Implement shadow → complete transition
+- [x] Create "Incomplete Entities" prompt
+- [x] Add filter for shadow entities in lists
+- [x] Implement shadow → complete transition
 
 ### Phase 4: Polish (Week 4)
 
 #### 4.1 Display & Rendering
 
-- [ ] Create `MentionRenderer` for read-only display
-- [ ] Implement tap-to-navigate on mentions
-- [ ] Add shadow entity visual treatment everywhere
+- [x] Create `MentionRenderer` for read-only display
+- [x] Implement tap-to-navigate on mentions
+- [x] Add shadow entity visual treatment everywhere
 
 #### 4.2 Migration & Testing
 
-- [ ] Create migration for existing session logs
+- [x] Create migration for existing session logs
 - [ ] Test P2P sync with mentions
-- [ ] Handle edge cases (deleted entities, etc.)
+- [x] Handle edge cases (deleted entities, etc.)
 
 ---
 
@@ -578,10 +577,10 @@ sessionLogs: {
 ```typescript
 // Stored
 {
-  content: "Met {{@:abc123}} at {{$:def456}}",
+  content: "Met {@}[Lira](abc123) at {$}[Whispering Springs](def456)",
   mentions: [
-    { trigger: '@', entityType: 'npc', entityId: 'abc123', label: 'Lira', ... },
-    { trigger: '$', entityType: 'location', entityId: 'def456', label: 'Whispering Springs', ... }
+    { trigger: '@', entityType: 'npc', entityId: 'abc123', displayLabel: 'Lira', ... },
+    { trigger: '$', entityType: 'location', entityId: 'def456', displayLabel: 'Whispering Springs', ... }
   ]
 }
 ```
@@ -619,7 +618,6 @@ Trigger determines entity type search context.
 |------|---------|
 | `mobile/src/components/mentions/MentionInput.tsx` | Wrapper around library |
 | `mobile/src/components/mentions/EntitySuggestions.tsx` | Unified picker |
-| `mobile/src/components/mentions/MentionChip.tsx` | Styled chip component |
 | `mobile/src/components/mentions/MentionRenderer.tsx` | Read-only display |
 | `mobile/src/hooks/useItems.ts` | Item CRUD operations |
 | `mobile/src/hooks/useMentionSettings.ts` | Trigger preferences |
@@ -666,24 +664,24 @@ Trigger determines entity type search context.
 
 ## Appendix: Reference Implementation
 
-### Mention Token Format
+### Controlled Mentions Markup
 
 ```
-{{TRIGGER:ENTITY_TYPE:ENTITY_ID}}
-{{TRIGGER:ENTITY_TYPE:null:LABEL}}  // for shadow entities
+{TRIGGER}[LABEL](ENTITY_ID)
+{TRIGGER}[LABEL](null)  // for shadow entities
 ```
 
 Examples:
-- `{{@:npc:abc123}}` → complete NPC mention
-- `{{@:npc:null:Strange Merchant}}` → shadow NPC
-- `{{$:location:def456}}` → complete location
-- `{{#:tag:xyz789}}` → tag
+- `{@}[Lira](abc123)` → complete NPC mention
+- `{@}[Strange Merchant](null)` → shadow NPC
+- `{$}[Whispering Springs](def456)` → complete location
+- `{#}[mystery](xyz789)` → tag
 
-### Parsing Regex
+### Parsing Regex (Library)
 
 ```typescript
-const MENTION_TOKEN_REGEX = /\{\{([^:]+):([^:]+):([^:}]+)(?::([^}]+))?\}\}/g;
-// Groups: trigger, entityType, entityId, label (optional, for shadows)
+const triggerRegEx = /({([^{^}]*)}\[([^[]*)]\(([^(^)]*)\))/i;
+// match[2] = trigger, match[3] = label, match[4] = id (or "null")
 ```
 
 ### Example Session Log Content
@@ -698,14 +696,14 @@ merchants. We fought [Goblin Scout] × 3. Found [Emerald Dagger] and met
 **Stored as**:
 ```json
 {
-  "content": "Arrived at {{$:location:loc1}}. Met {{@:npc:npc1}} who told us about the missing merchants. We fought {{@:npc:npc2}} × 3. Found {{!:item:item1}} and met {{@:npc:null:Strange Merchant}} who wanted to buy it. Tagged this as {{#:tag:tag1}}.",
+  "content": "Arrived at {$}[Whispering Springs](loc1). Met {@}[Lira](npc1) who told us about the missing merchants. We fought {@}[Goblin Scout](npc2) × 3. Found {!}[Emerald Dagger](item1) and met {@}[Strange Merchant](null) who wanted to buy it. Tagged this as {#}[mystery](tag1).",
   "mentions": [
-    { "trigger": "$", "entityType": "location", "entityId": "loc1", "label": "Whispering Springs", "status": "resolved" },
-    { "trigger": "@", "entityType": "npc", "entityId": "npc1", "label": "Lira", "status": "resolved" },
-    { "trigger": "@", "entityType": "npc", "entityId": "npc2", "label": "Goblin Scout", "status": "resolved" },
-    { "trigger": "!", "entityType": "item", "entityId": "item1", "label": "Emerald Dagger", "status": "resolved" },
-    { "trigger": "@", "entityType": "npc", "entityId": null, "label": "Strange Merchant", "status": "shadow" },
-    { "trigger": "#", "entityType": "tag", "entityId": "tag1", "label": "mystery", "status": "resolved" }
+    { "trigger": "$", "entityType": "location", "entityId": "loc1", "displayLabel": "Whispering Springs", "status": "resolved" },
+    { "trigger": "@", "entityType": "npc", "entityId": "npc1", "displayLabel": "Lira", "status": "resolved" },
+    { "trigger": "@", "entityType": "npc", "entityId": "npc2", "displayLabel": "Goblin Scout", "status": "resolved" },
+    { "trigger": "!", "entityType": "item", "entityId": "item1", "displayLabel": "Emerald Dagger", "status": "resolved" },
+    { "trigger": "@", "entityType": "npc", "entityId": null, "displayLabel": "Strange Merchant", "status": "shadow" },
+    { "trigger": "#", "entityType": "tag", "entityId": "tag1", "displayLabel": "mystery", "status": "resolved" }
   ]
 }
 ```

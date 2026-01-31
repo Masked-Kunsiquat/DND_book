@@ -6,6 +6,7 @@ import {
   AppCard,
   FormModal,
   LocationMultiSelect,
+  FormMultiSelect,
   FormSelect,
   FormTextInput,
   Screen,
@@ -29,6 +30,13 @@ import {
   useTags,
 } from '../../src/hooks';
 
+/**
+ * Screen that displays and manages notes for the current campaign and continuity, including search, tag filtering, linking, and note creation.
+ *
+ * Renders a searchable, filterable list of notes scoped to the active campaign/continuity, empty states when no notes or campaigns exist, and modals for creating notes and linking tags/locations.
+ *
+ * @returns A React element containing the notes list UI, filter controls, FAB to create notes, and associated modals.
+ */
 export default function NotesScreen() {
   const { theme } = useTheme();
   const campaigns = useCampaigns();
@@ -46,6 +54,7 @@ export default function NotesScreen() {
   const [draftContent, setDraftContent] = useState('');
   const [draftScope, setDraftScope] = useState<EntityScope>('campaign');
   const [draftCampaignId, setDraftCampaignId] = useState('');
+  const [draftCampaignIds, setDraftCampaignIds] = useState<string[]>([]);
   const [draftLocationIds, setDraftLocationIds] = useState<string[]>([]);
   const [draftTagIds, setDraftTagIds] = useState<string[]>([]);
   const createNote = useCreateNote();
@@ -80,12 +89,17 @@ export default function NotesScreen() {
     return new Map(campaigns.map((campaign) => [campaign.id, campaign]));
   }, [campaigns]);
 
+  const continuityCampaigns = useMemo(() => {
+    if (!continuityId) return campaigns;
+    return campaigns.filter((campaign) => campaign.continuityId === continuityId);
+  }, [campaigns, continuityId]);
+
   const campaignOptions = useMemo(() => {
-    return campaigns.map((campaign) => ({
+    return continuityCampaigns.map((campaign) => ({
       label: campaign.name || 'Untitled campaign',
       value: campaign.id,
     }));
-  }, [campaigns]);
+  }, [continuityCampaigns]);
 
   const continuityLocations = useMemo(() => {
     if (!continuityId) return [];
@@ -172,6 +186,7 @@ export default function NotesScreen() {
     setDraftContent('');
     setDraftScope('campaign');
     setDraftCampaignId(currentCampaign?.id ?? campaigns[0]?.id ?? '');
+    setDraftCampaignIds(currentCampaign?.id ? [currentCampaign.id] : []);
     setDraftLocationIds([]);
     setDraftTagIds([]);
     setCreateError(null);
@@ -204,9 +219,11 @@ export default function NotesScreen() {
     setDraftTagIds([]);
     if (value === 'campaign') {
       setDraftCampaignId(currentCampaign?.id ?? campaigns[0]?.id ?? '');
+      setDraftCampaignIds([]);
       return;
     }
     setDraftCampaignId('');
+    setDraftCampaignIds(currentCampaign?.id ? [currentCampaign.id] : []);
   };
 
   const handleCreateTag = (tagName: string) => {
@@ -255,6 +272,10 @@ export default function NotesScreen() {
       setCreateError('Select a continuity before creating a shared note.');
       return;
     }
+    if (draftScope === 'continuity' && draftCampaignIds.length === 0) {
+      setCreateError('Select at least one campaign for this shared note.');
+      return;
+    }
     setIsCreating(true);
     try {
       createNote({
@@ -268,9 +289,7 @@ export default function NotesScreen() {
             ? draftCampaignId
               ? [draftCampaignId]
               : []
-            : currentCampaign?.id
-              ? [currentCampaign.id]
-              : [],
+            : draftCampaignIds,
         locationIds: draftLocationIds,
         tagIds: draftTagIds,
       });
@@ -312,7 +331,7 @@ export default function NotesScreen() {
           { label: 'Shared in continuity', value: 'continuity' },
         ]}
         onChange={(value) => handleScopeChange(value as EntityScope)}
-        helperText="Shared notes are visible to every campaign in this continuity."
+        helperText="Shared notes live in the continuity and can be linked to multiple campaigns."
       />
       {draftScope === 'campaign' && (
         <FormSelect
@@ -320,6 +339,15 @@ export default function NotesScreen() {
           value={draftCampaignId}
           options={campaignOptions}
           onChange={handleCampaignChange}
+        />
+      )}
+      {draftScope === 'continuity' && (
+        <FormMultiSelect
+          label="Visible in campaigns"
+          value={draftCampaignIds}
+          options={campaignOptions}
+          onChange={setDraftCampaignIds}
+          helperText="Select which campaigns should see this note."
         />
       )}
       <FormTextInput label="Title" value={draftTitle} onChangeText={setDraftTitle} />
