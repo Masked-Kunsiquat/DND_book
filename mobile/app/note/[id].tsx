@@ -380,7 +380,14 @@ export default function NoteDetailScreen() {
     }
     setIsSharing(true);
     try {
-      const linkedCampaignIds = currentCampaign?.id ? [currentCampaign.id] : [];
+      const linkedCampaignIds =
+        note.campaignIds.length > 0
+          ? note.campaignIds
+          : note.campaignId
+            ? [note.campaignId]
+            : currentCampaign?.id
+              ? [currentCampaign.id]
+              : [];
       updateNote(note.id, {
         scope: 'continuity',
         continuityId,

@@ -206,6 +206,7 @@ export default function ItemDetailScreen() {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete item.';
       setError(message);
+    } finally {
       setIsDeleting(false);
     }
   };
