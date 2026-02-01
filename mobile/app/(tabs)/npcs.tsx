@@ -576,7 +576,7 @@ export default function NpcsScreen() {
                 </View>
                 {filtersOpen && (
                   <>
-                    <View style={styles.tagHeader}>
+                    <View style={[commonStyles.flexRowBetween, styles.tagHeader]}>
                       <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
                         Tags
                       </Text>
@@ -609,7 +609,7 @@ export default function NpcsScreen() {
                         No tags yet.
                       </Text>
                     )}
-                    <View style={styles.statusHeader}>
+                    <View style={[commonStyles.flexRowBetween, styles.statusHeader]}>
                       <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
                         Status
                       </Text>
@@ -619,7 +619,7 @@ export default function NpcsScreen() {
                         </Button>
                       )}
                     </View>
-                    <View style={styles.statusRow}>
+                    <View style={[commonStyles.flexRow, styles.statusRow]}>
                       <Button
                         mode={showShadowOnly ? 'contained' : 'outlined'}
                         onPress={() => setShowShadowOnly((prev) => !prev)}
@@ -708,16 +708,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing[3],
   },
   tagHeader: {
-    ...commonStyles.flexRowBetween,
     marginBottom: spacing[1],
   },
   statusHeader: {
-    ...commonStyles.flexRowBetween,
     marginBottom: spacing[1],
     marginTop: spacing[2],
   },
   statusRow: {
-    ...commonStyles.flexRow,
     gap: spacing[2],
   },
   tagScroll: {
@@ -728,7 +725,6 @@ const styles = StyleSheet.create({
     marginRight: spacing[2],
   },
   listHeaderActions: {
-    ...commonStyles.flexRow,
     gap: spacing[2],
   },
   cardWrapper: {

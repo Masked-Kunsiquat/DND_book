@@ -308,7 +308,7 @@ export default function PlayerCharacterTemplatesScreen() {
           New Template
         </Button>
         {error && (
-          <View style={styles.errorRow}>
+          <View style={[commonStyles.flexRow, styles.errorRow]}>
             <MaterialCommunityIcons
               name="alert-circle-outline"
               size={iconSizes.sm}
@@ -472,7 +472,6 @@ const styles = StyleSheet.create({
     minHeight: 120,
   },
   errorRow: {
-    ...commonStyles.flexRow,
     gap: spacing[2],
     marginTop: spacing[2],
   },

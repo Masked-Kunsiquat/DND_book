@@ -202,7 +202,7 @@ export default function CampaignsScreen() {
           />
         )}
       </Section>
-      <View style={styles.listHeader}>
+      <View style={[commonStyles.flexRowBetween, styles.listHeader]}>
         <View style={commonStyles.flexRow}>
           <MaterialCommunityIcons
             name="folder"
@@ -299,7 +299,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing[3],
   },
   listHeader: {
-    ...commonStyles.flexRowBetween,
     marginBottom: spacing[3],
   },
   listHeaderIcon: {

@@ -546,7 +546,7 @@ export default function LocationsScreen() {
           ListHeaderComponent={
             <View style={styles.header}>
               <Section title="Overview" icon="chart-box-outline">
-                <View style={styles.statsRow}>
+                <View style={[commonStyles.flexRow, styles.statsRow]}>
                   <StatCard
                     label={pluralize('Location', locations.length)}
                     value={locations.length}
@@ -573,7 +573,7 @@ export default function LocationsScreen() {
                     }
                   />
                 </View>
-                <View style={styles.statsRow}>
+                <View style={[commonStyles.flexRow, styles.statsRow]}>
                   <StatCard
                     label={pluralize('Issue', hierarchyIssues.total)}
                     value={hierarchyIssues.total}
@@ -734,7 +734,7 @@ export default function LocationsScreen() {
                         </Button>
                       )}
                     </View>
-                    <View style={styles.statusRow}>
+                    <View style={[commonStyles.flexRow, styles.statusRow]}>
                       <Button
                         mode={showShadowOnly ? 'contained' : 'outlined'}
                         onPress={() => setShowShadowOnly((prev) => !prev)}
@@ -783,6 +783,7 @@ export default function LocationsScreen() {
             <Pressable
               onPress={() => router.push(`/location/${section.root.id}`)}
               style={[
+                commonStyles.flexRowBetween,
                 styles.rootHeader,
                 {
                   backgroundColor: theme.colors.surfaceVariant,
@@ -799,7 +800,7 @@ export default function LocationsScreen() {
                   {section.root.type} root
                 </Text>
               </View>
-              <View style={styles.rootHeaderMeta}>
+              <View style={[commonStyles.flexRow, styles.rootHeaderMeta]}>
                 {!section.isRootVisible && (
                   <View
                     style={[
@@ -890,14 +891,12 @@ const styles = StyleSheet.create({
     gap: spacing[3],
   },
   statsRow: {
-    ...commonStyles.flexRow,
     gap: spacing[3],
   },
   filterIcon: {
     marginRight: spacing[2],
   },
   statusRow: {
-    ...commonStyles.flexRow,
     gap: spacing[2],
   },
   tagScroll: {
@@ -909,7 +908,6 @@ const styles = StyleSheet.create({
     gap: spacing[0.5],
   },
   listHeaderActions: {
-    ...commonStyles.flexRow,
     gap: spacing[2],
   },
   listHeaderIcon: {
@@ -923,7 +921,6 @@ const styles = StyleSheet.create({
     width: 132,
   },
   rootHeader: {
-    ...commonStyles.flexRowBetween,
     marginTop: spacing[3],
     marginBottom: spacing[1.5],
     paddingVertical: spacing[2],
@@ -940,7 +937,6 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   rootHeaderMeta: {
-    ...commonStyles.flexRow,
     gap: spacing[2],
   },
   rootFilteredPill: {

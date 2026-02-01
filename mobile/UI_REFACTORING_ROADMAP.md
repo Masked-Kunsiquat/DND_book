@@ -170,7 +170,7 @@ Analysis identified **~520 lines of duplicated UI code** across components and s
 ## Tracking
 
 | Phase | Item | Status | Impact | Files |
-|-------|------|--------|--------|-------|
+| --- | --- | --- | --- | --- |
 | 1.1 | Common layout styles | ✅ Complete | ~45 lines | 10 |
 | 1.2 | FAB styles | ✅ Complete | ~8 lines | 9 |
 | 2.1 | StyledBadge component | ✅ Complete | ~60 lines | 5 |

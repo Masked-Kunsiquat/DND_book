@@ -537,7 +537,7 @@ export default function NotesScreen() {
                 </View>
                 {filtersOpen && (
                   <>
-                    <View style={styles.tagHeader}>
+                    <View style={[commonStyles.flexRowBetween, styles.tagHeader]}>
                       <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
                         Tags
                       </Text>
@@ -642,7 +642,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing[3],
   },
   tagHeader: {
-    ...commonStyles.flexRowBetween,
     marginBottom: spacing[1],
   },
   tagScroll: {
