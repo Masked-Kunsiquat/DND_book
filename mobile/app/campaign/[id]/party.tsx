@@ -11,7 +11,7 @@ import {
   Screen,
 } from '../../../src/components';
 import { useTheme } from '../../../src/theme/ThemeProvider';
-import { layout, spacing } from '../../../src/theme';
+import { commonStyles, layout, spacing } from '../../../src/theme';
 import {
   useCampaign,
   useCreatePlayerCharacter,
@@ -20,6 +20,14 @@ import {
 } from '../../../src/hooks';
 import type { PlayerCharacter } from '../../../src/types/schema';
 
+/**
+ * Screen for viewing and managing a campaign's party (player characters).
+ *
+ * Renders the party list for the current campaign, empty-state UI when no campaign or no party members exist,
+ * a modal to create new player characters, and controls to browse character templates tied to the campaign continuity.
+ *
+ * @returns The React element that renders the campaign party screen.
+ */
 export default function CampaignPartyScreen() {
   const { theme } = useTheme();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
@@ -198,12 +206,12 @@ export default function CampaignPartyScreen() {
         <FlatList
           data={party}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={commonStyles.listContent}
           refreshing={refreshing}
           onRefresh={onRefresh}
           ListHeaderComponent={
             <View style={styles.header}>
-              <View style={styles.listHeader}>
+              <View style={commonStyles.flexRow}>
                 <MaterialCommunityIcons
                   name="account-group"
                   size={18}
@@ -241,7 +249,7 @@ export default function CampaignPartyScreen() {
         <FAB
           icon="plus"
           onPress={openCreateModal}
-          style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+          style={[commonStyles.fab, { backgroundColor: theme.colors.primary }]}
           color={theme.colors.onPrimary}
         />
       </Screen>
@@ -251,9 +259,6 @@ export default function CampaignPartyScreen() {
 }
 
 const styles = StyleSheet.create({
-  listContent: {
-    paddingBottom: layout.fabSize + layout.fabMargin * 2,
-  },
   header: {
     marginBottom: spacing[3],
     gap: spacing[1],
@@ -266,20 +271,11 @@ const styles = StyleSheet.create({
     marginTop: spacing[3],
     alignSelf: 'center',
   },
-  listHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   listHeaderIcon: {
     marginRight: spacing[2],
   },
   card: {
     marginBottom: spacing[3],
-  },
-  fab: {
-    position: 'absolute',
-    right: layout.fabMargin,
-    bottom: layout.fabMargin,
   },
   backgroundInput: {
     minHeight: 120,

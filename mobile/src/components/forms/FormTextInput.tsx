@@ -4,8 +4,8 @@
 
 import React, { type ComponentProps } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Text, TextInput } from 'react-native-paper';
-import { useTheme } from '../../theme/ThemeProvider';
+import { TextInput } from 'react-native-paper';
+import { FormHelperText } from './FormHelperText';
 import { spacing } from '../../theme';
 
 type PaperTextInputProps = ComponentProps<typeof TextInput>;
@@ -36,7 +36,6 @@ export function FormTextInput({
   style,
   ...rest
 }: FormTextInputProps) {
-  const { theme } = useTheme();
   const hasError = Boolean(error);
   const message = error ?? helperText;
 
@@ -51,17 +50,7 @@ export function FormTextInput({
         style={style}
         {...rest}
       />
-      {message ? (
-        <Text
-          variant="bodySmall"
-          style={[
-            styles.helperText,
-            { color: hasError ? theme.colors.error : theme.colors.onSurfaceVariant },
-          ]}
-        >
-          {message}
-        </Text>
-      ) : null}
+      <FormHelperText message={message} error={hasError} />
     </View>
   );
 }
@@ -69,8 +58,5 @@ export function FormTextInput({
 const styles = StyleSheet.create({
   container: {
     gap: spacing[1],
-  },
-  helperText: {
-    marginLeft: spacing[1],
   },
 });

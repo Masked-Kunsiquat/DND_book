@@ -8,8 +8,8 @@ import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppCard } from './AppCard';
 import { TagChip } from '../chips/TagChip';
-import { useTheme } from '../../theme/ThemeProvider';
-import { iconSizes, layout, semanticColors, spacing } from '../../theme';
+import { StyledBadge } from '../shared/StyledBadge';
+import { iconSizes, semanticColors, spacing } from '../../theme';
 import type { Location, Tag } from '../../types/schema';
 
 export interface LocationCardProps {
@@ -31,62 +31,6 @@ export interface LocationCardProps {
   style?: object;
 }
 
-interface TypeBadgeProps {
-  label: string;
-}
-
-/**
- * Render a small themed badge that displays a location type label.
- *
- * @param label - The text displayed inside the badge
- * @returns A themed View containing the label styled as a compact type badge
- */
-function TypeBadge({ label }: TypeBadgeProps) {
-  const { theme } = useTheme();
-
-  return (
-    <View
-      style={[
-        styles.typeBadge,
-        {
-          backgroundColor: theme.colors.surfaceVariant,
-          borderColor: theme.colors.outlineVariant,
-        },
-      ]}
-    >
-      <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-        {label}
-      </Text>
-    </View>
-  );
-}
-
-/**
- * Renders a themed badge labeled "Shadow".
- *
- * The badge uses theme colors for its dashed border, background, and text to indicate a shadowed location.
- *
- * @returns A React element displaying a small "Shadow" badge
- */
-function ShadowBadge() {
-  const { theme } = useTheme();
-
-  return (
-    <View
-      style={[
-        styles.shadowBadge,
-        {
-          borderColor: theme.colors.outlineVariant,
-          backgroundColor: theme.colors.surfaceVariant,
-        },
-      ]}
-    >
-      <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-        Shadow
-      </Text>
-    </View>
-  );
-}
 
 /**
  * Render a card summarizing a location with optional parent, status indicator, type badge, and tag chips.
@@ -116,8 +60,8 @@ export function LocationCard({
     statusTone === 'error' ? semanticColors.error.main : semanticColors.warning.main;
   const rightContent = (
     <View style={styles.rightBadges}>
-      {location.status === 'shadow' && <ShadowBadge />}
-      <TypeBadge label={location.type} />
+      {location.status === 'shadow' && <StyledBadge label="Shadow" variant="shadow" size="medium" />}
+      <StyledBadge label={location.type} size="medium" />
     </View>
   );
 
@@ -170,20 +114,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing[1],
     marginBottom: spacing[2],
-  },
-  typeBadge: {
-    paddingHorizontal: spacing[2],
-    paddingVertical: spacing[0.5],
-    borderRadius: layout.cardBorderRadius,
-    borderWidth: 1,
-    alignSelf: 'flex-start',
-  },
-  shadowBadge: {
-    paddingHorizontal: spacing[2],
-    paddingVertical: spacing[0.5],
-    borderRadius: layout.cardBorderRadius,
-    borderWidth: 1,
-    borderStyle: 'dashed',
   },
   rightBadges: {
     alignItems: 'flex-end',

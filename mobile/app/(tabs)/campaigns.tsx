@@ -26,8 +26,15 @@ import {
   Section,
   AppCard,
 } from '../../src/components';
-import { layout, spacing } from '../../src/theme';
+import { commonStyles, layout, spacing } from '../../src/theme';
 
+/**
+ * Render the Campaigns screen for browsing, filtering by continuity, setting the current campaign, and creating new campaigns.
+ *
+ * Renders a current-campaign section, a header with continuity-aware title and a "New" action, a list of campaigns (filtered by continuity when applicable) with counts for notes/NPCs/locations, pull-to-refresh support, and a modal + FAB for creating campaigns.
+ *
+ * @returns A React element displaying the campaigns UI, including the create campaign modal and floating action button.
+ */
 export default function CampaignsScreen() {
   const { theme } = useTheme();
   const params = useLocalSearchParams<{ create?: string | string[]; continuityId?: string | string[] }>();
@@ -202,8 +209,8 @@ export default function CampaignsScreen() {
           />
         )}
       </Section>
-      <View style={styles.listHeader}>
-        <View style={styles.listHeaderRow}>
+      <View style={[commonStyles.flexRowBetween, styles.listHeader]}>
+        <View style={commonStyles.flexRow}>
           <MaterialCommunityIcons
             name="folder"
             size={18}
@@ -248,7 +255,7 @@ export default function CampaignsScreen() {
         <FlatList
           data={continuityCampaigns}
           keyExtractor={(campaign) => campaign.id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={commonStyles.listContent}
           ListHeaderComponent={header}
           refreshing={refreshing}
           onRefresh={onRefresh}
@@ -285,7 +292,7 @@ export default function CampaignsScreen() {
         <FAB
           icon="plus"
           onPress={openCreateModal}
-          style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+          style={[commonStyles.fab, { backgroundColor: theme.colors.primary }]}
           color={theme.colors.onPrimary}
         />
       </Screen>
@@ -295,28 +302,13 @@ export default function CampaignsScreen() {
 }
 
 const styles = StyleSheet.create({
-  listContent: {
-    paddingBottom: layout.fabSize + layout.fabMargin * 2,
-  },
   cardWrapper: {
     marginBottom: spacing[3],
   },
   listHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     marginBottom: spacing[3],
-  },
-  listHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
   },
   listHeaderIcon: {
     marginRight: spacing[2],
-  },
-  fab: {
-    position: 'absolute',
-    right: layout.fabMargin,
-    bottom: layout.fabMargin,
   },
 });

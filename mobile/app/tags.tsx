@@ -14,7 +14,7 @@ import {
   TagChip,
 } from '../src/components';
 import { useTheme } from '../src/theme/ThemeProvider';
-import { layout, spacing, tagColors } from '../src/theme';
+import { commonStyles, layout, spacing, tagColors } from '../src/theme';
 import {
   useCreateTag,
   useCurrentCampaign,
@@ -47,6 +47,14 @@ function buildUsageLabel(usage: TagUsage): string {
   return parts.length > 0 ? parts.join(' • ') : 'Unused tag';
 }
 
+/**
+ * Displays a searchable, sorted list of tags with per-tag usage indicators and a modal to create new tags.
+ *
+ * Shows pull-to-refreshable tag list, a search input, empty states for no tags or no search results, and a FAB to open a creation modal.
+ * The creation modal allows choosing a name, color, and scope (continuity or campaign) and enforces duplicate and scope-related validation.
+ *
+ * @returns A React element rendering the Tags screen with list, search, pull-to-refresh, and tag-creation UI.
+ */
 export default function TagsScreen() {
   const { theme } = useTheme();
   const params = useLocalSearchParams<{ continuityId?: string | string[] }>();
@@ -254,12 +262,12 @@ export default function TagsScreen() {
         <FlatList
           data={filteredTags}
           keyExtractor={(tag) => tag.id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={commonStyles.listContent}
           refreshing={refreshing}
           onRefresh={onRefresh}
           ListHeaderComponent={
             <View style={styles.header}>
-              <View style={styles.listHeader}>
+              <View style={commonStyles.flexRow}>
                 <MaterialCommunityIcons
                   name="tag-outline"
                   size={18}
@@ -301,7 +309,7 @@ export default function TagsScreen() {
         <FAB
           icon="plus"
           onPress={openCreateModal}
-          style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+          style={[commonStyles.fab, { backgroundColor: theme.colors.primary }]}
           color={theme.colors.onPrimary}
           disabled={isCreating}
         />
@@ -312,16 +320,9 @@ export default function TagsScreen() {
 }
 
 const styles = StyleSheet.create({
-  listContent: {
-    paddingBottom: layout.fabSize + layout.fabMargin * 2,
-  },
   header: {
     marginBottom: spacing[3],
     gap: spacing[2],
-  },
-  listHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
   },
   listHeaderIcon: {
     marginRight: spacing[2],
@@ -343,10 +344,5 @@ const styles = StyleSheet.create({
     marginHorizontal: 0,
     marginBottom: spacing[2],
     borderRadius: 999,
-  },
-  fab: {
-    position: 'absolute',
-    right: layout.fabMargin,
-    bottom: layout.fabMargin,
   },
 });

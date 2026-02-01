@@ -14,7 +14,7 @@ import {
   Section,
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
-import { iconSizes, layout, spacing } from '../../src/theme';
+import { commonStyles, iconSizes, layout, spacing } from '../../src/theme';
 import {
   useCampaigns,
   useCreateItem,
@@ -253,7 +253,7 @@ export default function ItemsScreen() {
         <FlatList
           data={filteredItems}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={commonStyles.listContent}
           refreshing={refreshing}
           onRefresh={onRefresh}
           ListHeaderComponent={
@@ -290,7 +290,7 @@ export default function ItemsScreen() {
         <FAB
           icon="plus"
           onPress={openCreateModal}
-          style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+          style={[commonStyles.fab, { backgroundColor: theme.colors.primary }]}
           color={theme.colors.onPrimary}
           disabled={isCreating}
         />
@@ -301,19 +301,11 @@ export default function ItemsScreen() {
 }
 
 const styles = StyleSheet.create({
-  listContent: {
-    paddingBottom: layout.fabSize + layout.fabMargin * 2,
-  },
   header: {
     marginBottom: spacing[3],
   },
   card: {
     marginBottom: spacing[2],
-  },
-  fab: {
-    position: 'absolute',
-    right: layout.fabMargin,
-    bottom: layout.fabMargin,
   },
   modalContentInput: {
     minHeight: spacing[32],

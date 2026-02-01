@@ -7,6 +7,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Text } from 'react-native-paper';
 import { TagChip } from '../chips/TagChip';
+import { StyledBadge } from '../shared/StyledBadge';
 import { useTheme } from '../../theme/ThemeProvider';
 import { iconSizes, layout, semanticColors, spacing } from '../../theme';
 import type { Location, Tag } from '../../types/schema';
@@ -30,74 +31,6 @@ export interface LocationRowProps {
   style?: object;
 }
 
-interface TypeBadgeProps {
-  label: string;
-  variant?: 'default' | 'shared';
-}
-
-/**
- * Renders a compact badge displaying a type label with variant-specific themed styling.
- *
- * The `variant` controls the badge background and border colors: `'shared'` uses primary container and primary colors,
- * while `'default'` uses surface variant and outline variant colors.
- *
- * @param label - Text to display inside the badge
- * @param variant - Visual variant of the badge; `'shared'` applies shared/primary styling, `'default'` applies neutral styling
- * @returns A React element containing the styled badge with the provided label
- */
-function TypeBadge({ label, variant = 'default' }: TypeBadgeProps) {
-  const { theme } = useTheme();
-
-  return (
-    <View
-      style={[
-        styles.typeBadge,
-        {
-          backgroundColor:
-            variant === 'shared' ? theme.colors.primaryContainer : theme.colors.surfaceVariant,
-          borderColor: variant === 'shared' ? theme.colors.primary : theme.colors.outlineVariant,
-        },
-      ]}
-    >
-      <Text
-        variant="labelSmall"
-        style={{
-          color:
-            variant === 'shared'
-              ? theme.colors.onPrimaryContainer
-              : theme.colors.onSurfaceVariant,
-        }}
-      >
-        {label}
-      </Text>
-    </View>
-  );
-}
-
-/**
- * Render a themed "Shadow" status badge.
- *
- * @returns A React element displaying a small badge labeled "Shadow" that uses theme-provided border, background, and text colors.
- */
-function ShadowBadge() {
-  const { theme } = useTheme();
-
-  return (
-    <View
-      style={[
-        styles.shadowBadge,
-        {
-          borderColor: theme.colors.outlineVariant,
-          backgroundColor: theme.colors.surfaceVariant,
-        },
-      ]}
-    >
-      <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-        Shadow
-      </Text>
-    </View>
-  );
-}
 
 const MAX_TAGS = 2;
 
@@ -160,9 +93,9 @@ export function LocationRow({
           </Text>
         </View>
         <View style={styles.headerRight}>
-          {location.scope === 'continuity' && <TypeBadge label="Shared" variant="shared" />}
-          {location.status === 'shadow' && <ShadowBadge />}
-          <TypeBadge label={location.type} />
+          {location.scope === 'continuity' && <StyledBadge label="Shared" variant="primary" />}
+          {location.status === 'shadow' && <StyledBadge label="Shadow" variant="shadow" />}
+          <StyledBadge label={location.type} />
           <MaterialCommunityIcons
             name="chevron-right"
             size={iconSizes.md}
@@ -236,19 +169,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[1],
-  },
-  typeBadge: {
-    paddingHorizontal: spacing[1.5],
-    paddingVertical: spacing[0.5],
-    borderRadius: layout.cardBorderRadius,
-    borderWidth: 1,
-  },
-  shadowBadge: {
-    paddingHorizontal: spacing[1.5],
-    paddingVertical: spacing[0.5],
-    borderRadius: layout.cardBorderRadius,
-    borderWidth: 1,
-    borderStyle: 'dashed',
   },
   pressed: {
     opacity: 0.7,

@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
+import { FormHelperText } from './FormHelperText';
 import { useTheme } from '../../theme/ThemeProvider';
 import { layout, spacing } from '../../theme';
 import { removeManagedImage, saveImageToLibrary } from '../../utils/files';
@@ -100,17 +101,7 @@ export function FormImagePicker({
           ) : null}
         </View>
       </View>
-      {message ? (
-        <Text
-          variant="bodySmall"
-          style={[
-            styles.helperText,
-            { color: hasError ? theme.colors.error : theme.colors.onSurfaceVariant },
-          ]}
-        >
-          {message}
-        </Text>
-      ) : null}
+      <FormHelperText message={message} error={hasError} />
     </View>
   );
 }
@@ -141,8 +132,5 @@ const styles = StyleSheet.create({
   actions: {
     flex: 1,
     gap: spacing[2],
-  },
-  helperText: {
-    marginLeft: spacing[1],
   },
 });

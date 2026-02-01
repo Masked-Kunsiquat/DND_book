@@ -5,6 +5,7 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Checkbox, Chip, List, Modal, Portal, Text, TextInput } from 'react-native-paper';
+import { FormHelperText } from './FormHelperText';
 import { useTheme } from '../../theme/ThemeProvider';
 import { spacing } from '../../theme';
 
@@ -149,17 +150,7 @@ export function FormMultiSelect({
           )}
         </Modal>
       </Portal>
-      {message ? (
-        <Text
-          variant="bodySmall"
-          style={[
-            styles.helperText,
-            { color: hasError ? theme.colors.error : theme.colors.onSurfaceVariant },
-          ]}
-        >
-          {message}
-        </Text>
-      ) : null}
+      <FormHelperText message={message} error={hasError} />
     </View>
   );
 }
@@ -191,8 +182,5 @@ const styles = StyleSheet.create({
   },
   optionsContent: {
     gap: spacing[1],
-  },
-  helperText: {
-    marginLeft: spacing[1],
   },
 });

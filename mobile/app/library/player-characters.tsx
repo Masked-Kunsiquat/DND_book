@@ -13,7 +13,7 @@ import {
   Section,
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
-import { iconSizes, layout, spacing } from '../../src/theme';
+import { commonStyles, iconSizes, layout, spacing } from '../../src/theme';
 import {
   useCreatePlayerCharacter,
   useCreatePlayerCharacterTemplate,
@@ -33,6 +33,14 @@ function renderSubtitle(template: PlayerCharacterTemplate): string {
   return parts.length > 0 ? parts.join(' • ') : 'No details yet.';
 }
 
+/**
+ * Screen for browsing and managing player character templates within a continuity/campaign.
+ *
+ * Renders a searchable list of templates and provides UI for creating, editing, deleting,
+ * and applying templates to create new characters tied to the current campaign.
+ *
+ * @returns The React element for the Player Character Templates screen.
+ */
 export default function PlayerCharacterTemplatesScreen() {
   const { theme } = useTheme();
   const params = useLocalSearchParams<{ continuityId?: string | string[] }>();
@@ -255,7 +263,7 @@ export default function PlayerCharacterTemplatesScreen() {
         <FlatList
           data={visibleTemplates}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={commonStyles.listContent}
           ListHeaderComponent={
             <View style={styles.header}>
               <Section title="Continuity Library" icon="book-outline">
@@ -308,7 +316,7 @@ export default function PlayerCharacterTemplatesScreen() {
           New Template
         </Button>
         {error && (
-          <View style={styles.errorRow}>
+          <View style={[commonStyles.flexRow, styles.errorRow]}>
             <MaterialCommunityIcons
               name="alert-circle-outline"
               size={iconSizes.sm}
@@ -404,6 +412,13 @@ type FormModalProps = {
   extraActions?: ReactNode;
 };
 
+/**
+ * Render a form modal used to create or edit a player character template.
+ *
+ * @param extraActions - Optional additional action buttons to include in the modal's action bar.
+ * @param error - Optional error message to display below the inputs (styled with the provided theme).
+ * @returns The FormModal element containing inputs for Name, Player, Race, Class, Background and the action buttons.
+ */
 function renderFormModal({
   title,
   visible,
@@ -462,9 +477,6 @@ function renderFormModal({
 }
 
 const styles = StyleSheet.create({
-  listContent: {
-    paddingBottom: layout.fabSize + layout.fabMargin * 2,
-  },
   header: {
     marginBottom: spacing[3],
   },
@@ -475,8 +487,6 @@ const styles = StyleSheet.create({
     minHeight: 120,
   },
   errorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: spacing[2],
     marginTop: spacing[2],
   },
