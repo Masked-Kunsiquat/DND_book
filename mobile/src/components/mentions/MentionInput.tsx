@@ -152,7 +152,6 @@ export function MentionInput({
             borderColor: theme.colors.outlineVariant,
             backgroundColor: theme.colors.surface,
           },
-          textInputProps.style,
           style,
         ]}
       />
