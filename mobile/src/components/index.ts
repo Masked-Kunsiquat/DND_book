@@ -33,6 +33,7 @@ export { LocationMultiSelect, type LocationMultiSelectProps } from './forms/Loca
 export { FormImagePicker, type FormImagePickerProps } from './forms/FormImagePicker';
 export { FormImageGallery, type FormImageGalleryProps } from './forms/FormImageGallery';
 export { FormDateTimePicker, type FormDateTimePickerProps } from './forms/FormDateTimePicker';
+export { FormHelperText, type FormHelperTextProps } from './forms/FormHelperText';
 export { TagInput, type TagInputProps } from './forms/TagInput';
 export { FormModal, type FormModalProps } from './forms/FormModal';
 export { ConfirmDialog, type ConfirmDialogProps } from './forms/ConfirmDialog';
