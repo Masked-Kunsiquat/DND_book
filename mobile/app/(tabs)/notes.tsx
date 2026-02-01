@@ -25,6 +25,7 @@ import {
   useCreateNote,
   useCurrentCampaign,
   useGetOrCreateTag,
+  useListEmptyState,
   useLocations,
   useNotes,
   usePullToRefresh,
@@ -137,6 +138,19 @@ export default function NotesScreen() {
     });
   }, [notes, query, selectedTagIds]);
 
+  const hasActiveFilters = query.trim().length > 0 || selectedTagIds.length > 0;
+  const { showNoCampaign, showNoResults, showFilteredEmpty } = useListEmptyState({
+    hasCampaign: Boolean(currentCampaign),
+    totalCount: notes.length,
+    filteredCount: filteredNotes.length,
+    hasActiveFilters,
+  });
+
+  const clearFilters = () => {
+    setQuery('');
+    setSelectedTagIds([]);
+  };
+
   const appendDraftContent = (snippet: string) => {
     setDraftContent((prev) => {
       const trimmed = prev.trimEnd();
@@ -163,7 +177,7 @@ export default function NotesScreen() {
     setSelectedTagIds(tagParam ? [tagParam] : []);
   }, [tagParam]);
 
-  if (!currentCampaign) {
+  if (showNoCampaign) {
     return (
       <Screen>
         <EmptyState
@@ -438,17 +452,13 @@ export default function NotesScreen() {
     </FormModal>
   );
 
-  if (notes.length === 0) {
+  if (showNoResults) {
     return (
       <>
         <Screen onRefresh={onRefresh} refreshing={refreshing}>
           <EmptyState
             title="No notes yet"
-            description={
-              currentCampaign
-                ? 'Create your first note to get started.'
-                : 'Select a campaign to start adding notes.'
-            }
+            description="Create your first note to get started."
             icon="note-text-outline"
             action={
               campaigns.length > 0 && !isCreating
@@ -463,7 +473,7 @@ export default function NotesScreen() {
     );
   }
 
-  if (filteredNotes.length === 0) {
+  if (showFilteredEmpty) {
     return (
       <>
         <Screen onRefresh={onRefresh} refreshing={refreshing}>
@@ -471,13 +481,7 @@ export default function NotesScreen() {
             title="No notes match your filters"
             description="Try clearing search or tag filters."
             icon="note-text-outline"
-            action={{
-              label: 'Clear Filters',
-              onPress: () => {
-                setQuery('');
-                setSelectedTagIds([]);
-              },
-            }}
+            action={{ label: 'Clear Filters', onPress: clearFilters }}
           />
         </Screen>
         {createModal}

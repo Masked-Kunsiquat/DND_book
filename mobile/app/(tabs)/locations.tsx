@@ -23,6 +23,7 @@ import {
   useCreateLocation,
   useCampaigns,
   useCurrentCampaign,
+  useListEmptyState,
   useLocations,
   usePullToRefresh,
   useTags,
@@ -130,6 +131,20 @@ export default function LocationsScreen() {
     if (typeFilter === 'all') return shadowFiltered;
     return shadowFiltered.filter((location) => location.type === typeFilter);
   }, [locations, selectedTagIds, showShadowOnly, typeFilter]);
+
+  const hasActiveFilters = typeFilter !== 'all' || selectedTagIds.length > 0 || showShadowOnly;
+  const { showNoCampaign, showNoResults, showFilteredEmpty } = useListEmptyState({
+    hasCampaign: Boolean(currentCampaign),
+    totalCount: locations.length,
+    filteredCount: visibleLocations.length,
+    hasActiveFilters,
+  });
+
+  const clearFilters = () => {
+    setTypeFilter('all');
+    setSelectedTagIds([]);
+    setShowShadowOnly(false);
+  };
 
   const { locationById, depthById } = useMemo(() => {
     const locationMap = new Map<string, Location>();
@@ -309,7 +324,7 @@ export default function LocationsScreen() {
     setSelectedTagIds(tagParam ? [tagParam] : []);
   }, [tagParam]);
 
-  if (!currentCampaign) {
+  if (showNoCampaign) {
     return (
       <Screen>
         <EmptyState
@@ -490,17 +505,13 @@ export default function LocationsScreen() {
     </FormModal>
   );
 
-  if (locations.length === 0) {
+  if (showNoResults) {
     return (
       <>
         <Screen onRefresh={onRefresh} refreshing={refreshing}>
           <EmptyState
             title="No locations yet"
-            description={
-              currentCampaign
-                ? 'Create your first location to get started.'
-                : 'Create a location or select a campaign to filter.'
-            }
+            description="Create your first location to get started."
             icon="map-marker-outline"
             action={!isCreating ? { label: 'Create Location', onPress: openCreateModal } : undefined}
           />
@@ -510,7 +521,7 @@ export default function LocationsScreen() {
     );
   }
 
-  if (visibleLocations.length === 0) {
+  if (showFilteredEmpty) {
     return (
       <>
         <Screen onRefresh={onRefresh} refreshing={refreshing}>
@@ -518,14 +529,7 @@ export default function LocationsScreen() {
             title="No locations found"
             description="Try clearing the type or tag filters."
             icon="map-marker-outline"
-            action={{
-              label: 'Clear Filters',
-              onPress: () => {
-                setTypeFilter('all');
-                setSelectedTagIds([]);
-                setShowShadowOnly(false);
-              },
-            }}
+            action={{ label: 'Clear Filters', onPress: clearFilters }}
           />
         </Screen>
         {createModal}

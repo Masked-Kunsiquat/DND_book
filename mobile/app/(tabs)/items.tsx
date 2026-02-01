@@ -20,6 +20,7 @@ import {
   useCreateItem,
   useCurrentCampaign,
   useItems,
+  useListEmptyState,
   usePullToRefresh,
 } from '../../src/hooks';
 import type { EntityScope, Item } from '../../src/types/schema';
@@ -99,6 +100,12 @@ export default function ItemsScreen() {
     });
   }, [items, query]);
 
+  const { showNoCampaign, showNoResults } = useListEmptyState({
+    hasCampaign: Boolean(currentCampaign),
+    totalCount: items.length,
+    filteredCount: filteredItems.length,
+  });
+
   const openCreateModal = () => {
     setDraftName(`New Item ${items.length + 1}`);
     setDraftDescription('');
@@ -153,7 +160,7 @@ export default function ItemsScreen() {
     }
   };
 
-  if (!currentCampaign) {
+  if (showNoCampaign) {
     return (
       <Screen>
         <EmptyState
@@ -231,7 +238,7 @@ export default function ItemsScreen() {
     </FormModal>
   );
 
-  if (items.length === 0) {
+  if (showNoResults) {
     return (
       <>
         <Screen onRefresh={onRefresh} refreshing={refreshing}>

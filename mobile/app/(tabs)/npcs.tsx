@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { Button, FAB, Text, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -26,6 +26,7 @@ import {
   useCreateNpc,
   useCurrentCampaign,
   useGetOrCreateTag,
+  useListEmptyState,
   useLocations,
   useNotes,
   useNpcs,
@@ -115,6 +116,20 @@ export default function NpcsScreen() {
     });
   }, [npcs, query, selectedTagIds, showShadowOnly]);
 
+  const hasActiveFilters = query.trim().length > 0 || selectedTagIds.length > 0 || showShadowOnly;
+  const { showNoCampaign, showNoResults, showFilteredEmpty } = useListEmptyState({
+    hasCampaign: Boolean(currentCampaign),
+    totalCount: npcs.length,
+    filteredCount: filteredNpcs.length,
+    hasActiveFilters,
+  });
+
+  const clearFilters = () => {
+    setQuery('');
+    setSelectedTagIds([]);
+    setShowShadowOnly(false);
+  };
+
   useEffect(() => {
     setSelectedTagIds(tagParam ? [tagParam] : []);
   }, [tagParam]);
@@ -139,7 +154,7 @@ export default function NpcsScreen() {
     });
   }, [continuityId, draftCampaignIds, draftScope, locations]);
 
-  if (!currentCampaign) {
+  if (showNoCampaign) {
     return (
       <Screen>
         <EmptyState
@@ -479,17 +494,13 @@ export default function NpcsScreen() {
     </FormModal>
   );
 
-  if (npcs.length === 0) {
+  if (showNoResults) {
     return (
       <>
         <Screen onRefresh={onRefresh} refreshing={refreshing}>
           <EmptyState
             title="No NPCs yet"
-            description={
-              currentCampaign
-                ? 'Create your first NPC to get started.'
-                : 'Create an NPC or select a campaign to filter.'
-            }
+            description="Create your first NPC to get started."
             icon="account-group-outline"
             action={!isCreating ? { label: 'Create NPC', onPress: openCreateModal } : undefined}
           />
@@ -500,7 +511,7 @@ export default function NpcsScreen() {
     );
   }
 
-  if (filteredNpcs.length === 0) {
+  if (showFilteredEmpty) {
     return (
       <>
         <Screen onRefresh={onRefresh} refreshing={refreshing}>
@@ -508,14 +519,7 @@ export default function NpcsScreen() {
             title="No NPCs match your filters"
             description="Try clearing search or tag filters."
             icon="account-group-outline"
-            action={{
-              label: 'Clear Filters',
-              onPress: () => {
-                setQuery('');
-                setSelectedTagIds([]);
-                setShowShadowOnly(false);
-              },
-            }}
+            action={{ label: 'Clear Filters', onPress: clearFilters }}
           />
         </Screen>
         {createModal}
