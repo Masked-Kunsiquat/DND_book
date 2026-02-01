@@ -102,11 +102,15 @@ Analysis identified **~400+ lines of duplicated code** across hooks and componen
   - [x] Export from `src/hooks/index.ts`
   - [x] `app/(tabs)/campaigns.tsx` - Use for note, NPC, and location counts
 
-### 3.2 `useFormModal()` Hook
-- **Status:** Pending
-- **Impact:** Standardizes modal state management across pages
-- **Location:** `src/hooks/useFormModal.ts`
-- **Encapsulates:**
+### 3.2 `useFormModal()` Hook ⏭️
+- **Status:** Skipped
+- **Reason:** After analysis, the complexity outweighs the benefit:
+  - Common state (isOpen, isCreating, error) is only ~6 lines per page
+  - Draft fields vary widely (2-10 fields per entity type)
+  - Each field needs typed individual setters for form bindings
+  - A generic hook would require complex generics without meaningful simplification
+  - Current explicit approach is clear and maintainable
+- **Original proposal:**
   - `isOpen` state
   - `draft` state (generic)
   - `error` state
@@ -148,7 +152,7 @@ Analysis identified **~400+ lines of duplicated code** across hooks and componen
 | 2.1 | Generic update builder | ✅ Complete | - |
 | 2.2 | Row defaults helper | ⏭️ Skipped | - |
 | 3.1 | `useEntityCounts()` | ✅ Complete | - |
-| 3.2 | `useFormModal()` | ⏳ Pending | - |
+| 3.2 | `useFormModal()` | ⏭️ Skipped | - |
 | 4.1 | Hook factory | ⏳ Pending | - |
 | 4.2 | Naming conventions | ⏳ Pending | - |
 | 4.3 | Error handling | ⏳ Pending | - |
