@@ -15,7 +15,7 @@ import {
   LocationRow,
   Section,
   StatCard,
-  TagChip,
+  TagFilterSection,
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { commonStyles, iconSizes, layout, semanticColors, spacing } from '../../src/theme';
@@ -663,39 +663,12 @@ export default function LocationsScreen() {
                     );
                   })}
                 </ScrollView>
-                <View style={commonStyles.flexRowBetween}>
-                  <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                    Tags
-                  </Text>
-                  {selectedTagIds.length > 0 && (
-                    <Button mode="text" onPress={() => setSelectedTagIds([])} compact>
-                      Clear
-                    </Button>
-                  )}
-                </View>
-                {tags.length > 0 ? (
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.tagScroll}
-                  >
-                    {tags.map((tag) => (
-                      <TagChip
-                        key={tag.id}
-                        id={tag.id}
-                        name={tag.name}
-                        color={tag.color}
-                        size="small"
-                        selected={selectedTagIds.includes(tag.id)}
-                        onPress={() => toggleTag(tag.id)}
-                      />
-                    ))}
-                  </ScrollView>
-                ) : (
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    No tags yet.
-                  </Text>
-                )}
+                <TagFilterSection
+                  tags={tags}
+                  selectedIds={selectedTagIds}
+                  onToggle={toggleTag}
+                  onClear={() => setSelectedTagIds([])}
+                />
                 <View style={commonStyles.flexRowBetween}>
                   <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
                     Status
@@ -860,10 +833,6 @@ const styles = StyleSheet.create({
     gap: spacing[3],
   },
   statusRow: {
-    gap: spacing[2],
-  },
-  tagScroll: {
-    paddingBottom: spacing[2],
     gap: spacing[2],
   },
   listHeaderMeta: {

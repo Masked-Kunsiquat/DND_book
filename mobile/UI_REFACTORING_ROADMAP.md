@@ -122,14 +122,19 @@ Analysis identified **~520 lines of duplicated UI code** across components and s
   - `app/(tabs)/locations.tsx`
 
 ### 4.2 Extract TagFilterSection Component
-- **Status:** Pending
+- **Status:** ✅ Complete
 - **Impact:** ~30 lines across 3 files
 - **Location:** `src/components/shared/TagFilterSection.tsx`
 - **Props:**
   - `tags: Tag[]`
   - `selectedIds: string[]`
-  - `onSelect: (ids: string[]) => void`
+  - `onToggle: (tagId: string) => void`
   - `onClear: () => void`
+  - `headerStyle?: object`
+- **Files updated:**
+  - `app/(tabs)/notes.tsx`
+  - `app/(tabs)/npcs.tsx`
+  - `app/(tabs)/locations.tsx`
 
 ---
 
@@ -177,7 +182,7 @@ Analysis identified **~520 lines of duplicated UI code** across components and s
 | 3.1 | FormHelperText | ✅ Complete | ~40 lines | 4 |
 | 3.2 | Form container styles | ⏭️ Skipped | ~50 lines | 19+ |
 | 4.1 | FilterHeader | ✅ Complete | ~80 lines | 3 |
-| 4.2 | TagFilterSection | ⏳ Pending | ~30 lines | 3 |
+| 4.2 | TagFilterSection | ✅ Complete | ~30 lines | 3 |
 | 5.1 | useListEmptyState | ⏳ Pending | ~160 lines | 4 |
 | 6.1 | ModalActions | ⏳ Pending | ~80 lines | 10+ |
 

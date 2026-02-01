@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
 import { Button, FAB, Text, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -14,7 +14,7 @@ import {
   FormTextInput,
   NPCCard,
   Screen,
-  TagChip,
+  TagFilterSection,
   TagInput,
   EmptyState,
 } from '../../src/components';
@@ -546,39 +546,13 @@ export default function NpcsScreen() {
                 expanded={filtersOpen}
                 onToggle={() => setFiltersOpen((prev) => !prev)}
               >
-                <View style={[commonStyles.flexRowBetween, styles.tagHeader]}>
-                  <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                    Tags
-                  </Text>
-                  {selectedTagIds.length > 0 && (
-                    <Button mode="text" onPress={() => setSelectedTagIds([])} compact>
-                      Clear
-                    </Button>
-                  )}
-                </View>
-                {tags.length > 0 ? (
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.tagScroll}
-                  >
-                    {tags.map((tag) => (
-                      <TagChip
-                        key={tag.id}
-                        id={tag.id}
-                        name={tag.name}
-                        color={tag.color}
-                        size="small"
-                        selected={selectedTagIds.includes(tag.id)}
-                        onPress={() => toggleTag(tag.id)}
-                      />
-                    ))}
-                  </ScrollView>
-                ) : (
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    No tags yet.
-                  </Text>
-                )}
+                <TagFilterSection
+                  tags={tags}
+                  selectedIds={selectedTagIds}
+                  onToggle={toggleTag}
+                  onClear={() => setSelectedTagIds([])}
+                  headerStyle={styles.tagHeader}
+                />
                 <View style={[commonStyles.flexRowBetween, styles.statusHeader]}>
                   <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
                     Status
@@ -673,10 +647,6 @@ const styles = StyleSheet.create({
     marginTop: spacing[2],
   },
   statusRow: {
-    gap: spacing[2],
-  },
-  tagScroll: {
-    paddingBottom: spacing[2],
     gap: spacing[2],
   },
   listHeaderIcon: {
