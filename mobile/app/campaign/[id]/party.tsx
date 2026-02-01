@@ -8,6 +8,7 @@ import {
   EmptyState,
   FormModal,
   FormTextInput,
+  ModalActions,
   Screen,
 } from '../../../src/components';
 import { useTheme } from '../../../src/theme/ThemeProvider';
@@ -144,14 +145,13 @@ export default function CampaignPartyScreen() {
       visible={isModalOpen}
       onDismiss={closeModal}
       actions={
-        <>
-          <Button mode="text" onPress={closeModal} disabled={isSaving}>
-            Cancel
-          </Button>
-          <Button mode="contained" onPress={handleSave} loading={isSaving} disabled={isSaving}>
-            Save
-          </Button>
-        </>
+        <ModalActions
+          onCancel={closeModal}
+          onConfirm={handleSave}
+          confirmLabel="Save"
+          loading={isSaving}
+          disabled={isSaving}
+        />
       }
     >
       <FormTextInput label="Name" value={draftName} onChangeText={setDraftName} />

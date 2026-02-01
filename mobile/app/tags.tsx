@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
-import { Button, FAB, Text, TextInput } from 'react-native-paper';
+import { FAB, Text, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import ColorPicker, { Swatches } from 'reanimated-color-picker';
@@ -10,6 +10,7 @@ import {
   FormModal,
   FormSelect,
   FormTextInput,
+  ModalActions,
   Screen,
   TagChip,
 } from '../src/components';
@@ -174,14 +175,13 @@ export default function TagsScreen() {
       visible={isCreateOpen}
       onDismiss={closeCreateModal}
       actions={
-        <>
-          <Button mode="text" onPress={closeCreateModal} disabled={isCreating}>
-            Cancel
-          </Button>
-          <Button mode="contained" onPress={handleCreate} loading={isCreating} disabled={isCreating}>
-            Create
-          </Button>
-        </>
+        <ModalActions
+          onCancel={closeCreateModal}
+          onConfirm={handleCreate}
+          confirmLabel="Create"
+          loading={isCreating}
+          disabled={isCreating}
+        />
       }
     >
       <FormTextInput label="Name" value={draftName} onChangeText={setDraftName} />

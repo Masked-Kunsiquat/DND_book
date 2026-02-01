@@ -36,6 +36,7 @@ export { FormDateTimePicker, type FormDateTimePickerProps } from './forms/FormDa
 export { FormHelperText, type FormHelperTextProps } from './forms/FormHelperText';
 export { TagInput, type TagInputProps } from './forms/TagInput';
 export { FormModal, type FormModalProps } from './forms/FormModal';
+export { ModalActions, type ModalActionsProps } from './forms/ModalActions';
 export { ConfirmDialog, type ConfirmDialogProps } from './forms/ConfirmDialog';
 
 // Sync

@@ -10,6 +10,7 @@ import {
   FormSelect,
   FormTextInput,
   LocationMultiSelect,
+  ModalActions,
   Screen,
   EmptyState,
   LocationRow,
@@ -436,19 +437,13 @@ export default function LocationsScreen() {
       visible={isCreateOpen}
       onDismiss={closeCreateModal}
       actions={
-        <>
-          <Button mode="text" onPress={closeCreateModal} disabled={isCreating}>
-            Cancel
-          </Button>
-          <Button
-            mode="contained"
-            onPress={handleCreate}
-            loading={isCreating}
-            disabled={isCreating}
-          >
-            Create
-          </Button>
-        </>
+        <ModalActions
+          onCancel={closeCreateModal}
+          onConfirm={handleCreate}
+          confirmLabel="Create"
+          loading={isCreating}
+          disabled={isCreating}
+        />
       }
     >
       <Button mode="outlined" icon="book-outline" onPress={openLibrary}>

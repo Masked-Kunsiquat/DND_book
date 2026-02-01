@@ -9,6 +9,7 @@ import {
   FormModal,
   FormMultiSelect,
   FormTextInput,
+  ModalActions,
   Screen,
   Section,
 } from '../../src/components';
@@ -122,14 +123,13 @@ export default function SessionsScreen() {
       visible={isCreateOpen}
       onDismiss={closeCreateModal}
       actions={
-        <>
-          <Button mode="text" onPress={closeCreateModal} disabled={isCreating}>
-            Cancel
-          </Button>
-          <Button mode="contained" onPress={handleCreate} loading={isCreating} disabled={isCreating}>
-            Create
-          </Button>
-        </>
+        <ModalActions
+          onCancel={closeCreateModal}
+          onConfirm={handleCreate}
+          confirmLabel="Create"
+          loading={isCreating}
+          disabled={isCreating}
+        />
       }
     >
       <FormTextInput label="Title" value={draftTitle} onChangeText={setDraftTitle} />

@@ -10,6 +10,7 @@ import {
   FormMultiSelect,
   FormSelect,
   FormTextInput,
+  ModalActions,
   Screen,
   EmptyState,
   NoteCard,
@@ -323,19 +324,13 @@ export default function NotesScreen() {
       visible={isCreateOpen}
       onDismiss={closeCreateModal}
       actions={
-        <>
-          <Button mode="text" onPress={closeCreateModal} disabled={isCreating}>
-            Cancel
-          </Button>
-          <Button
-            mode="contained"
-            onPress={handleCreate}
-            loading={isCreating}
-            disabled={isCreating}
-          >
-            Create
-          </Button>
-        </>
+        <ModalActions
+          onCancel={closeCreateModal}
+          onConfirm={handleCreate}
+          confirmLabel="Create"
+          loading={isCreating}
+          disabled={isCreating}
+        />
       }
     >
       <FormSelect

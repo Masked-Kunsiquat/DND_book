@@ -141,15 +141,15 @@ Analysis identified **~520 lines of duplicated UI code** across components and s
 ## Phase 5: Empty State Handling (Medium Priority)
 
 ### 5.1 Create useListEmptyState Hook
-- **Status:** Pending
+- **Status:** ✅ Complete
 - **Impact:** ~160 lines across 4 files
 - **Location:** `src/hooks/useListEmptyState.ts`
 - **Returns:**
   - `showNoCampaign: boolean`
   - `showNoResults: boolean`
   - `showFilteredEmpty: boolean`
-  - `clearFilters: () => void`
-- **Files to update:**
+  - `showList: boolean`
+- **Files updated:**
   - `app/(tabs)/notes.tsx`
   - `app/(tabs)/npcs.tsx`
   - `app/(tabs)/locations.tsx`
@@ -160,15 +160,30 @@ Analysis identified **~520 lines of duplicated UI code** across components and s
 ## Phase 6: Modal Action Patterns (Low Priority)
 
 ### 6.1 Extract ModalActions Component
-- **Status:** Pending
+- **Status:** ✅ Complete
 - **Impact:** ~80 lines across 10+ files
 - **Location:** `src/components/forms/ModalActions.tsx`
 - **Props:**
   - `onCancel: () => void`
   - `onConfirm: () => void`
   - `confirmLabel?: string`
+  - `cancelLabel?: string`
   - `loading?: boolean`
   - `disabled?: boolean`
+- **Files updated:**
+  - `app/(tabs)/notes.tsx`
+  - `app/(tabs)/npcs.tsx`
+  - `app/(tabs)/locations.tsx`
+  - `app/(tabs)/items.tsx`
+  - `app/(tabs)/sessions.tsx`
+  - `app/(tabs)/campaigns.tsx`
+  - `app/continuities.tsx`
+  - `app/tags.tsx`
+  - `app/tag/[id].tsx`
+  - `app/campaign/[id]/sessions.tsx`
+  - `app/campaign/[id]/party.tsx`
+  - `app/location/[id].tsx`
+  - `app/library/player-characters.tsx`
 
 ---
 
@@ -183,8 +198,8 @@ Analysis identified **~520 lines of duplicated UI code** across components and s
 | 3.2 | Form container styles | ⏭️ Skipped | ~50 lines | 19+ |
 | 4.1 | FilterHeader | ✅ Complete | ~80 lines | 3 |
 | 4.2 | TagFilterSection | ✅ Complete | ~30 lines | 3 |
-| 5.1 | useListEmptyState | ⏳ Pending | ~160 lines | 4 |
-| 6.1 | ModalActions | ⏳ Pending | ~80 lines | 10+ |
+| 5.1 | useListEmptyState | ✅ Complete | ~160 lines | 4 |
+| 6.1 | ModalActions | ✅ Complete | ~80 lines | 10+ |
 
 **Total potential savings:** ~520+ lines
 
