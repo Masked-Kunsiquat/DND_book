@@ -4,11 +4,10 @@
 
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Text } from 'react-native-paper';
 import { AppCard } from './AppCard';
 import { TagChip } from '../chips/TagChip';
-import { useTheme } from '../../theme/ThemeProvider';
-import { layout, spacing } from '../../theme';
+import { StyledBadge } from '../shared/StyledBadge';
+import { spacing } from '../../theme';
 import type { Note, Tag } from '../../types/schema';
 
 export interface NoteCardProps {
@@ -43,31 +42,14 @@ export function NoteCard({
   onPress,
   style,
 }: NoteCardProps) {
-  const { theme } = useTheme();
-
   const badgeLabel = campaignName ?? (note.scope === 'continuity' ? 'Shared' : undefined);
-  const campaignBadge = badgeLabel ? (
-    <View
-      style={[
-        styles.campaignBadge,
-        {
-          backgroundColor: theme.colors.surfaceVariant,
-          borderColor: theme.colors.outlineVariant,
-        },
-      ]}
-    >
-      <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-        {badgeLabel}
-      </Text>
-    </View>
-  ) : undefined;
 
   return (
     <AppCard
       title={note.title || 'Untitled note'}
       subtitle={buildPreview(note.content || '')}
       onPress={onPress}
-      right={campaignBadge}
+      right={badgeLabel ? <StyledBadge label={badgeLabel} size="medium" /> : undefined}
       style={style}
     >
       {tags.length > 0 && (
@@ -93,12 +75,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing[2],
-  },
-  campaignBadge: {
-    paddingHorizontal: spacing[2],
-    paddingVertical: spacing[0.5],
-    borderRadius: layout.cardBorderRadius,
-    borderWidth: 1,
-    alignSelf: 'flex-start',
   },
 });

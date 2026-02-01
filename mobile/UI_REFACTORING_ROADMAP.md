@@ -58,18 +58,18 @@ Analysis identified **~520 lines of duplicated UI code** across components and s
 ## Phase 2: Reusable Badge Component (High Priority)
 
 ### 2.1 Create StyledBadge Component
-- **Status:** Pending
+- **Status:** ✅ Complete
 - **Impact:** ~60 lines across 5 files
 - **Location:** `src/components/shared/StyledBadge.tsx`
-- **Variants:**
-  - `type` - Location type badge
-  - `shadow` - Shadow/incomplete status
-  - `campaign` - Campaign scope indicator
-  - `count` - Numeric count badge
-- **Files to update:**
+- **Variants implemented:**
+  - `default` - Neutral badge (surfaceVariant colors)
+  - `primary` - Primary-colored badge (primaryContainer colors)
+  - `shadow` - Dashed border badge (indicates incomplete status)
+  - `count` - Numeric value with label (for stats display)
+- **Files updated:**
   - `src/components/cards/NoteCard.tsx` (campaignBadge)
   - `src/components/cards/LocationCard.tsx` (typeBadge, shadowBadge)
-  - `src/components/cards/LocationRow.tsx` (typeBadge, shadowBadge)
+  - `src/components/cards/LocationRow.tsx` (typeBadge, shadowBadge, sharedBadge)
   - `src/components/cards/CampaignCard.tsx` (CountBadge)
 
 ---
@@ -173,7 +173,7 @@ Analysis identified **~520 lines of duplicated UI code** across components and s
 |-------|------|--------|--------|-------|
 | 1.1 | Common layout styles | ✅ Complete | ~45 lines | 10 |
 | 1.2 | FAB styles | ✅ Complete | ~8 lines | 9 |
-| 2.1 | StyledBadge component | ⏳ Pending | ~60 lines | 5 |
+| 2.1 | StyledBadge component | ✅ Complete | ~60 lines | 5 |
 | 3.1 | FormHelperText | ⏳ Pending | ~40 lines | 4 |
 | 3.2 | Form container styles | ⏳ Pending | ~50 lines | 19+ |
 | 4.1 | FilterHeader | ⏳ Pending | ~80 lines | 3 |

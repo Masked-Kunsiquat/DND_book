@@ -46,3 +46,9 @@ export { PeerList, type PeerListProps } from './sync/PeerList';
 export { EmptyState, type EmptyStateProps } from './shared/EmptyState';
 export { LoadingScreen } from './shared/LoadingScreen';
 export { AvatarGroup, type AvatarGroupProps, type AvatarGroupItem } from './shared/AvatarGroup';
+export {
+  StyledBadge,
+  type StyledBadgeProps,
+  type BadgeVariant,
+  type BadgeSize,
+} from './shared/StyledBadge';

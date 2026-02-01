@@ -4,10 +4,9 @@
 
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Text } from 'react-native-paper';
 import { AppCard } from './AppCard';
-import { useTheme } from '../../theme/ThemeProvider';
-import { layout, spacing } from '../../theme';
+import { StyledBadge } from '../shared/StyledBadge';
+import { spacing } from '../../theme';
 import { formatShortDate } from '../../utils/date';
 import type { Campaign } from '../../types/schema';
 
@@ -30,33 +29,6 @@ export interface CampaignCardProps {
   style?: object;
 }
 
-interface CountBadgeProps {
-  label: string;
-  value: number;
-}
-
-function CountBadge({ label, value }: CountBadgeProps) {
-  const { theme } = useTheme();
-
-  return (
-    <View
-      style={[
-        styles.badge,
-        {
-          backgroundColor: theme.colors.surfaceVariant,
-          borderColor: theme.colors.outlineVariant,
-        },
-      ]}
-    >
-      <Text variant="labelLarge" style={[styles.badgeValue, { color: theme.colors.onSurface }]}>
-        {value}
-      </Text>
-      <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-        {label}
-      </Text>
-    </View>
-  );
-}
 
 export function CampaignCard({
   campaign,
@@ -78,9 +50,9 @@ export function CampaignCard({
       style={style}
     >
       <View style={styles.badgeRow}>
-        <CountBadge label="Notes" value={noteCount} />
-        <CountBadge label="NPCs" value={npcCount} />
-        <CountBadge label="Locations" value={locationCount} />
+        <StyledBadge label="Notes" variant="count" value={noteCount} />
+        <StyledBadge label="NPCs" variant="count" value={npcCount} />
+        <StyledBadge label="Locations" variant="count" value={locationCount} />
       </View>
     </AppCard>
   );
@@ -90,18 +62,5 @@ const styles = StyleSheet.create({
   badgeRow: {
     flexDirection: 'row',
     gap: spacing[2],
-  },
-  badge: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: spacing[12],
-    paddingVertical: spacing[2],
-    paddingHorizontal: spacing[2],
-    borderRadius: layout.cardBorderRadius,
-    borderWidth: 1,
-  },
-  badgeValue: {
-    marginBottom: spacing[0.5],
   },
 });
