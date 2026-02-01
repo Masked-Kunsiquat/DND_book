@@ -30,6 +30,19 @@ export interface CampaignCardProps {
 }
 
 
+/**
+ * Render a card summarizing a campaign with count badges for notes, NPCs, and locations.
+ *
+ * @param campaign - Campaign data to display (used for title and creation date)
+ * @param noteCount - Number of notes associated with the campaign (defaults to 0)
+ * @param npcCount - Number of NPCs associated with the campaign (defaults to 0)
+ * @param locationCount - Number of locations associated with the campaign (defaults to 0)
+ * @param right - Optional content to render on the right side of the card
+ * @param onPress - Optional handler invoked when the card is pressed
+ * @param onLongPress - Optional handler invoked when the card is long-pressed
+ * @param style - Optional style object applied to the card container
+ * @returns A React element rendering the campaign card with title, created date subtitle, and three count badges
+ */
 export function CampaignCard({
   campaign,
   noteCount = 0,

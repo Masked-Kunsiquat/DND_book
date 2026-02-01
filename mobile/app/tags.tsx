@@ -47,6 +47,14 @@ function buildUsageLabel(usage: TagUsage): string {
   return parts.length > 0 ? parts.join(' • ') : 'Unused tag';
 }
 
+/**
+ * Displays a searchable, sorted list of tags with per-tag usage indicators and a modal to create new tags.
+ *
+ * Shows pull-to-refreshable tag list, a search input, empty states for no tags or no search results, and a FAB to open a creation modal.
+ * The creation modal allows choosing a name, color, and scope (continuity or campaign) and enforces duplicate and scope-related validation.
+ *
+ * @returns A React element rendering the Tags screen with list, search, pull-to-refresh, and tag-creation UI.
+ */
 export default function TagsScreen() {
   const { theme } = useTheme();
   const params = useLocalSearchParams<{ continuityId?: string | string[] }>();

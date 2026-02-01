@@ -33,13 +33,12 @@ import {
 } from '../../src/hooks';
 
 /**
- * Render the NPC management screen including search, filters, list, and creation/linking modals.
+ * Render the NPC management screen with search, tag and status filters, NPC list, and creation/linking modals.
  *
- * Renders a searchable, tag- and status-filterable list of NPCs scoped to the current campaign/continuity,
- * provides UI to create new NPCs (including linking to campaigns, locations, notes, and tags),
- * and exposes a continuity library navigation. Handles creation state and client-side filtering.
+ * Provides controls to create NPCs (including scope, campaign/location/note/tag links), navigate to a continuity library,
+ * and client-side filtering by query, tags, and shadow status.
  *
- * @returns The React element for the NPCs screen containing the list, filter controls, and modals.
+ * @returns The React element for the NPC management screen containing the list, filter controls, and modals.
  */
 export default function NpcsScreen() {
   const { theme } = useTheme();
