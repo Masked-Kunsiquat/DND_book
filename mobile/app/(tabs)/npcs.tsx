@@ -18,7 +18,7 @@ import {
   EmptyState,
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
-import { iconSizes, layout, spacing } from '../../src/theme';
+import { commonStyles, iconSizes, layout, spacing } from '../../src/theme';
 import type { EntityScope, Tag } from '../../src/types/schema';
 import {
   useCampaigns,
@@ -530,7 +530,7 @@ export default function NpcsScreen() {
         <FlatList
           data={filteredNpcs}
           keyExtractor={(npc) => npc.id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={commonStyles.listContent}
           refreshing={refreshing}
           onRefresh={onRefresh}
           ListHeaderComponent={
@@ -551,10 +551,10 @@ export default function NpcsScreen() {
                   },
                 ]}
               >
-                <View style={styles.filterHeader}>
+                <View style={commonStyles.flexRowBetween}>
                   <Pressable
                     onPress={() => setFiltersOpen((prev) => !prev)}
-                    style={styles.filterTitle}
+                    style={commonStyles.flexRow}
                   >
                     <MaterialCommunityIcons
                       name="tune-variant"
@@ -632,8 +632,8 @@ export default function NpcsScreen() {
                   </>
                 )}
               </View>
-              <View style={styles.listHeader}>
-                <View style={styles.listHeaderRow}>
+              <View style={commonStyles.flexRowBetween}>
+                <View style={commonStyles.flexRow}>
                   <MaterialCommunityIcons
                     name="account-group"
                     size={18}
@@ -644,7 +644,7 @@ export default function NpcsScreen() {
                     NPCs
                   </Text>
                 </View>
-                <View style={styles.listHeaderActions}>
+                <View style={commonStyles.flexRow}>
                   <Pressable onPress={openLibrary} hitSlop={8}>
                     <Text variant="labelMedium" style={{ color: theme.colors.primary }}>
                       Library
@@ -679,7 +679,7 @@ export default function NpcsScreen() {
         <FAB
           icon="plus"
           onPress={openCreateModal}
-          style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+          style={[commonStyles.fab, { backgroundColor: theme.colors.primary }]}
           color={theme.colors.onPrimary}
           disabled={isCreating}
         />
@@ -691,9 +691,6 @@ export default function NpcsScreen() {
 }
 
 const styles = StyleSheet.create({
-  listContent: {
-    paddingBottom: layout.fabSize + layout.fabMargin * 2,
-  },
   header: {
     marginBottom: spacing[3],
   },
@@ -704,15 +701,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing[3],
     gap: spacing[2],
   },
-  filterHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  filterTitle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   filterIcon: {
     marginRight: spacing[2],
   },
@@ -720,49 +708,31 @@ const styles = StyleSheet.create({
     marginBottom: spacing[3],
   },
   tagHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    ...commonStyles.flexRowBetween,
     marginBottom: spacing[1],
   },
   statusHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    ...commonStyles.flexRowBetween,
     marginBottom: spacing[1],
     marginTop: spacing[2],
   },
   statusRow: {
-    flexDirection: 'row',
+    ...commonStyles.flexRow,
     gap: spacing[2],
   },
   tagScroll: {
     paddingBottom: spacing[2],
     gap: spacing[2],
   },
-  listHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  listHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   listHeaderIcon: {
     marginRight: spacing[2],
   },
   listHeaderActions: {
-    flexDirection: 'row',
+    ...commonStyles.flexRow,
     gap: spacing[2],
   },
   cardWrapper: {
     marginBottom: spacing[3],
-  },
-  fab: {
-    position: 'absolute',
-    right: layout.fabMargin,
-    bottom: layout.fabMargin,
   },
   modalContentInput: {
     minHeight: 120,

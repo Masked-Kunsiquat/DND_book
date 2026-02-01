@@ -17,7 +17,7 @@ import {
   TagChip,
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
-import { iconSizes, layout, semanticColors, spacing } from '../../src/theme';
+import { commonStyles, iconSizes, layout, semanticColors, spacing } from '../../src/theme';
 import {
   useCreateLocation,
   useCampaigns,
@@ -538,7 +538,7 @@ export default function LocationsScreen() {
         <SectionList
           sections={sections}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={commonStyles.listContent}
           stickySectionHeadersEnabled={false}
           showsVerticalScrollIndicator={false}
           refreshing={refreshing}
@@ -610,10 +610,10 @@ export default function LocationsScreen() {
                   },
                 ]}
               >
-                <View style={styles.filterHeader}>
+                <View style={commonStyles.flexRowBetween}>
                   <Pressable
                     onPress={() => setFiltersOpen((prev) => !prev)}
-                    style={styles.filterTitle}
+                    style={commonStyles.flexRow}
                   >
                     <MaterialCommunityIcons
                       name="tune-variant"
@@ -635,7 +635,7 @@ export default function LocationsScreen() {
                 </View>
                 {filtersOpen && (
                   <>
-                    <View style={styles.typeHeader}>
+                    <View style={commonStyles.flexRowBetween}>
                       <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
                         Type focus
                       </Text>
@@ -691,7 +691,7 @@ export default function LocationsScreen() {
                         );
                       })}
                     </ScrollView>
-                    <View style={styles.tagHeader}>
+                    <View style={commonStyles.flexRowBetween}>
                       <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
                         Tags
                       </Text>
@@ -724,7 +724,7 @@ export default function LocationsScreen() {
                         No tags yet.
                       </Text>
                     )}
-                    <View style={styles.statusHeader}>
+                    <View style={commonStyles.flexRowBetween}>
                       <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
                         Status
                       </Text>
@@ -747,8 +747,8 @@ export default function LocationsScreen() {
                   </>
                 )}
               </View>
-              <View style={styles.listHeader}>
-                <View style={styles.listHeaderRow}>
+              <View style={commonStyles.flexRowBetween}>
+                <View style={commonStyles.flexRow}>
                   <MaterialCommunityIcons
                     name="map-marker"
                     size={18}
@@ -760,7 +760,7 @@ export default function LocationsScreen() {
                   </Text>
                 </View>
                 <View style={styles.listHeaderMeta}>
-                  <View style={styles.listHeaderActions}>
+                  <View style={commonStyles.flexRow}>
                     <Pressable onPress={openLibrary} hitSlop={8}>
                       <Text variant="labelMedium" style={{ color: theme.colors.primary }}>
                         Library
@@ -868,7 +868,7 @@ export default function LocationsScreen() {
         <FAB
           icon="plus"
           onPress={openCreateModal}
-          style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+          style={[commonStyles.fab, { backgroundColor: theme.colors.primary }]}
           color={theme.colors.onPrimary}
           disabled={isCreating}
         />
@@ -879,9 +879,6 @@ export default function LocationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  listContent: {
-    paddingBottom: layout.fabSize + layout.fabMargin * 2,
-  },
   header: {
     marginBottom: spacing[3],
   },
@@ -893,62 +890,27 @@ const styles = StyleSheet.create({
     gap: spacing[3],
   },
   statsRow: {
-    flexDirection: 'row',
+    ...commonStyles.flexRow,
     gap: spacing[3],
-  },
-  filterHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  filterTitle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing[2],
   },
   filterIcon: {
     marginRight: spacing[2],
   },
-  typeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  tagHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  statusHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: spacing[2],
-  },
   statusRow: {
-    flexDirection: 'row',
+    ...commonStyles.flexRow,
     gap: spacing[2],
   },
   tagScroll: {
     paddingBottom: spacing[2],
     gap: spacing[2],
   },
-  listHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
   listHeaderMeta: {
     alignItems: 'flex-end',
     gap: spacing[0.5],
   },
   listHeaderActions: {
-    flexDirection: 'row',
+    ...commonStyles.flexRow,
     gap: spacing[2],
-  },
-  listHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
   },
   listHeaderIcon: {
     marginRight: spacing[2],
@@ -961,9 +923,7 @@ const styles = StyleSheet.create({
     width: 132,
   },
   rootHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    ...commonStyles.flexRowBetween,
     marginTop: spacing[3],
     marginBottom: spacing[1.5],
     paddingVertical: spacing[2],
@@ -980,8 +940,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   rootHeaderMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...commonStyles.flexRow,
     gap: spacing[2],
   },
   rootFilteredPill: {
@@ -998,11 +957,6 @@ const styles = StyleSheet.create({
   },
   cardWrapper: {
     marginBottom: spacing[1.5],
-  },
-  fab: {
-    position: 'absolute',
-    right: layout.fabMargin,
-    bottom: layout.fabMargin,
   },
   modalContentInput: {
     minHeight: 120,

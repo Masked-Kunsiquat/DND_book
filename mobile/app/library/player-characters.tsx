@@ -13,7 +13,7 @@ import {
   Section,
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
-import { iconSizes, layout, spacing } from '../../src/theme';
+import { commonStyles, iconSizes, layout, spacing } from '../../src/theme';
 import {
   useCreatePlayerCharacter,
   useCreatePlayerCharacterTemplate,
@@ -255,7 +255,7 @@ export default function PlayerCharacterTemplatesScreen() {
         <FlatList
           data={visibleTemplates}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={commonStyles.listContent}
           ListHeaderComponent={
             <View style={styles.header}>
               <Section title="Continuity Library" icon="book-outline">
@@ -462,9 +462,6 @@ function renderFormModal({
 }
 
 const styles = StyleSheet.create({
-  listContent: {
-    paddingBottom: layout.fabSize + layout.fabMargin * 2,
-  },
   header: {
     marginBottom: spacing[3],
   },
@@ -475,8 +472,7 @@ const styles = StyleSheet.create({
     minHeight: 120,
   },
   errorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    ...commonStyles.flexRow,
     gap: spacing[2],
     marginTop: spacing[2],
   },

@@ -13,6 +13,7 @@ import { fontFamily, fontSize } from './typography';
 export * from './colors';
 export * from './spacing';
 export * from './typography';
+export * from './styles';
 
 // Custom font configuration for Paper
 const fontConfig = {

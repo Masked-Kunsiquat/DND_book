@@ -13,7 +13,7 @@ import {
   Section,
 } from '../../../src/components';
 import { useTheme } from '../../../src/theme/ThemeProvider';
-import { layout, spacing } from '../../../src/theme';
+import { commonStyles, layout, spacing } from '../../../src/theme';
 import { formatDisplayDate, getTodayDateInput } from '../../../src/utils/date';
 import {
   useCampaign,
@@ -237,7 +237,7 @@ export default function CampaignSessionsScreen() {
         <FlatList
           data={sessions}
           keyExtractor={(session) => session.id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={commonStyles.listContent}
           refreshing={refreshing}
           onRefresh={onRefresh}
           ListHeaderComponent={
@@ -262,7 +262,7 @@ export default function CampaignSessionsScreen() {
         <FAB
           icon="plus"
           onPress={openCreateModal}
-          style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+          style={[commonStyles.fab, { backgroundColor: theme.colors.primary }]}
           color={theme.colors.onPrimary}
           disabled={isCreating}
         />
@@ -274,19 +274,11 @@ export default function CampaignSessionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  listContent: {
-    paddingBottom: layout.fabSize + layout.fabMargin * 2,
-  },
   header: {
     marginBottom: spacing[2],
   },
   cardWrapper: {
     marginBottom: spacing[3],
-  },
-  fab: {
-    position: 'absolute',
-    right: layout.fabMargin,
-    bottom: layout.fabMargin,
   },
   summaryInput: {
     minHeight: 120,

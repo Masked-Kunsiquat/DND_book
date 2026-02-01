@@ -26,7 +26,7 @@ import {
   Section,
   AppCard,
 } from '../../src/components';
-import { layout, spacing } from '../../src/theme';
+import { commonStyles, layout, spacing } from '../../src/theme';
 
 export default function CampaignsScreen() {
   const { theme } = useTheme();
@@ -203,7 +203,7 @@ export default function CampaignsScreen() {
         )}
       </Section>
       <View style={styles.listHeader}>
-        <View style={styles.listHeaderRow}>
+        <View style={commonStyles.flexRow}>
           <MaterialCommunityIcons
             name="folder"
             size={18}
@@ -248,7 +248,7 @@ export default function CampaignsScreen() {
         <FlatList
           data={continuityCampaigns}
           keyExtractor={(campaign) => campaign.id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={commonStyles.listContent}
           ListHeaderComponent={header}
           refreshing={refreshing}
           onRefresh={onRefresh}
@@ -285,7 +285,7 @@ export default function CampaignsScreen() {
         <FAB
           icon="plus"
           onPress={openCreateModal}
-          style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+          style={[commonStyles.fab, { backgroundColor: theme.colors.primary }]}
           color={theme.colors.onPrimary}
         />
       </Screen>
@@ -295,28 +295,14 @@ export default function CampaignsScreen() {
 }
 
 const styles = StyleSheet.create({
-  listContent: {
-    paddingBottom: layout.fabSize + layout.fabMargin * 2,
-  },
   cardWrapper: {
     marginBottom: spacing[3],
   },
   listHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    ...commonStyles.flexRowBetween,
     marginBottom: spacing[3],
-  },
-  listHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
   },
   listHeaderIcon: {
     marginRight: spacing[2],
-  },
-  fab: {
-    position: 'absolute',
-    right: layout.fabMargin,
-    bottom: layout.fabMargin,
   },
 });

@@ -16,7 +16,7 @@ import {
   TagInput,
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
-import { iconSizes, layout, spacing } from '../../src/theme';
+import { commonStyles, iconSizes, layout, spacing } from '../../src/theme';
 import { router, useLocalSearchParams } from 'expo-router';
 import type { EntityScope, Tag } from '../../src/types/schema';
 import {
@@ -491,7 +491,7 @@ export default function NotesScreen() {
         <FlatList
           data={filteredNotes}
           keyExtractor={(note) => note.id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={commonStyles.listContent}
           refreshing={refreshing}
           onRefresh={onRefresh}
           ListHeaderComponent={
@@ -512,10 +512,10 @@ export default function NotesScreen() {
                   },
                 ]}
               >
-                <View style={styles.filterHeader}>
+                <View style={commonStyles.flexRowBetween}>
                   <Pressable
                     onPress={() => setFiltersOpen((prev) => !prev)}
-                    style={styles.filterTitle}
+                    style={commonStyles.flexRow}
                   >
                     <MaterialCommunityIcons
                       name="tune-variant"
@@ -573,7 +573,7 @@ export default function NotesScreen() {
                   </>
                 )}
               </View>
-              <View style={styles.listHeader}>
+              <View style={commonStyles.flexRow}>
                 <MaterialCommunityIcons
                   name="note-text"
                   size={18}
@@ -613,7 +613,7 @@ export default function NotesScreen() {
         <FAB
           icon="plus"
           onPress={openCreateModal}
-          style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+          style={[commonStyles.fab, { backgroundColor: theme.colors.primary }]}
           color={theme.colors.onPrimary}
           disabled={campaigns.length === 0 || isCreating}
         />
@@ -625,9 +625,6 @@ export default function NotesScreen() {
 }
 
 const styles = StyleSheet.create({
-  listContent: {
-    paddingBottom: layout.fabSize + layout.fabMargin * 2,
-  },
   header: {
     marginBottom: spacing[3],
   },
@@ -638,15 +635,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing[3],
     gap: spacing[2],
   },
-  filterHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  filterTitle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   filterIcon: {
     marginRight: spacing[2],
   },
@@ -654,29 +642,18 @@ const styles = StyleSheet.create({
     marginBottom: spacing[3],
   },
   tagHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    ...commonStyles.flexRowBetween,
     marginBottom: spacing[1],
   },
   tagScroll: {
     paddingBottom: spacing[2],
     gap: spacing[2],
   },
-  listHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   listHeaderIcon: {
     marginRight: spacing[2],
   },
   cardWrapper: {
     marginBottom: spacing[3],
-  },
-  fab: {
-    position: 'absolute',
-    right: layout.fabMargin,
-    bottom: layout.fabMargin,
   },
   modalContentInput: {
     minHeight: 120,

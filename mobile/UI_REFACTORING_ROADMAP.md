@@ -11,22 +11,30 @@ Analysis identified **~520 lines of duplicated UI code** across components and s
 ## Phase 1: Shared Style Constants (High Priority, Low Risk)
 
 ### 1.1 Extract Common Layout Styles
-- **Status:** Pending
+- **Status:** ✅ Complete
 - **Impact:** ~45 lines across 9 files
 - **Location:** `src/theme/styles.ts`
-- **Patterns to extract:**
+- **Patterns extracted:**
   - `flexRow`: `{ flexDirection: 'row', alignItems: 'center' }`
   - `flexRowBetween`: `{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }`
   - `listContent`: `{ paddingBottom: layout.fabSize + layout.fabMargin * 2 }`
-- **Files affected:**
-  - `src/components/cards/*.tsx` (tagsRow patterns)
-  - `app/(tabs)/*.tsx` (list screens)
+- **Files updated:**
+  - `app/(tabs)/notes.tsx`
+  - `app/(tabs)/npcs.tsx`
+  - `app/(tabs)/locations.tsx`
+  - `app/(tabs)/items.tsx`
+  - `app/(tabs)/sessions.tsx`
+  - `app/(tabs)/campaigns.tsx`
+  - `app/tags.tsx`
+  - `app/campaign/[id]/sessions.tsx`
+  - `app/campaign/[id]/party.tsx`
+  - `app/library/player-characters.tsx`
 
 ### 1.2 Extract FAB Styles
-- **Status:** Pending
+- **Status:** ✅ Complete
 - **Impact:** ~8 lines, 4 files (100% duplicate)
 - **Location:** `src/theme/styles.ts`
-- **Pattern:**
+- **Pattern extracted:**
   ```typescript
   fab: {
     position: 'absolute',
@@ -34,11 +42,16 @@ Analysis identified **~520 lines of duplicated UI code** across components and s
     bottom: layout.fabMargin,
   }
   ```
-- **Files affected:**
+- **Files updated:**
   - `app/(tabs)/notes.tsx`
   - `app/(tabs)/npcs.tsx`
   - `app/(tabs)/locations.tsx`
   - `app/(tabs)/items.tsx`
+  - `app/(tabs)/sessions.tsx`
+  - `app/(tabs)/campaigns.tsx`
+  - `app/tags.tsx`
+  - `app/campaign/[id]/sessions.tsx`
+  - `app/campaign/[id]/party.tsx`
 
 ---
 
@@ -158,8 +171,8 @@ Analysis identified **~520 lines of duplicated UI code** across components and s
 
 | Phase | Item | Status | Impact | Files |
 |-------|------|--------|--------|-------|
-| 1.1 | Common layout styles | ⏳ Pending | ~45 lines | 9 |
-| 1.2 | FAB styles | ⏳ Pending | ~8 lines | 4 |
+| 1.1 | Common layout styles | ✅ Complete | ~45 lines | 10 |
+| 1.2 | FAB styles | ✅ Complete | ~8 lines | 9 |
 | 2.1 | StyledBadge component | ⏳ Pending | ~60 lines | 5 |
 | 3.1 | FormHelperText | ⏳ Pending | ~40 lines | 4 |
 | 3.2 | Form container styles | ⏳ Pending | ~50 lines | 19+ |
