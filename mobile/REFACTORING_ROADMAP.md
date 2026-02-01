@@ -120,25 +120,32 @@ Analysis identified **~400+ lines of duplicated code** across hooks and componen
 
 ## Phase 4: Architecture Improvements (Low Priority)
 
-### 4.1 Hook Factory Pattern
-- **Status:** Pending
-- **Impact:** Could reduce each entity hook by 50%+
-- **Risk:** Higher complexity, needs careful design
-- **Approach:** Create `createEntityHooks()` factory for CRUD operations
+### 4.1 Hook Factory Pattern ⏭️
+- **Status:** Skipped
+- **Reason:** After analysis, the variations across hooks are too significant:
+  - Different filter parameters per entity (campaignId, continuityId, scope logic)
+  - Custom query hooks vary by entity (`useTagsByIds`, `useNpcsByLocation`, etc.)
+  - Delete side effects differ (NPCs/Locations clean up images, Tags cascade)
+  - Create logic varies (Tags generate colors, Notes handle scope, etc.)
+  - A factory would require complex configuration objects harder to maintain than explicit code
+- **Original proposal:** Create `createEntityHooks()` factory for CRUD operations
 
-### 4.2 Naming Convention Standardization
-- **Status:** Pending
-- **Issues:**
-  - `Npc` (type) vs `NPCCard` (component) vs `NPC` (display)
-  - Inconsistent capitalization across codebase
-- **Decision needed:** Pick one convention and apply globally
+### 4.2 Naming Convention Standardization ✅
+- **Status:** Complete (documented as acceptable)
+- **Analysis:** Current naming follows common React conventions:
+  - Types: `Npc` (PascalCase, treating acronym as a word)
+  - Components: `NPCCard` (all-caps acronym for readability)
+  - Hooks: `useNpcs`, `useNpc` (camelCase with lowercase acronym)
+- **Conclusion:** The pattern is consistent within each category - no changes needed
 
-### 4.3 Error Handling Strategy
-- **Status:** Pending
-- **Issues:**
-  - Fire-and-forget async calls (`void removeManagedImage()`)
-  - Inconsistent error throwing vs logging
-- **Recommendation:** Define explicit error handling policy
+### 4.3 Error Handling Strategy ✅
+- **Status:** Complete (documented as acceptable)
+- **Analysis:** Current patterns are intentional and consistent:
+  - **Throw + log.error**: Update hooks throw for "not found" (caller handles)
+  - **Fire-and-forget (`void`)**: Image cleanup - `removeManagedImage()` handles errors internally with `log.warn`
+  - **log.error + continue**: Store/sync operations degrade gracefully
+  - **log.warn + fallback**: File operations return fallback values on failure
+- **Conclusion:** No changes needed - the strategy is appropriate for each context
 
 ---
 
@@ -153,9 +160,9 @@ Analysis identified **~400+ lines of duplicated code** across hooks and componen
 | 2.2 | Row defaults helper | ⏭️ Skipped | - |
 | 3.1 | `useEntityCounts()` | ✅ Complete | - |
 | 3.2 | `useFormModal()` | ⏭️ Skipped | - |
-| 4.1 | Hook factory | ⏳ Pending | - |
-| 4.2 | Naming conventions | ⏳ Pending | - |
-| 4.3 | Error handling | ⏳ Pending | - |
+| 4.1 | Hook factory | ⏭️ Skipped | - |
+| 4.2 | Naming conventions | ✅ Documented | - |
+| 4.3 | Error handling | ✅ Documented | - |
 
 ---
 
