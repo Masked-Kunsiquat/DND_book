@@ -28,6 +28,13 @@ import {
 } from '../../src/components';
 import { commonStyles, layout, spacing } from '../../src/theme';
 
+/**
+ * Render the Campaigns screen for browsing, filtering by continuity, setting the current campaign, and creating new campaigns.
+ *
+ * Renders a current-campaign section, a header with continuity-aware title and a "New" action, a list of campaigns (filtered by continuity when applicable) with counts for notes/NPCs/locations, pull-to-refresh support, and a modal + FAB for creating campaigns.
+ *
+ * @returns A React element displaying the campaigns UI, including the create campaign modal and floating action button.
+ */
 export default function CampaignsScreen() {
   const { theme } = useTheme();
   const params = useLocalSearchParams<{ create?: string | string[]; continuityId?: string | string[] }>();

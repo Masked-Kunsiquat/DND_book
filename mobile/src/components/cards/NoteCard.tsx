@@ -34,6 +34,21 @@ function buildPreview(content: string): string {
   return `${trimmed.slice(0, PREVIEW_LENGTH)}...`;
 }
 
+/**
+ * Render a card summarizing a note with optional tags and a campaign or shared badge.
+ *
+ * Renders the note title (or "Untitled note"), a trimmed content preview, an optional badge
+ * (campaignName takes precedence; otherwise "Shared" when note.scope === 'continuity'), and
+ * a row of tag chips if any tags are provided.
+ *
+ * @param note - The note data to display
+ * @param tags - Resolved tag objects to render as chips; defaults to an empty array
+ * @param campaignName - Optional label to show in the badge; when omitted and the note's scope is 'continuity', a "Shared" badge is shown
+ * @param onTagPress - Optional callback invoked with the tag id when a tag chip is pressed
+ * @param onPress - Optional callback invoked when the card is pressed
+ * @param style - Optional additional style applied to the card container
+ * @returns The rendered note card element
+ */
 export function NoteCard({
   note,
   tags = [],

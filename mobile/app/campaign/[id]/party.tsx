@@ -20,6 +20,14 @@ import {
 } from '../../../src/hooks';
 import type { PlayerCharacter } from '../../../src/types/schema';
 
+/**
+ * Screen for viewing and managing a campaign's party (player characters).
+ *
+ * Renders the party list for the current campaign, empty-state UI when no campaign or no party members exist,
+ * a modal to create new player characters, and controls to browse character templates tied to the campaign continuity.
+ *
+ * @returns The React element that renders the campaign party screen.
+ */
 export default function CampaignPartyScreen() {
   const { theme } = useTheme();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
