@@ -23,6 +23,15 @@ import {
   useSessionLogsByDate,
 } from '../../../src/hooks';
 
+/**
+ * Render the Campaign Sessions screen for viewing, creating, and managing session logs.
+ *
+ * Displays a campaign's session list (with pull-to-refresh), an empty state when no campaign
+ * or sessions exist, and UI for creating a new session including title, date, summary,
+ * and participant selection. Automatically opens the create modal when triggered via URL params.
+ *
+ * @returns A React element representing the Campaign Sessions screen.
+ */
 export default function CampaignSessionsScreen() {
   const { theme } = useTheme();
   const params = useLocalSearchParams<{ id?: string | string[]; create?: string }>();

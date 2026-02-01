@@ -33,6 +33,14 @@ function renderSubtitle(template: PlayerCharacterTemplate): string {
   return parts.length > 0 ? parts.join(' • ') : 'No details yet.';
 }
 
+/**
+ * Screen for browsing and managing player character templates within a continuity/campaign.
+ *
+ * Renders a searchable list of templates and provides UI for creating, editing, deleting,
+ * and applying templates to create new characters tied to the current campaign.
+ *
+ * @returns The React element for the Player Character Templates screen.
+ */
 export default function PlayerCharacterTemplatesScreen() {
   const { theme } = useTheme();
   const params = useLocalSearchParams<{ continuityId?: string | string[] }>();
@@ -404,6 +412,13 @@ type FormModalProps = {
   extraActions?: ReactNode;
 };
 
+/**
+ * Render a form modal used to create or edit a player character template.
+ *
+ * @param extraActions - Optional additional action buttons to include in the modal's action bar.
+ * @param error - Optional error message to display below the inputs (styled with the provided theme).
+ * @returns The FormModal element containing inputs for Name, Player, Race, Class, Background and the action buttons.
+ */
 function renderFormModal({
   title,
   visible,
