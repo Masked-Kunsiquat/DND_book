@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, FAB, Text, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   AppCard,
+  FilterHeader,
   FormModal,
   LocationMultiSelect,
   FormMultiSelect,
@@ -16,7 +17,7 @@ import {
   TagInput,
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
-import { commonStyles, iconSizes, layout, spacing } from '../../src/theme';
+import { commonStyles, spacing } from '../../src/theme';
 import { router, useLocalSearchParams } from 'expo-router';
 import type { EntityScope, Tag } from '../../src/types/schema';
 import {
@@ -503,76 +504,44 @@ export default function NotesScreen() {
                 placeholder="Search notes..."
                 style={styles.searchInput}
               />
-              <View
-                style={[
-                  styles.filtersContainer,
-                  {
-                    backgroundColor: theme.colors.surfaceVariant,
-                    borderColor: theme.colors.outlineVariant,
-                  },
-                ]}
+              <FilterHeader
+                expanded={filtersOpen}
+                onToggle={() => setFiltersOpen((prev) => !prev)}
               >
-                <View style={commonStyles.flexRowBetween}>
-                  <Pressable
-                    onPress={() => setFiltersOpen((prev) => !prev)}
-                    style={commonStyles.flexRow}
-                  >
-                    <MaterialCommunityIcons
-                      name="tune-variant"
-                      size={18}
-                      color={theme.colors.primary}
-                      style={styles.filterIcon}
-                    />
-                    <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-                      Filters
-                    </Text>
-                  </Pressable>
-                  <Pressable onPress={() => setFiltersOpen((prev) => !prev)} hitSlop={6}>
-                    <MaterialCommunityIcons
-                      name={filtersOpen ? 'chevron-up' : 'chevron-down'}
-                      size={iconSizes.md}
-                      color={theme.colors.onSurfaceVariant}
-                    />
-                  </Pressable>
+                <View style={[commonStyles.flexRowBetween, styles.tagHeader]}>
+                  <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Tags
+                  </Text>
+                  {selectedTagIds.length > 0 && (
+                    <Button mode="text" onPress={() => setSelectedTagIds([])} compact>
+                      Clear
+                    </Button>
+                  )}
                 </View>
-                {filtersOpen && (
-                  <>
-                    <View style={[commonStyles.flexRowBetween, styles.tagHeader]}>
-                      <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                        Tags
-                      </Text>
-                      {selectedTagIds.length > 0 && (
-                        <Button mode="text" onPress={() => setSelectedTagIds([])} compact>
-                          Clear
-                        </Button>
-                      )}
-                    </View>
-                    {tags.length > 0 ? (
-                      <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.tagScroll}
-                      >
-                        {tags.map((tag) => (
-                          <TagChip
-                            key={tag.id}
-                            id={tag.id}
-                            name={tag.name}
-                            color={tag.color}
-                            size="small"
-                            selected={selectedTagIds.includes(tag.id)}
-                            onPress={() => toggleTag(tag.id)}
-                          />
-                        ))}
-                      </ScrollView>
-                    ) : (
-                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                        No tags yet.
-                      </Text>
-                    )}
-                  </>
+                {tags.length > 0 ? (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.tagScroll}
+                  >
+                    {tags.map((tag) => (
+                      <TagChip
+                        key={tag.id}
+                        id={tag.id}
+                        name={tag.name}
+                        color={tag.color}
+                        size="small"
+                        selected={selectedTagIds.includes(tag.id)}
+                        onPress={() => toggleTag(tag.id)}
+                      />
+                    ))}
+                  </ScrollView>
+                ) : (
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                    No tags yet.
+                  </Text>
                 )}
-              </View>
+              </FilterHeader>
               <View style={commonStyles.flexRow}>
                 <MaterialCommunityIcons
                   name="note-text"
@@ -627,16 +596,6 @@ export default function NotesScreen() {
 const styles = StyleSheet.create({
   header: {
     marginBottom: spacing[3],
-  },
-  filtersContainer: {
-    borderRadius: layout.cardBorderRadius,
-    borderWidth: 1,
-    padding: spacing[3],
-    marginBottom: spacing[3],
-    gap: spacing[2],
-  },
-  filterIcon: {
-    marginRight: spacing[2],
   },
   searchInput: {
     marginBottom: spacing[3],

@@ -4,6 +4,7 @@ import { Button, FAB, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
+  FilterHeader,
   FormModal,
   FormMultiSelect,
   FormSelect,
@@ -601,152 +602,121 @@ export default function LocationsScreen() {
                 </View>
               </Section>
 
-              <View
-                style={[
-                  styles.filtersContainer,
-                  {
-                    backgroundColor: theme.colors.surfaceVariant,
-                    borderColor: theme.colors.outlineVariant,
-                  },
-                ]}
+              <FilterHeader
+                expanded={filtersOpen}
+                onToggle={() => setFiltersOpen((prev) => !prev)}
+                style={styles.filtersContainer}
               >
                 <View style={commonStyles.flexRowBetween}>
-                  <Pressable
-                    onPress={() => setFiltersOpen((prev) => !prev)}
-                    style={commonStyles.flexRow}
-                  >
-                    <MaterialCommunityIcons
-                      name="tune-variant"
-                      size={18}
-                      color={theme.colors.primary}
-                      style={styles.filterIcon}
-                    />
-                    <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-                      Filters
-                    </Text>
-                  </Pressable>
-                  <Pressable onPress={() => setFiltersOpen((prev) => !prev)} hitSlop={6}>
-                    <MaterialCommunityIcons
-                      name={filtersOpen ? 'chevron-up' : 'chevron-down'}
-                      size={iconSizes.md}
-                      color={theme.colors.onSurfaceVariant}
-                    />
-                  </Pressable>
-                </View>
-                {filtersOpen && (
-                  <>
-                    <View style={commonStyles.flexRowBetween}>
-                      <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                        Type focus
+                  <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Type focus
+                  </Text>
+                  {typeFilter !== 'all' && (
+                    <Pressable onPress={() => setTypeFilter('all')} hitSlop={6}>
+                      <Text variant="labelSmall" style={{ color: theme.colors.primary }}>
+                        Clear
                       </Text>
-                      {typeFilter !== 'all' && (
-                        <Pressable onPress={() => setTypeFilter('all')} hitSlop={6}>
-                          <Text variant="labelSmall" style={{ color: theme.colors.primary }}>
-                            Clear
-                          </Text>
-                        </Pressable>
-                      )}
-                    </View>
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={styles.typeScroll}
-                    >
-                      <View style={styles.typeCard}>
+                    </Pressable>
+                  )}
+                </View>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.typeScroll}
+                >
+                  <View style={styles.typeCard}>
+                    <StatCard
+                      label={pluralize('Location', locations.length)}
+                      value={locations.length}
+                      layout="compact"
+                      style={getTypeFocusStyle(typeFilter === 'all')}
+                      onPress={() => setTypeFilter('all')}
+                      icon={
+                        <MaterialCommunityIcons
+                          name="earth"
+                          size={iconSizes.md}
+                          color={getTypeFocusIconColor(typeFilter === 'all')}
+                        />
+                      }
+                    />
+                  </View>
+                  {LOCATION_TYPE_ORDER.map((type) => {
+                    const count = typeCounts.get(type) || 0;
+                    const isActive = typeFilter === type;
+                    return (
+                      <View key={type} style={styles.typeCard}>
                         <StatCard
-                          label={pluralize('Location', locations.length)}
-                          value={locations.length}
+                          label={pluralizeLocationType(type, count)}
+                          value={count}
                           layout="compact"
-                          style={getTypeFocusStyle(typeFilter === 'all')}
-                          onPress={() => setTypeFilter('all')}
+                          style={getTypeFocusStyle(isActive)}
+                          onPress={() => setTypeFilter(type)}
                           icon={
                             <MaterialCommunityIcons
-                              name="earth"
+                              name="compass-rose"
                               size={iconSizes.md}
-                              color={getTypeFocusIconColor(typeFilter === 'all')}
+                              color={getTypeFocusIconColor(isActive)}
                             />
                           }
                         />
                       </View>
-                      {LOCATION_TYPE_ORDER.map((type) => {
-                        const count = typeCounts.get(type) || 0;
-                        const isActive = typeFilter === type;
-                        return (
-                          <View key={type} style={styles.typeCard}>
-                            <StatCard
-                              label={pluralizeLocationType(type, count)}
-                              value={count}
-                              layout="compact"
-                              style={getTypeFocusStyle(isActive)}
-                              onPress={() => setTypeFilter(type)}
-                              icon={
-                                <MaterialCommunityIcons
-                                  name="compass-rose"
-                                  size={iconSizes.md}
-                                  color={getTypeFocusIconColor(isActive)}
-                                />
-                              }
-                            />
-                          </View>
-                        );
-                      })}
-                    </ScrollView>
-                    <View style={commonStyles.flexRowBetween}>
-                      <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                        Tags
-                      </Text>
-                      {selectedTagIds.length > 0 && (
-                        <Button mode="text" onPress={() => setSelectedTagIds([])} compact>
-                          Clear
-                        </Button>
-                      )}
-                    </View>
-                    {tags.length > 0 ? (
-                      <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.tagScroll}
-                      >
-                        {tags.map((tag) => (
-                          <TagChip
-                            key={tag.id}
-                            id={tag.id}
-                            name={tag.name}
-                            color={tag.color}
-                            size="small"
-                            selected={selectedTagIds.includes(tag.id)}
-                            onPress={() => toggleTag(tag.id)}
-                          />
-                        ))}
-                      </ScrollView>
-                    ) : (
-                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                        No tags yet.
-                      </Text>
-                    )}
-                    <View style={commonStyles.flexRowBetween}>
-                      <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                        Status
-                      </Text>
-                      {showShadowOnly && (
-                        <Button mode="text" onPress={() => setShowShadowOnly(false)} compact>
-                          Clear
-                        </Button>
-                      )}
-                    </View>
-                    <View style={[commonStyles.flexRow, styles.statusRow]}>
-                      <Button
-                        mode={showShadowOnly ? 'contained' : 'outlined'}
-                        onPress={() => setShowShadowOnly((prev) => !prev)}
-                        icon="circle-outline"
-                        compact
-                      >
-                        Shadow only
-                      </Button>
-                    </View>
-                  </>
+                    );
+                  })}
+                </ScrollView>
+                <View style={commonStyles.flexRowBetween}>
+                  <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Tags
+                  </Text>
+                  {selectedTagIds.length > 0 && (
+                    <Button mode="text" onPress={() => setSelectedTagIds([])} compact>
+                      Clear
+                    </Button>
+                  )}
+                </View>
+                {tags.length > 0 ? (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.tagScroll}
+                  >
+                    {tags.map((tag) => (
+                      <TagChip
+                        key={tag.id}
+                        id={tag.id}
+                        name={tag.name}
+                        color={tag.color}
+                        size="small"
+                        selected={selectedTagIds.includes(tag.id)}
+                        onPress={() => toggleTag(tag.id)}
+                      />
+                    ))}
+                  </ScrollView>
+                ) : (
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                    No tags yet.
+                  </Text>
                 )}
-              </View>
+                <View style={commonStyles.flexRowBetween}>
+                  <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Status
+                  </Text>
+                  {showShadowOnly && (
+                    <Button mode="text" onPress={() => setShowShadowOnly(false)} compact>
+                      Clear
+                    </Button>
+                  )}
+                </View>
+                <View style={[commonStyles.flexRow, styles.statusRow]}>
+                  <Button
+                    mode={showShadowOnly ? 'contained' : 'outlined'}
+                    onPress={() => setShowShadowOnly((prev) => !prev)}
+                    icon="circle-outline"
+                    compact
+                  >
+                    Shadow only
+                  </Button>
+                </View>
+              </FilterHeader>
               <View style={commonStyles.flexRowBetween}>
                 <View style={commonStyles.flexRow}>
                   <MaterialCommunityIcons
@@ -884,17 +854,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing[3],
   },
   filtersContainer: {
-    marginBottom: spacing[3],
-    borderWidth: 1,
-    borderRadius: layout.cardBorderRadius,
-    padding: spacing[3],
     gap: spacing[3],
   },
   statsRow: {
     gap: spacing[3],
-  },
-  filterIcon: {
-    marginRight: spacing[2],
   },
   statusRow: {
     gap: spacing[2],
