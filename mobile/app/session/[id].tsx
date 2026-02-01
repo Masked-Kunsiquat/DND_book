@@ -27,6 +27,7 @@ import {
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { iconSizes, spacing } from '../../src/theme';
+import { formatDateTime, formatDisplayDate, getTodayDateInput } from '../../src/utils/date';
 import {
   useCampaigns,
   useDeleteSessionLog,
@@ -43,45 +44,6 @@ import {
 } from '../../src/hooks';
 import { generateId } from '../../src/utils/id';
 import type { Item, Location, Mention, MentionSettings, Npc, PlayerCharacter } from '../../src/types/schema';
-
-/**
- * Format a date string into a locale-specific date and time, or provide a fallback when missing or invalid.
- *
- * @param value - The date/time string to format (may be undefined or any string parseable by the JavaScript Date constructor)
- * @returns `'Unknown'` if `value` is falsy or cannot be parsed as a valid date, otherwise the date/time formatted using the runtime's locale
- */
-function formatDate(value?: string): string {
-  if (!value) return 'Unknown';
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return 'Unknown';
-  return parsed.toLocaleString();
-}
-
-/**
- * Formats an ISO-8601 or other date-parsable string as a locale-specific date.
- *
- * @param value - A date string parsable by Date (e.g., ISO-8601). If omitted or not a valid date, the function will not format a date.
- * @returns A locale-formatted date string when `value` is valid, `'Unknown'` otherwise.
- */
-function formatSessionDate(value?: string): string {
-  if (!value) return 'Unknown';
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return 'Unknown';
-  return parsed.toLocaleDateString();
-}
-
-/**
- * Format a Date as a calendar date string in `YYYY-MM-DD` format.
- *
- * @param value - The Date to format
- * @returns The formatted date string in `YYYY-MM-DD` form
- */
-function formatDateOnly(value: Date): string {
-  const year = value.getFullYear();
-  const month = String(value.getMonth() + 1).padStart(2, '0');
-  const day = String(value.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
 
 interface MentionExtractionResult {
   mentions: Mention[];
@@ -675,7 +637,7 @@ export default function SessionDetailScreen() {
   const handleSave = () => {
     if (!session) return;
     const trimmedTitle = title.trim();
-    const resolvedDate = date.trim() || formatDateOnly(new Date());
+    const resolvedDate = date.trim() || getTodayDateInput();
     setError(null);
     try {
       updateSessionLog(session.id, {
@@ -894,7 +856,7 @@ export default function SessionDetailScreen() {
                   {session.title || 'Untitled session'}
                 </Text>
                 <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                  {formatSessionDate(session.date)}
+                  {formatDisplayDate(session.date)}
                 </Text>
               </>
             )}
@@ -1228,10 +1190,10 @@ export default function SessionDetailScreen() {
 
         <View style={styles.metaRow}>
           <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-            Created: {formatDate(session.created)}
+            Created: {formatDateTime(session.created)}
           </Text>
           <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-            Updated: {formatDate(session.updated)}
+            Updated: {formatDateTime(session.updated)}
           </Text>
         </View>
 

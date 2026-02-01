@@ -8,12 +8,13 @@ import {
   useCurrentCampaign,
   useSetCurrentCampaign,
   useCreateCampaign,
+  useEntityCounts,
+  useLocations,
+  useNotes,
+  useNpcs,
   usePullToRefresh,
 } from '../../src/hooks';
 import { useContinuities } from '../../src/hooks/useContinuities';
-import { useNotes } from '../../src/hooks/useNotes';
-import { useNpcs } from '../../src/hooks/useNpcs';
-import { useLocations } from '../../src/hooks/useLocations';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import {
   FormModal,
@@ -58,40 +59,17 @@ export default function CampaignsScreen() {
     return campaigns.filter((campaign) => campaign.continuityId === continuityId);
   }, [campaigns, continuityId]);
 
-  const noteCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    notes.forEach((note) => {
-      if (note.scope === 'campaign') {
-        if (!note.campaignId) return;
-        counts.set(note.campaignId, (counts.get(note.campaignId) || 0) + 1);
-        return;
-      }
-      note.campaignIds.forEach((id) => {
-        counts.set(id, (counts.get(id) || 0) + 1);
-      });
-    });
-    return counts;
-  }, [notes]);
-
-  const npcCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    npcs.forEach((npc) => {
-      npc.campaignIds.forEach((id) => {
-        counts.set(id, (counts.get(id) || 0) + 1);
-      });
-    });
-    return counts;
-  }, [npcs]);
-
-  const locationCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    locations.forEach((location) => {
-      location.campaignIds.forEach((id) => {
-        counts.set(id, (counts.get(id) || 0) + 1);
-      });
-    });
-    return counts;
-  }, [locations]);
+  const getNotesCampaignIds = useCallback(
+    (note: (typeof notes)[number]) =>
+      note.scope === 'campaign' ? (note.campaignId ? [note.campaignId] : []) : note.campaignIds,
+    []
+  );
+  const noteCounts = useEntityCounts(notes, getNotesCampaignIds);
+  const npcCounts = useEntityCounts(npcs, useCallback((npc: (typeof npcs)[number]) => npc.campaignIds, []));
+  const locationCounts = useEntityCounts(
+    locations,
+    useCallback((loc: (typeof locations)[number]) => loc.campaignIds, [])
+  );
 
   const openCreateModal = useCallback(() => {
     setDraftName(`New Campaign ${continuityCampaigns.length + 1}`);

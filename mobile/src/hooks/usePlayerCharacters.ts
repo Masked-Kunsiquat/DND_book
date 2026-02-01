@@ -5,24 +5,25 @@
 import { useCallback, useMemo } from 'react';
 import { useRow, useTable } from 'tinybase/ui-react';
 import { useStore } from '../store';
+import { buildUpdates, type FieldSchema } from '../utils/entityHelpers';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
+import { parseJsonArray } from '../utils/parsing';
 import type { PlayerCharacter, PlayerCharacterRow, RecordId } from '../types/schema';
 
 const log = createLogger('player-characters');
 
-/**
- * Safely parses a JSON array string, returning empty array on failure.
- */
-function parseJsonArray(value: string): string[] {
-  if (!value) return [];
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
+/** Field schema for PlayerCharacter updates */
+const PLAYER_CHARACTER_UPDATE_SCHEMA: FieldSchema = {
+  name: 'string',
+  player: 'string',
+  race: 'string',
+  class: 'string',
+  background: 'string',
+  image: 'string',
+  campaignIds: 'array',
+  noteIds: 'array',
+};
 
 /**
  * Converts a TinyBase row to a PlayerCharacter object.
@@ -158,22 +159,8 @@ export function useUpdatePlayerCharacter(): (id: string, data: UpdatePlayerChara
         throw new Error(`PlayerCharacter ${id} not found`);
       }
 
-      const updates: Record<string, string> = { updated: now() };
-
-      if (data.name !== undefined) updates.name = data.name;
-      if (data.player !== undefined) updates.player = data.player;
-      if (data.race !== undefined) updates.race = data.race;
-      if (data.class !== undefined) updates.class = data.class;
-      if (data.background !== undefined) updates.background = data.background;
-      if (data.image !== undefined) updates.image = data.image;
-      if (data.campaignIds !== undefined) updates.campaignIds = JSON.stringify(data.campaignIds);
-      if (data.noteIds !== undefined) updates.noteIds = JSON.stringify(data.noteIds);
-
-      store.setRow('playerCharacters', id, {
-        ...existing,
-        ...updates,
-      });
-
+      const updates = buildUpdates(data, PLAYER_CHARACTER_UPDATE_SCHEMA);
+      store.setRow('playerCharacters', id, { ...existing, ...updates });
       log.debug('Updated player character', id);
     },
     [store]

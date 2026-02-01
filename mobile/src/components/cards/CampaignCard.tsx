@@ -8,6 +8,7 @@ import { Text } from 'react-native-paper';
 import { AppCard } from './AppCard';
 import { useTheme } from '../../theme/ThemeProvider';
 import { layout, spacing } from '../../theme';
+import { formatShortDate } from '../../utils/date';
 import type { Campaign } from '../../types/schema';
 
 export interface CampaignCardProps {
@@ -32,16 +33,6 @@ export interface CampaignCardProps {
 interface CountBadgeProps {
   label: string;
   value: number;
-}
-
-function formatDate(dateValue: string): string {
-  const parsed = new Date(dateValue);
-  if (Number.isNaN(parsed.getTime())) return 'Unknown date';
-  return parsed.toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
 }
 
 function CountBadge({ label, value }: CountBadgeProps) {
@@ -80,7 +71,7 @@ export function CampaignCard({
   return (
     <AppCard
       title={campaign.name}
-      subtitle={`Created ${formatDate(campaign.created)}`}
+      subtitle={`Created ${formatShortDate(campaign.created)}`}
       onPress={onPress}
       onLongPress={onLongPress}
       right={right}

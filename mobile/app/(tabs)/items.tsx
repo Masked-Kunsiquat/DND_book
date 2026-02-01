@@ -316,6 +316,6 @@ const styles = StyleSheet.create({
     bottom: layout.fabMargin,
   },
   modalContentInput: {
-    minHeight: 120,
+    minHeight: spacing[32],
   },
 });

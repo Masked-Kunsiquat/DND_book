@@ -5,11 +5,18 @@
 import { useCallback, useMemo } from 'react';
 import { useRow, useTable, useValue } from 'tinybase/ui-react';
 import { useStore } from '../store';
+import { buildUpdates, type FieldSchema } from '../utils/entityHelpers';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
 import type { Campaign, CampaignRow } from '../types/schema';
 
 const log = createLogger('campaigns');
+
+/** Field schema for Campaign updates */
+const CAMPAIGN_UPDATE_SCHEMA: FieldSchema = {
+  name: 'string',
+  continuityId: 'string',
+};
 
 /**
  * Converts a TinyBase row to a Campaign object.
@@ -169,19 +176,8 @@ export function useUpdateCampaign(): (id: string, data: UpdateCampaignInput) => 
         throw new Error(`Campaign ${id} not found`);
       }
 
-      const sanitizedData = Object.entries(data).reduce<Record<string, string>>((acc, [key, value]) => {
-        if (value !== undefined) {
-          acc[key] = value as string;
-        }
-        return acc;
-      }, {});
-
-      store.setRow('campaigns', id, {
-        ...existing,
-        ...sanitizedData,
-        updated: now(),
-      });
-
+      const updates = buildUpdates(data, CAMPAIGN_UPDATE_SCHEMA);
+      store.setRow('campaigns', id, { ...existing, ...updates });
       log.debug('Updated campaign', id);
     },
     [store]

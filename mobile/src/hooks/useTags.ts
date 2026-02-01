@@ -5,12 +5,26 @@
 import { useCallback, useMemo } from 'react';
 import { useTable } from 'tinybase/ui-react';
 import { useStore } from '../store';
+import { buildUpdates, type FieldSchema } from '../utils/entityHelpers';
 import { generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
+import { parseJsonArray } from '../utils/parsing';
 import { getTagColor } from '../theme';
 import type { Tag, TagRow } from '../types/schema';
 
 const log = createLogger('tags');
+
+/** Field schema for Tag updates */
+const TAG_UPDATE_SCHEMA: FieldSchema = {
+  name: 'string',
+  color: 'string',
+  scope: 'string',
+  continuityId: 'string',
+  campaignId: 'string',
+  originId: 'string',
+  originContinuityId: 'string',
+  forkedAt: 'string',
+};
 
 /**
  * Converts a TinyBase row to a Tag object.
@@ -29,19 +43,6 @@ function rowToTag(row: TagRow): Tag {
     created: row.created,
     updated: row.updated,
   };
-}
-
-/**
- * Safely parses a JSON array string, returning empty array on failure.
- */
-function parseJsonArray(value: string): string[] {
-  if (!value) return [];
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
 }
 
 /**
@@ -257,22 +258,8 @@ export function useUpdateTag(): (id: string, data: UpdateTagInput) => void {
         throw new Error(`Tag ${id} not found`);
       }
 
-      const updates: Record<string, string> = { updated: now() };
-      if (data.name !== undefined) updates.name = data.name;
-      if (data.color !== undefined) updates.color = data.color;
-      if (data.scope !== undefined) updates.scope = data.scope;
-      if (data.continuityId !== undefined) updates.continuityId = data.continuityId;
-      if (data.campaignId !== undefined) updates.campaignId = data.campaignId;
-      if (data.originId !== undefined) updates.originId = data.originId;
-      if (data.originContinuityId !== undefined)
-        updates.originContinuityId = data.originContinuityId;
-      if (data.forkedAt !== undefined) updates.forkedAt = data.forkedAt;
-
-      store.setRow('tags', id, {
-        ...existing,
-        ...updates,
-      });
-
+      const updates = buildUpdates(data, TAG_UPDATE_SCHEMA);
+      store.setRow('tags', id, { ...existing, ...updates });
       log.debug('Updated tag', id);
     },
     [store]

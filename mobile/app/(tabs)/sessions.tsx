@@ -14,6 +14,7 @@ import {
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { layout, spacing } from '../../src/theme';
+import { formatDisplayDate, getTodayDateInput } from '../../src/utils/date';
 import {
   useCreateSessionLog,
   useCurrentCampaign,
@@ -21,20 +22,6 @@ import {
   usePullToRefresh,
   useSessionLogsByDate,
 } from '../../src/hooks';
-
-function formatDate(value?: string): string {
-  if (!value) return 'Unknown date';
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return value;
-  return parsed.toLocaleDateString();
-}
-
-function formatDateOnly(value: Date): string {
-  const year = value.getFullYear();
-  const month = String(value.getMonth() + 1).padStart(2, '0');
-  const day = String(value.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
 
 export default function SessionsScreen() {
   const { theme } = useTheme();
@@ -68,7 +55,7 @@ export default function SessionsScreen() {
 
   const openCreateModal = () => {
     setDraftTitle(`Session ${sessions.length + 1}`);
-    setDraftDate(formatDateOnly(new Date()));
+    setDraftDate(getTodayDateInput());
     setDraftSummary('');
     setDraftPlayerIds(party.map((pc) => pc.id));
     setCreateError(null);
@@ -98,7 +85,7 @@ export default function SessionsScreen() {
       setCreateError('Session title is required.');
       return;
     }
-    const dateValue = draftDate.trim() || formatDateOnly(new Date());
+    const dateValue = draftDate.trim() || getTodayDateInput();
 
     setIsCreating(true);
     setCreateError(null);
@@ -245,7 +232,7 @@ export default function SessionsScreen() {
             <View style={styles.cardWrapper}>
               <AppCard
                 title={item.title || 'Untitled session'}
-                subtitle={item.summary ? item.summary.slice(0, 120) : formatDate(item.date)}
+                subtitle={item.summary ? item.summary.slice(0, 120) : formatDisplayDate(item.date)}
                 onPress={() => router.push(`/session/${item.id}`)}
               />
             </View>
