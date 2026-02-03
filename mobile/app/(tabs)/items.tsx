@@ -101,11 +101,17 @@ export default function ItemsScreen() {
     });
   }, [items, query]);
 
-  const { showNoCampaign, showNoResults } = useListEmptyState({
+  const hasActiveFilters = query.trim().length > 0;
+  const { showNoCampaign, showNoResults, showFilteredEmpty } = useListEmptyState({
     hasCampaign: Boolean(currentCampaign),
     totalCount: items.length,
     filteredCount: filteredItems.length,
+    hasActiveFilters,
   });
+
+  const clearFilters = () => {
+    setQuery('');
+  };
 
   const openCreateModal = () => {
     setDraftName(`New Item ${items.length + 1}`);
@@ -242,6 +248,22 @@ export default function ItemsScreen() {
             description="Create your first item to get started."
             icon="treasure-chest-outline"
             action={!isCreating ? { label: 'Create Item', onPress: openCreateModal } : undefined}
+          />
+        </Screen>
+        {createModal}
+      </>
+    );
+  }
+
+  if (showFilteredEmpty) {
+    return (
+      <>
+        <Screen onRefresh={onRefresh} refreshing={refreshing}>
+          <EmptyState
+            title="No items match your search"
+            description="Try clearing the search query."
+            icon="treasure-chest-outline"
+            action={{ label: 'Clear Search', onPress: clearFilters }}
           />
         </Screen>
         {createModal}
