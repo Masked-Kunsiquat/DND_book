@@ -1,30 +1,33 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { Button, FAB, Text, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
   AppCard,
+  FilterHeader,
   FormModal,
   FormImagePicker,
   LocationMultiSelect,
   FormMultiSelect,
   FormSelect,
   FormTextInput,
+  ModalActions,
   NPCCard,
   Screen,
-  TagChip,
+  TagFilterSection,
   TagInput,
   EmptyState,
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
-import { commonStyles, iconSizes, layout, spacing } from '../../src/theme';
+import { commonStyles, spacing } from '../../src/theme';
 import type { EntityScope, Tag } from '../../src/types/schema';
 import {
   useCampaigns,
   useCreateNpc,
   useCurrentCampaign,
   useGetOrCreateTag,
+  useListEmptyState,
   useLocations,
   useNotes,
   useNpcs,
@@ -114,6 +117,20 @@ export default function NpcsScreen() {
     });
   }, [npcs, query, selectedTagIds, showShadowOnly]);
 
+  const hasActiveFilters = query.trim().length > 0 || selectedTagIds.length > 0 || showShadowOnly;
+  const { showNoCampaign, showNoResults, showFilteredEmpty } = useListEmptyState({
+    hasCampaign: Boolean(currentCampaign),
+    totalCount: npcs.length,
+    filteredCount: filteredNpcs.length,
+    hasActiveFilters,
+  });
+
+  const clearFilters = () => {
+    setQuery('');
+    setSelectedTagIds([]);
+    setShowShadowOnly(false);
+  };
+
   useEffect(() => {
     setSelectedTagIds(tagParam ? [tagParam] : []);
   }, [tagParam]);
@@ -138,7 +155,7 @@ export default function NpcsScreen() {
     });
   }, [continuityId, draftCampaignIds, draftScope, locations]);
 
-  if (!currentCampaign) {
+  if (showNoCampaign) {
     return (
       <Screen>
         <EmptyState
@@ -318,19 +335,13 @@ export default function NpcsScreen() {
       visible={isCreateOpen}
       onDismiss={closeCreateModal}
       actions={
-        <>
-          <Button mode="text" onPress={closeCreateModal} disabled={isCreating}>
-            Cancel
-          </Button>
-          <Button
-            mode="contained"
-            onPress={handleCreate}
-            loading={isCreating}
-            disabled={isCreating}
-          >
-            Create
-          </Button>
-        </>
+        <ModalActions
+          onCancel={closeCreateModal}
+          onConfirm={handleCreate}
+          confirmLabel="Create"
+          loading={isCreating}
+          disabled={isCreating}
+        />
       }
     >
       <Button mode="outlined" icon="book-outline" onPress={openLibrary}>
@@ -478,17 +489,13 @@ export default function NpcsScreen() {
     </FormModal>
   );
 
-  if (npcs.length === 0) {
+  if (showNoResults) {
     return (
       <>
         <Screen onRefresh={onRefresh} refreshing={refreshing}>
           <EmptyState
             title="No NPCs yet"
-            description={
-              currentCampaign
-                ? 'Create your first NPC to get started.'
-                : 'Create an NPC or select a campaign to filter.'
-            }
+            description="Create your first NPC to get started."
             icon="account-group-outline"
             action={!isCreating ? { label: 'Create NPC', onPress: openCreateModal } : undefined}
           />
@@ -499,7 +506,7 @@ export default function NpcsScreen() {
     );
   }
 
-  if (filteredNpcs.length === 0) {
+  if (showFilteredEmpty) {
     return (
       <>
         <Screen onRefresh={onRefresh} refreshing={refreshing}>
@@ -507,14 +514,7 @@ export default function NpcsScreen() {
             title="No NPCs match your filters"
             description="Try clearing search or tag filters."
             icon="account-group-outline"
-            action={{
-              label: 'Clear Filters',
-              onPress: () => {
-                setQuery('');
-                setSelectedTagIds([]);
-                setShowShadowOnly(false);
-              },
-            }}
+            action={{ label: 'Clear Filters', onPress: clearFilters }}
           />
         </Screen>
         {createModal}
@@ -541,96 +541,38 @@ export default function NpcsScreen() {
                 placeholder="Search NPCs..."
                 style={styles.searchInput}
               />
-              <View
-                style={[
-                  styles.filtersContainer,
-                  {
-                    backgroundColor: theme.colors.surfaceVariant,
-                    borderColor: theme.colors.outlineVariant,
-                  },
-                ]}
+              <FilterHeader
+                expanded={filtersOpen}
+                onToggle={() => setFiltersOpen((prev) => !prev)}
               >
-                <View style={commonStyles.flexRowBetween}>
-                  <Pressable
-                    onPress={() => setFiltersOpen((prev) => !prev)}
-                    style={commonStyles.flexRow}
-                  >
-                    <MaterialCommunityIcons
-                      name="tune-variant"
-                      size={18}
-                      color={theme.colors.primary}
-                      style={styles.filterIcon}
-                    />
-                    <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-                      Filters
-                    </Text>
-                  </Pressable>
-                  <Pressable onPress={() => setFiltersOpen((prev) => !prev)} hitSlop={6}>
-                    <MaterialCommunityIcons
-                      name={filtersOpen ? 'chevron-up' : 'chevron-down'}
-                      size={iconSizes.md}
-                      color={theme.colors.onSurfaceVariant}
-                    />
-                  </Pressable>
+                <TagFilterSection
+                  tags={tags}
+                  selectedIds={selectedTagIds}
+                  onToggle={toggleTag}
+                  onClear={() => setSelectedTagIds([])}
+                  headerStyle={styles.tagHeader}
+                />
+                <View style={[commonStyles.flexRowBetween, styles.statusHeader]}>
+                  <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Status
+                  </Text>
+                  {showShadowOnly && (
+                    <Button mode="text" onPress={() => setShowShadowOnly(false)} compact>
+                      Clear
+                    </Button>
+                  )}
                 </View>
-                {filtersOpen && (
-                  <>
-                    <View style={[commonStyles.flexRowBetween, styles.tagHeader]}>
-                      <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                        Tags
-                      </Text>
-                      {selectedTagIds.length > 0 && (
-                        <Button mode="text" onPress={() => setSelectedTagIds([])} compact>
-                          Clear
-                        </Button>
-                      )}
-                    </View>
-                    {tags.length > 0 ? (
-                      <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.tagScroll}
-                      >
-                        {tags.map((tag) => (
-                          <TagChip
-                            key={tag.id}
-                            id={tag.id}
-                            name={tag.name}
-                            color={tag.color}
-                            size="small"
-                            selected={selectedTagIds.includes(tag.id)}
-                            onPress={() => toggleTag(tag.id)}
-                          />
-                        ))}
-                      </ScrollView>
-                    ) : (
-                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                        No tags yet.
-                      </Text>
-                    )}
-                    <View style={[commonStyles.flexRowBetween, styles.statusHeader]}>
-                      <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                        Status
-                      </Text>
-                      {showShadowOnly && (
-                        <Button mode="text" onPress={() => setShowShadowOnly(false)} compact>
-                          Clear
-                        </Button>
-                      )}
-                    </View>
-                    <View style={[commonStyles.flexRow, styles.statusRow]}>
-                      <Button
-                        mode={showShadowOnly ? 'contained' : 'outlined'}
-                        onPress={() => setShowShadowOnly((prev) => !prev)}
-                        icon="circle-outline"
-                        compact
-                      >
-                        Shadow only
-                      </Button>
-                    </View>
-                  </>
-                )}
-              </View>
+                <View style={[commonStyles.flexRow, styles.statusRow]}>
+                  <Button
+                    mode={showShadowOnly ? 'contained' : 'outlined'}
+                    onPress={() => setShowShadowOnly((prev) => !prev)}
+                    icon="circle-outline"
+                    compact
+                  >
+                    Shadow only
+                  </Button>
+                </View>
+              </FilterHeader>
               <View style={commonStyles.flexRowBetween}>
                 <View style={commonStyles.flexRow}>
                   <MaterialCommunityIcons
@@ -693,16 +635,6 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: spacing[3],
   },
-  filtersContainer: {
-    borderRadius: layout.cardBorderRadius,
-    borderWidth: 1,
-    padding: spacing[3],
-    marginBottom: spacing[3],
-    gap: spacing[2],
-  },
-  filterIcon: {
-    marginRight: spacing[2],
-  },
   searchInput: {
     marginBottom: spacing[3],
   },
@@ -714,10 +646,6 @@ const styles = StyleSheet.create({
     marginTop: spacing[2],
   },
   statusRow: {
-    gap: spacing[2],
-  },
-  tagScroll: {
-    paddingBottom: spacing[2],
     gap: spacing[2],
   },
   listHeaderIcon: {

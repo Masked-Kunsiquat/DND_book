@@ -90,7 +90,7 @@ Analysis identified **~520 lines of duplicated UI code** across components and s
   - `src/components/forms/FormImagePicker.tsx`
 
 ### 3.2 Standardize Form Container Styling
-- **Status:** Pending
+- **Status:** ⏭️ Skipped (dynamic theme styles, high effort for 19+ files)
 - **Impact:** ~50 lines across 19+ files
 - **Location:** `src/theme/styles.ts`
 - **Pattern:**
@@ -108,43 +108,48 @@ Analysis identified **~520 lines of duplicated UI code** across components and s
 ## Phase 4: List Screen Patterns (Medium Priority, Higher Risk)
 
 ### 4.1 Extract FilterHeader Component
-- **Status:** Pending
+- **Status:** ✅ Complete
 - **Impact:** ~80 lines across 3 files
 - **Location:** `src/components/shared/FilterHeader.tsx`
 - **Props:**
   - `expanded: boolean`
   - `onToggle: () => void`
-  - `resultCount: number`
   - `children: ReactNode` (filter content)
-- **Files to update:**
+  - `style?: object` (optional style override)
+- **Files updated:**
   - `app/(tabs)/notes.tsx`
   - `app/(tabs)/npcs.tsx`
   - `app/(tabs)/locations.tsx`
 
 ### 4.2 Extract TagFilterSection Component
-- **Status:** Pending
+- **Status:** ✅ Complete
 - **Impact:** ~30 lines across 3 files
 - **Location:** `src/components/shared/TagFilterSection.tsx`
 - **Props:**
   - `tags: Tag[]`
   - `selectedIds: string[]`
-  - `onSelect: (ids: string[]) => void`
+  - `onToggle: (tagId: string) => void`
   - `onClear: () => void`
+  - `headerStyle?: object`
+- **Files updated:**
+  - `app/(tabs)/notes.tsx`
+  - `app/(tabs)/npcs.tsx`
+  - `app/(tabs)/locations.tsx`
 
 ---
 
 ## Phase 5: Empty State Handling (Medium Priority)
 
 ### 5.1 Create useListEmptyState Hook
-- **Status:** Pending
+- **Status:** ✅ Complete
 - **Impact:** ~160 lines across 4 files
 - **Location:** `src/hooks/useListEmptyState.ts`
 - **Returns:**
   - `showNoCampaign: boolean`
   - `showNoResults: boolean`
   - `showFilteredEmpty: boolean`
-  - `clearFilters: () => void`
-- **Files to update:**
+  - `showList: boolean`
+- **Files updated:**
   - `app/(tabs)/notes.tsx`
   - `app/(tabs)/npcs.tsx`
   - `app/(tabs)/locations.tsx`
@@ -155,15 +160,30 @@ Analysis identified **~520 lines of duplicated UI code** across components and s
 ## Phase 6: Modal Action Patterns (Low Priority)
 
 ### 6.1 Extract ModalActions Component
-- **Status:** Pending
+- **Status:** ✅ Complete
 - **Impact:** ~80 lines across 10+ files
 - **Location:** `src/components/forms/ModalActions.tsx`
 - **Props:**
   - `onCancel: () => void`
   - `onConfirm: () => void`
   - `confirmLabel?: string`
+  - `cancelLabel?: string`
   - `loading?: boolean`
   - `disabled?: boolean`
+- **Files updated:**
+  - `app/(tabs)/notes.tsx`
+  - `app/(tabs)/npcs.tsx`
+  - `app/(tabs)/locations.tsx`
+  - `app/(tabs)/items.tsx`
+  - `app/(tabs)/sessions.tsx`
+  - `app/(tabs)/campaigns.tsx`
+  - `app/continuities.tsx`
+  - `app/tags.tsx`
+  - `app/tag/[id].tsx`
+  - `app/campaign/[id]/sessions.tsx`
+  - `app/campaign/[id]/party.tsx`
+  - `app/location/[id].tsx`
+  - `app/library/player-characters.tsx`
 
 ---
 
@@ -175,11 +195,11 @@ Analysis identified **~520 lines of duplicated UI code** across components and s
 | 1.2 | FAB styles | ✅ Complete | ~8 lines | 9 |
 | 2.1 | StyledBadge component | ✅ Complete | ~60 lines | 5 |
 | 3.1 | FormHelperText | ✅ Complete | ~40 lines | 4 |
-| 3.2 | Form container styles | ⏳ Pending | ~50 lines | 19+ |
-| 4.1 | FilterHeader | ⏳ Pending | ~80 lines | 3 |
-| 4.2 | TagFilterSection | ⏳ Pending | ~30 lines | 3 |
-| 5.1 | useListEmptyState | ⏳ Pending | ~160 lines | 4 |
-| 6.1 | ModalActions | ⏳ Pending | ~80 lines | 10+ |
+| 3.2 | Form container styles | ⏭️ Skipped | ~50 lines | 19+ |
+| 4.1 | FilterHeader | ✅ Complete | ~80 lines | 3 |
+| 4.2 | TagFilterSection | ✅ Complete | ~30 lines | 3 |
+| 5.1 | useListEmptyState | ✅ Complete | ~160 lines | 4 |
+| 6.1 | ModalActions | ✅ Complete | ~80 lines | 10+ |
 
 **Total potential savings:** ~520+ lines
 

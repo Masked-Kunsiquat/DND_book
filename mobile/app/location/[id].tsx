@@ -16,6 +16,7 @@ import {
   FormSelect,
   FormTextInput,
   LocationCard,
+  ModalActions,
   Screen,
   Section,
   TagChip,
@@ -586,14 +587,13 @@ export default function LocationDetailScreen() {
       visible={isMoveOpen}
       onDismiss={closeMoveModal}
       actions={
-        <>
-          <Button mode="text" onPress={closeMoveModal} disabled={isMoving}>
-            Cancel
-          </Button>
-          <Button mode="contained" onPress={handleMove} loading={isMoving} disabled={isMoving}>
-            Move
-          </Button>
-        </>
+        <ModalActions
+          onCancel={closeMoveModal}
+          onConfirm={handleMove}
+          confirmLabel="Move"
+          loading={isMoving}
+          disabled={isMoving}
+        />
       }
     >
       <LocationMultiSelect

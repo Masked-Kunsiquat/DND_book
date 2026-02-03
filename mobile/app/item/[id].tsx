@@ -265,7 +265,7 @@ export default function ItemDetailScreen() {
     return (
       <Screen>
         <Stack.Screen options={{ title: 'Item' }} />
-        <EmptyState title="Item not found" subtitle="This item may have been removed." />
+        <EmptyState title="Item not found" description="This item may have been removed." />
       </Screen>
     );
   }

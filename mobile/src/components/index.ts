@@ -36,6 +36,7 @@ export { FormDateTimePicker, type FormDateTimePickerProps } from './forms/FormDa
 export { FormHelperText, type FormHelperTextProps } from './forms/FormHelperText';
 export { TagInput, type TagInputProps } from './forms/TagInput';
 export { FormModal, type FormModalProps } from './forms/FormModal';
+export { ModalActions, type ModalActionsProps } from './forms/ModalActions';
 export { ConfirmDialog, type ConfirmDialogProps } from './forms/ConfirmDialog';
 
 // Sync
@@ -45,7 +46,9 @@ export { PeerList, type PeerListProps } from './sync/PeerList';
 
 // Shared
 export { EmptyState, type EmptyStateProps } from './shared/EmptyState';
+export { FilterHeader, type FilterHeaderProps } from './shared/FilterHeader';
 export { LoadingScreen } from './shared/LoadingScreen';
+export { TagFilterSection, type TagFilterSectionProps } from './shared/TagFilterSection';
 export { AvatarGroup, type AvatarGroupProps, type AvatarGroupItem } from './shared/AvatarGroup';
 export {
   StyledBadge,

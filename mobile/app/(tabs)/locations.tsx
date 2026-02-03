@@ -4,17 +4,19 @@ import { Button, FAB, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
+  FilterHeader,
   FormModal,
   FormMultiSelect,
   FormSelect,
   FormTextInput,
   LocationMultiSelect,
+  ModalActions,
   Screen,
   EmptyState,
   LocationRow,
   Section,
   StatCard,
-  TagChip,
+  TagFilterSection,
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { commonStyles, iconSizes, layout, semanticColors, spacing } from '../../src/theme';
@@ -22,6 +24,7 @@ import {
   useCreateLocation,
   useCampaigns,
   useCurrentCampaign,
+  useListEmptyState,
   useLocations,
   usePullToRefresh,
   useTags,
@@ -129,6 +132,20 @@ export default function LocationsScreen() {
     if (typeFilter === 'all') return shadowFiltered;
     return shadowFiltered.filter((location) => location.type === typeFilter);
   }, [locations, selectedTagIds, showShadowOnly, typeFilter]);
+
+  const hasActiveFilters = typeFilter !== 'all' || selectedTagIds.length > 0 || showShadowOnly;
+  const { showNoCampaign, showNoResults, showFilteredEmpty } = useListEmptyState({
+    hasCampaign: Boolean(currentCampaign),
+    totalCount: locations.length,
+    filteredCount: visibleLocations.length,
+    hasActiveFilters,
+  });
+
+  const clearFilters = () => {
+    setTypeFilter('all');
+    setSelectedTagIds([]);
+    setShowShadowOnly(false);
+  };
 
   const { locationById, depthById } = useMemo(() => {
     const locationMap = new Map<string, Location>();
@@ -308,7 +325,7 @@ export default function LocationsScreen() {
     setSelectedTagIds(tagParam ? [tagParam] : []);
   }, [tagParam]);
 
-  if (!currentCampaign) {
+  if (showNoCampaign) {
     return (
       <Screen>
         <EmptyState
@@ -420,19 +437,13 @@ export default function LocationsScreen() {
       visible={isCreateOpen}
       onDismiss={closeCreateModal}
       actions={
-        <>
-          <Button mode="text" onPress={closeCreateModal} disabled={isCreating}>
-            Cancel
-          </Button>
-          <Button
-            mode="contained"
-            onPress={handleCreate}
-            loading={isCreating}
-            disabled={isCreating}
-          >
-            Create
-          </Button>
-        </>
+        <ModalActions
+          onCancel={closeCreateModal}
+          onConfirm={handleCreate}
+          confirmLabel="Create"
+          loading={isCreating}
+          disabled={isCreating}
+        />
       }
     >
       <Button mode="outlined" icon="book-outline" onPress={openLibrary}>
@@ -489,17 +500,13 @@ export default function LocationsScreen() {
     </FormModal>
   );
 
-  if (locations.length === 0) {
+  if (showNoResults) {
     return (
       <>
         <Screen onRefresh={onRefresh} refreshing={refreshing}>
           <EmptyState
             title="No locations yet"
-            description={
-              currentCampaign
-                ? 'Create your first location to get started.'
-                : 'Create a location or select a campaign to filter.'
-            }
+            description="Create your first location to get started."
             icon="map-marker-outline"
             action={!isCreating ? { label: 'Create Location', onPress: openCreateModal } : undefined}
           />
@@ -509,7 +516,7 @@ export default function LocationsScreen() {
     );
   }
 
-  if (visibleLocations.length === 0) {
+  if (showFilteredEmpty) {
     return (
       <>
         <Screen onRefresh={onRefresh} refreshing={refreshing}>
@@ -517,14 +524,7 @@ export default function LocationsScreen() {
             title="No locations found"
             description="Try clearing the type or tag filters."
             icon="map-marker-outline"
-            action={{
-              label: 'Clear Filters',
-              onPress: () => {
-                setTypeFilter('all');
-                setSelectedTagIds([]);
-                setShowShadowOnly(false);
-              },
-            }}
+            action={{ label: 'Clear Filters', onPress: clearFilters }}
           />
         </Screen>
         {createModal}
@@ -601,152 +601,94 @@ export default function LocationsScreen() {
                 </View>
               </Section>
 
-              <View
-                style={[
-                  styles.filtersContainer,
-                  {
-                    backgroundColor: theme.colors.surfaceVariant,
-                    borderColor: theme.colors.outlineVariant,
-                  },
-                ]}
+              <FilterHeader
+                expanded={filtersOpen}
+                onToggle={() => setFiltersOpen((prev) => !prev)}
+                style={styles.filtersContainer}
               >
                 <View style={commonStyles.flexRowBetween}>
-                  <Pressable
-                    onPress={() => setFiltersOpen((prev) => !prev)}
-                    style={commonStyles.flexRow}
-                  >
-                    <MaterialCommunityIcons
-                      name="tune-variant"
-                      size={18}
-                      color={theme.colors.primary}
-                      style={styles.filterIcon}
-                    />
-                    <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-                      Filters
-                    </Text>
-                  </Pressable>
-                  <Pressable onPress={() => setFiltersOpen((prev) => !prev)} hitSlop={6}>
-                    <MaterialCommunityIcons
-                      name={filtersOpen ? 'chevron-up' : 'chevron-down'}
-                      size={iconSizes.md}
-                      color={theme.colors.onSurfaceVariant}
-                    />
-                  </Pressable>
-                </View>
-                {filtersOpen && (
-                  <>
-                    <View style={commonStyles.flexRowBetween}>
-                      <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                        Type focus
+                  <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Type focus
+                  </Text>
+                  {typeFilter !== 'all' && (
+                    <Pressable onPress={() => setTypeFilter('all')} hitSlop={6}>
+                      <Text variant="labelSmall" style={{ color: theme.colors.primary }}>
+                        Clear
                       </Text>
-                      {typeFilter !== 'all' && (
-                        <Pressable onPress={() => setTypeFilter('all')} hitSlop={6}>
-                          <Text variant="labelSmall" style={{ color: theme.colors.primary }}>
-                            Clear
-                          </Text>
-                        </Pressable>
-                      )}
-                    </View>
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={styles.typeScroll}
-                    >
-                      <View style={styles.typeCard}>
+                    </Pressable>
+                  )}
+                </View>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.typeScroll}
+                >
+                  <View style={styles.typeCard}>
+                    <StatCard
+                      label={pluralize('Location', locations.length)}
+                      value={locations.length}
+                      layout="compact"
+                      style={getTypeFocusStyle(typeFilter === 'all')}
+                      onPress={() => setTypeFilter('all')}
+                      icon={
+                        <MaterialCommunityIcons
+                          name="earth"
+                          size={iconSizes.md}
+                          color={getTypeFocusIconColor(typeFilter === 'all')}
+                        />
+                      }
+                    />
+                  </View>
+                  {LOCATION_TYPE_ORDER.map((type) => {
+                    const count = typeCounts.get(type) || 0;
+                    const isActive = typeFilter === type;
+                    return (
+                      <View key={type} style={styles.typeCard}>
                         <StatCard
-                          label={pluralize('Location', locations.length)}
-                          value={locations.length}
+                          label={pluralizeLocationType(type, count)}
+                          value={count}
                           layout="compact"
-                          style={getTypeFocusStyle(typeFilter === 'all')}
-                          onPress={() => setTypeFilter('all')}
+                          style={getTypeFocusStyle(isActive)}
+                          onPress={() => setTypeFilter(type)}
                           icon={
                             <MaterialCommunityIcons
-                              name="earth"
+                              name="compass-rose"
                               size={iconSizes.md}
-                              color={getTypeFocusIconColor(typeFilter === 'all')}
+                              color={getTypeFocusIconColor(isActive)}
                             />
                           }
                         />
                       </View>
-                      {LOCATION_TYPE_ORDER.map((type) => {
-                        const count = typeCounts.get(type) || 0;
-                        const isActive = typeFilter === type;
-                        return (
-                          <View key={type} style={styles.typeCard}>
-                            <StatCard
-                              label={pluralizeLocationType(type, count)}
-                              value={count}
-                              layout="compact"
-                              style={getTypeFocusStyle(isActive)}
-                              onPress={() => setTypeFilter(type)}
-                              icon={
-                                <MaterialCommunityIcons
-                                  name="compass-rose"
-                                  size={iconSizes.md}
-                                  color={getTypeFocusIconColor(isActive)}
-                                />
-                              }
-                            />
-                          </View>
-                        );
-                      })}
-                    </ScrollView>
-                    <View style={commonStyles.flexRowBetween}>
-                      <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                        Tags
-                      </Text>
-                      {selectedTagIds.length > 0 && (
-                        <Button mode="text" onPress={() => setSelectedTagIds([])} compact>
-                          Clear
-                        </Button>
-                      )}
-                    </View>
-                    {tags.length > 0 ? (
-                      <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.tagScroll}
-                      >
-                        {tags.map((tag) => (
-                          <TagChip
-                            key={tag.id}
-                            id={tag.id}
-                            name={tag.name}
-                            color={tag.color}
-                            size="small"
-                            selected={selectedTagIds.includes(tag.id)}
-                            onPress={() => toggleTag(tag.id)}
-                          />
-                        ))}
-                      </ScrollView>
-                    ) : (
-                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                        No tags yet.
-                      </Text>
-                    )}
-                    <View style={commonStyles.flexRowBetween}>
-                      <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                        Status
-                      </Text>
-                      {showShadowOnly && (
-                        <Button mode="text" onPress={() => setShowShadowOnly(false)} compact>
-                          Clear
-                        </Button>
-                      )}
-                    </View>
-                    <View style={[commonStyles.flexRow, styles.statusRow]}>
-                      <Button
-                        mode={showShadowOnly ? 'contained' : 'outlined'}
-                        onPress={() => setShowShadowOnly((prev) => !prev)}
-                        icon="circle-outline"
-                        compact
-                      >
-                        Shadow only
-                      </Button>
-                    </View>
-                  </>
-                )}
-              </View>
+                    );
+                  })}
+                </ScrollView>
+                <TagFilterSection
+                  tags={tags}
+                  selectedIds={selectedTagIds}
+                  onToggle={toggleTag}
+                  onClear={() => setSelectedTagIds([])}
+                />
+                <View style={commonStyles.flexRowBetween}>
+                  <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Status
+                  </Text>
+                  {showShadowOnly && (
+                    <Button mode="text" onPress={() => setShowShadowOnly(false)} compact>
+                      Clear
+                    </Button>
+                  )}
+                </View>
+                <View style={[commonStyles.flexRow, styles.statusRow]}>
+                  <Button
+                    mode={showShadowOnly ? 'contained' : 'outlined'}
+                    onPress={() => setShowShadowOnly((prev) => !prev)}
+                    icon="circle-outline"
+                    compact
+                  >
+                    Shadow only
+                  </Button>
+                </View>
+              </FilterHeader>
               <View style={commonStyles.flexRowBetween}>
                 <View style={commonStyles.flexRow}>
                   <MaterialCommunityIcons
@@ -884,23 +826,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing[3],
   },
   filtersContainer: {
-    marginBottom: spacing[3],
-    borderWidth: 1,
-    borderRadius: layout.cardBorderRadius,
-    padding: spacing[3],
     gap: spacing[3],
   },
   statsRow: {
     gap: spacing[3],
   },
-  filterIcon: {
-    marginRight: spacing[2],
-  },
   statusRow: {
-    gap: spacing[2],
-  },
-  tagScroll: {
-    paddingBottom: spacing[2],
     gap: spacing[2],
   },
   listHeaderMeta: {

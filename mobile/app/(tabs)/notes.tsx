@@ -1,22 +1,24 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
 import { Button, FAB, Text, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   AppCard,
+  FilterHeader,
   FormModal,
   LocationMultiSelect,
   FormMultiSelect,
   FormSelect,
   FormTextInput,
+  ModalActions,
   Screen,
   EmptyState,
   NoteCard,
-  TagChip,
+  TagFilterSection,
   TagInput,
 } from '../../src/components';
 import { useTheme } from '../../src/theme/ThemeProvider';
-import { commonStyles, iconSizes, layout, spacing } from '../../src/theme';
+import { commonStyles, spacing } from '../../src/theme';
 import { router, useLocalSearchParams } from 'expo-router';
 import type { EntityScope, Tag } from '../../src/types/schema';
 import {
@@ -24,6 +26,7 @@ import {
   useCreateNote,
   useCurrentCampaign,
   useGetOrCreateTag,
+  useListEmptyState,
   useLocations,
   useNotes,
   usePullToRefresh,
@@ -136,6 +139,19 @@ export default function NotesScreen() {
     });
   }, [notes, query, selectedTagIds]);
 
+  const hasActiveFilters = query.trim().length > 0 || selectedTagIds.length > 0;
+  const { showNoCampaign, showNoResults, showFilteredEmpty } = useListEmptyState({
+    hasCampaign: Boolean(currentCampaign),
+    totalCount: notes.length,
+    filteredCount: filteredNotes.length,
+    hasActiveFilters,
+  });
+
+  const clearFilters = () => {
+    setQuery('');
+    setSelectedTagIds([]);
+  };
+
   const appendDraftContent = (snippet: string) => {
     setDraftContent((prev) => {
       const trimmed = prev.trimEnd();
@@ -162,7 +178,7 @@ export default function NotesScreen() {
     setSelectedTagIds(tagParam ? [tagParam] : []);
   }, [tagParam]);
 
-  if (!currentCampaign) {
+  if (showNoCampaign) {
     return (
       <Screen>
         <EmptyState
@@ -308,19 +324,13 @@ export default function NotesScreen() {
       visible={isCreateOpen}
       onDismiss={closeCreateModal}
       actions={
-        <>
-          <Button mode="text" onPress={closeCreateModal} disabled={isCreating}>
-            Cancel
-          </Button>
-          <Button
-            mode="contained"
-            onPress={handleCreate}
-            loading={isCreating}
-            disabled={isCreating}
-          >
-            Create
-          </Button>
-        </>
+        <ModalActions
+          onCancel={closeCreateModal}
+          onConfirm={handleCreate}
+          confirmLabel="Create"
+          loading={isCreating}
+          disabled={isCreating}
+        />
       }
     >
       <FormSelect
@@ -437,17 +447,13 @@ export default function NotesScreen() {
     </FormModal>
   );
 
-  if (notes.length === 0) {
+  if (showNoResults) {
     return (
       <>
         <Screen onRefresh={onRefresh} refreshing={refreshing}>
           <EmptyState
             title="No notes yet"
-            description={
-              currentCampaign
-                ? 'Create your first note to get started.'
-                : 'Select a campaign to start adding notes.'
-            }
+            description="Create your first note to get started."
             icon="note-text-outline"
             action={
               campaigns.length > 0 && !isCreating
@@ -462,7 +468,7 @@ export default function NotesScreen() {
     );
   }
 
-  if (filteredNotes.length === 0) {
+  if (showFilteredEmpty) {
     return (
       <>
         <Screen onRefresh={onRefresh} refreshing={refreshing}>
@@ -470,13 +476,7 @@ export default function NotesScreen() {
             title="No notes match your filters"
             description="Try clearing search or tag filters."
             icon="note-text-outline"
-            action={{
-              label: 'Clear Filters',
-              onPress: () => {
-                setQuery('');
-                setSelectedTagIds([]);
-              },
-            }}
+            action={{ label: 'Clear Filters', onPress: clearFilters }}
           />
         </Screen>
         {createModal}
@@ -503,76 +503,18 @@ export default function NotesScreen() {
                 placeholder="Search notes..."
                 style={styles.searchInput}
               />
-              <View
-                style={[
-                  styles.filtersContainer,
-                  {
-                    backgroundColor: theme.colors.surfaceVariant,
-                    borderColor: theme.colors.outlineVariant,
-                  },
-                ]}
+              <FilterHeader
+                expanded={filtersOpen}
+                onToggle={() => setFiltersOpen((prev) => !prev)}
               >
-                <View style={commonStyles.flexRowBetween}>
-                  <Pressable
-                    onPress={() => setFiltersOpen((prev) => !prev)}
-                    style={commonStyles.flexRow}
-                  >
-                    <MaterialCommunityIcons
-                      name="tune-variant"
-                      size={18}
-                      color={theme.colors.primary}
-                      style={styles.filterIcon}
-                    />
-                    <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-                      Filters
-                    </Text>
-                  </Pressable>
-                  <Pressable onPress={() => setFiltersOpen((prev) => !prev)} hitSlop={6}>
-                    <MaterialCommunityIcons
-                      name={filtersOpen ? 'chevron-up' : 'chevron-down'}
-                      size={iconSizes.md}
-                      color={theme.colors.onSurfaceVariant}
-                    />
-                  </Pressable>
-                </View>
-                {filtersOpen && (
-                  <>
-                    <View style={[commonStyles.flexRowBetween, styles.tagHeader]}>
-                      <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                        Tags
-                      </Text>
-                      {selectedTagIds.length > 0 && (
-                        <Button mode="text" onPress={() => setSelectedTagIds([])} compact>
-                          Clear
-                        </Button>
-                      )}
-                    </View>
-                    {tags.length > 0 ? (
-                      <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.tagScroll}
-                      >
-                        {tags.map((tag) => (
-                          <TagChip
-                            key={tag.id}
-                            id={tag.id}
-                            name={tag.name}
-                            color={tag.color}
-                            size="small"
-                            selected={selectedTagIds.includes(tag.id)}
-                            onPress={() => toggleTag(tag.id)}
-                          />
-                        ))}
-                      </ScrollView>
-                    ) : (
-                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                        No tags yet.
-                      </Text>
-                    )}
-                  </>
-                )}
-              </View>
+                <TagFilterSection
+                  tags={tags}
+                  selectedIds={selectedTagIds}
+                  onToggle={toggleTag}
+                  onClear={() => setSelectedTagIds([])}
+                  headerStyle={styles.tagHeader}
+                />
+              </FilterHeader>
               <View style={commonStyles.flexRow}>
                 <MaterialCommunityIcons
                   name="note-text"
@@ -628,25 +570,11 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: spacing[3],
   },
-  filtersContainer: {
-    borderRadius: layout.cardBorderRadius,
-    borderWidth: 1,
-    padding: spacing[3],
-    marginBottom: spacing[3],
-    gap: spacing[2],
-  },
-  filterIcon: {
-    marginRight: spacing[2],
-  },
   searchInput: {
     marginBottom: spacing[3],
   },
   tagHeader: {
     marginBottom: spacing[1],
-  },
-  tagScroll: {
-    paddingBottom: spacing[2],
-    gap: spacing[2],
   },
   listHeaderIcon: {
     marginRight: spacing[2],

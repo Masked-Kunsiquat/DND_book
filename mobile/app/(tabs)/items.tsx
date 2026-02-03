@@ -10,6 +10,7 @@ import {
   FormMultiSelect,
   FormSelect,
   FormTextInput,
+  ModalActions,
   Screen,
   Section,
 } from '../../src/components';
@@ -20,6 +21,7 @@ import {
   useCreateItem,
   useCurrentCampaign,
   useItems,
+  useListEmptyState,
   usePullToRefresh,
 } from '../../src/hooks';
 import type { EntityScope, Item } from '../../src/types/schema';
@@ -99,6 +101,18 @@ export default function ItemsScreen() {
     });
   }, [items, query]);
 
+  const hasActiveFilters = query.trim().length > 0;
+  const { showNoCampaign, showNoResults, showFilteredEmpty } = useListEmptyState({
+    hasCampaign: Boolean(currentCampaign),
+    totalCount: items.length,
+    filteredCount: filteredItems.length,
+    hasActiveFilters,
+  });
+
+  const clearFilters = () => {
+    setQuery('');
+  };
+
   const openCreateModal = () => {
     setDraftName(`New Item ${items.length + 1}`);
     setDraftDescription('');
@@ -153,7 +167,7 @@ export default function ItemsScreen() {
     }
   };
 
-  if (!currentCampaign) {
+  if (showNoCampaign) {
     return (
       <Screen>
         <EmptyState
@@ -172,19 +186,13 @@ export default function ItemsScreen() {
       visible={isCreateOpen}
       onDismiss={closeCreateModal}
       actions={
-        <>
-          <Button mode="text" onPress={closeCreateModal} disabled={isCreating}>
-            Cancel
-          </Button>
-          <Button
-            mode="contained"
-            onPress={handleCreate}
-            loading={isCreating}
-            disabled={isCreating}
-          >
-            Create
-          </Button>
-        </>
+        <ModalActions
+          onCancel={closeCreateModal}
+          onConfirm={handleCreate}
+          confirmLabel="Create"
+          loading={isCreating}
+          disabled={isCreating}
+        />
       }
     >
       <FormSelect
@@ -231,7 +239,7 @@ export default function ItemsScreen() {
     </FormModal>
   );
 
-  if (items.length === 0) {
+  if (showNoResults) {
     return (
       <>
         <Screen onRefresh={onRefresh} refreshing={refreshing}>
@@ -240,6 +248,22 @@ export default function ItemsScreen() {
             description="Create your first item to get started."
             icon="treasure-chest-outline"
             action={!isCreating ? { label: 'Create Item', onPress: openCreateModal } : undefined}
+          />
+        </Screen>
+        {createModal}
+      </>
+    );
+  }
+
+  if (showFilteredEmpty) {
+    return (
+      <>
+        <Screen onRefresh={onRefresh} refreshing={refreshing}>
+          <EmptyState
+            title="No items match your search"
+            description="Try clearing the search query."
+            icon="treasure-chest-outline"
+            action={{ label: 'Clear Search', onPress: clearFilters }}
           />
         </Screen>
         {createModal}

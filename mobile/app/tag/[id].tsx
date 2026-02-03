@@ -8,6 +8,7 @@ import {
   EmptyState,
   FormModal,
   FormTextInput,
+  ModalActions,
   Screen,
   Section,
   StatCard,
@@ -183,14 +184,13 @@ export default function TagDetailScreen() {
       visible={isEditOpen}
       onDismiss={closeEditModal}
       actions={
-        <>
-          <Button mode="text" onPress={closeEditModal} disabled={isSaving}>
-            Cancel
-          </Button>
-          <Button mode="contained" onPress={handleSave} loading={isSaving} disabled={isSaving}>
-            Save
-          </Button>
-        </>
+        <ModalActions
+          onCancel={closeEditModal}
+          onConfirm={handleSave}
+          confirmLabel="Save"
+          loading={isSaving}
+          disabled={isSaving}
+        />
       }
     >
       <FormTextInput label="Name" value={draftName} onChangeText={setDraftName} />

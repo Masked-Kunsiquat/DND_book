@@ -9,6 +9,7 @@ import {
   EmptyState,
   FormModal,
   FormTextInput,
+  ModalActions,
   Screen,
   Section,
 } from '../../src/components';
@@ -447,12 +448,13 @@ function renderFormModal({
       actions={
         <>
           {extraActions}
-          <Button mode="text" onPress={onDismiss} disabled={isSaving}>
-            Cancel
-          </Button>
-          <Button mode="contained" onPress={onSave} loading={isSaving} disabled={isSaving}>
-            Save
-          </Button>
+          <ModalActions
+            onCancel={onDismiss}
+            onConfirm={onSave}
+            confirmLabel="Save"
+            loading={isSaving}
+            disabled={isSaving}
+          />
         </>
       }
     >

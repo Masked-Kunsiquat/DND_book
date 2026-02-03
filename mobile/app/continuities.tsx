@@ -9,6 +9,7 @@ import {
   EmptyState,
   FormModal,
   FormTextInput,
+  ModalActions,
   Screen,
   Section,
 } from '../src/components';
@@ -191,14 +192,13 @@ export default function ContinuitiesScreen() {
       visible={isCreateOpen}
       onDismiss={closeCreateModal}
       actions={
-        <>
-          <Button mode="text" onPress={closeCreateModal} disabled={isCreating}>
-            Cancel
-          </Button>
-          <Button mode="contained" onPress={handleCreate} loading={isCreating} disabled={isCreating}>
-            Create
-          </Button>
-        </>
+        <ModalActions
+          onCancel={closeCreateModal}
+          onConfirm={handleCreate}
+          confirmLabel="Create"
+          loading={isCreating}
+          disabled={isCreating}
+        />
       }
     >
       <FormTextInput label="Name" value={draftName} onChangeText={setDraftName} />
@@ -223,14 +223,13 @@ export default function ContinuitiesScreen() {
       visible={isEditOpen}
       onDismiss={closeEditModal}
       actions={
-        <>
-          <Button mode="text" onPress={closeEditModal} disabled={isSaving}>
-            Cancel
-          </Button>
-          <Button mode="contained" onPress={handleSaveEdit} loading={isSaving} disabled={isSaving}>
-            Save
-          </Button>
-        </>
+        <ModalActions
+          onCancel={closeEditModal}
+          onConfirm={handleSaveEdit}
+          confirmLabel="Save"
+          loading={isSaving}
+          disabled={isSaving}
+        />
       }
     >
       <FormTextInput label="Name" value={editName} onChangeText={setEditName} />
