@@ -111,16 +111,16 @@ Continuity: The Wine-Dark Sea
 9. **NPCs Tab** - "All your characters, searchable and filterable."
 10. **Tags** - "Tags connect everything—use them to track themes and consequences."
 
-#### Implementation
+#### Implementation ✅
 
 ```
 mobile/src/onboarding/
-├── TourProvider.tsx      # Wraps app with SpotlightTourProvider
-├── steps.ts              # Tour step definitions
-├── hooks/
-│   └── useTour.ts        # Tour state management
-└── components/
-    └── TourTooltip.tsx   # Custom tooltip styling
+├── index.ts              # Module exports
+├── TourProvider.tsx      # Wraps app with SpotlightTourProvider + auto-start logic
+├── TourTooltip.tsx       # Custom themed tooltip with nav buttons
+├── steps.tsx             # Tour step definitions (11 steps)
+├── useTour.ts            # Tour state management hook
+└── types.ts              # Step IDs and type definitions
 ```
 
 ---
@@ -172,89 +172,100 @@ mobile/src/onboarding/
 
 ---
 
-### 4. Clear Demo Data
+### 4. Clear Demo Data ✅
 
 **Trigger points:**
-- End of onboarding tour
-- Settings → Data → "Clear Demo Data"
-- Creating first real campaign (optional prompt)
+- Settings → Onboarding → "Clear Demo Data"
+- (Future) End of onboarding tour prompt
 
-**Implementation:**
-```typescript
-function clearSeedData(store: AppStore) {
-  const seedContinuityId = store.getValue('seedDataContinuityId');
-  if (!seedContinuityId) return;
+**Implementation:** `src/seed/index.ts` → `clearSeedData()`
+- Deletes all entities matching seed continuity ID
+- Deletes the seed campaign and continuity
+- Clears `hasSeedData` and `seedDataContinuityId` flags
+- Clears `currentCampaignId` if it was the seed campaign
 
-  // Delete all entities where continuityId matches
-  // Delete the continuity itself
-  // Clear flags
-  store.delValue('hasSeedData');
-  store.delValue('seedDataContinuityId');
-}
-```
+**Hook:** `src/hooks/useSeedData.ts`
+- `hasSeedData` - check if demo data exists
+- `clearSeedData()` - remove all demo data
+- `isSeedContinuity(id)` - check if a continuity is demo data
 
 **Visual indicator while demo data exists:**
-- Continuity name includes "(Demo)" suffix
-- Optional: subtle badge on demo entities
+- Continuity name includes "(Demo)" suffix: "🏺 The Wine-Dark Sea (Demo)"
+- (Future) Optional: subtle badge on demo entities
 
 ---
 
 ## Implementation Order
 
-### Phase 1: Seed Data
-- [ ] Create `mobile/src/seed/` directory structure
-- [ ] Define seed data types
-- [ ] Create Odyssey data files (continuity, campaign, tags, locations, NPCs, items, session log)
-- [ ] Create image path constants with asset requires
-- [ ] Implement `seedOdysseyDemo()` function
-- [ ] Implement `clearSeedData()` function
-- [ ] Integrate seeding into `StoreProvider` for first-run
+### Phase 1: Seed Data ✅
+- [x] Create `mobile/src/seed/` directory structure
+- [x] Define seed data types (`types.ts`)
+- [x] Create Odyssey data files (continuity, campaign, tags, locations, NPCs, items, session log)
+- [x] Create image path constants with asset requires (`images.ts`)
+- [x] Implement `seedOdysseyDemo()` function
+- [x] Implement `clearSeedData()` function
+- [x] Integrate seeding into `StoreProvider` for first-run
+- [x] Create `useSeedData` hook for components
 
-### Phase 2: Spotlight Tour
-- [ ] Install `react-native-spotlight-tour`
-- [ ] Create `TourProvider` wrapper
-- [ ] Define tour steps referencing seed data
-- [ ] Create custom tooltip component matching app theme
-- [ ] Add tour trigger on first run (after seeding)
-- [ ] Add "restart tour" option in Settings
+### Phase 2: Spotlight Tour ✅
+- [x] Install `react-native-spotlight-tour`
+- [x] Create `TourProvider` wrapper
+- [x] Define tour steps (11 steps in `steps.tsx`)
+- [x] Create custom `TourTooltip` component matching app theme
+- [x] Create `useTour` hook for tour state management
+- [x] Add tour auto-start on first run (after seeding)
+- [x] Add `AttachStep` to Dashboard (campaign card, stats section)
+- [x] Add "Restart Tour" option in Settings
+- [x] Add "Clear Demo Data" option in Settings
 
 ### Phase 3: Polish
+- [ ] Add `AttachStep` to more screens (Sessions, NPCs, Locations, Tags)
 - [ ] End-of-tour prompt (keep demo / start fresh)
-- [ ] Settings → "Clear Demo Data" option
-- [ ] Visual indicator for demo entities
+- [ ] Visual indicator for demo entities (badge or subtle styling)
 - [ ] Handle edge cases (user deletes demo entities mid-tour)
 - [ ] Test full flow on fresh install
 
 ---
 
-## Files to Create/Modify
+## Files Created/Modified
 
-### New Files
+### Seed Data (Phase 1) ✅
 ```
 mobile/src/seed/
-mobile/src/seed/index.ts
-mobile/src/seed/types.ts
-mobile/src/seed/odyssey/index.ts
-mobile/src/seed/odyssey/continuity.ts
-mobile/src/seed/odyssey/tags.ts
-mobile/src/seed/odyssey/locations.ts
-mobile/src/seed/odyssey/npcs.ts
-mobile/src/seed/odyssey/items.ts
-mobile/src/seed/odyssey/session-logs.ts
-mobile/src/seed/odyssey/images.ts
+├── index.ts                    # seedOdysseyDemo(), clearSeedData(), hasSeedData()
+├── types.ts                    # IDs for continuity, campaign, tags, locations, NPCs, items
+└── odyssey/
+    ├── index.ts                # Re-exports
+    ├── continuity.ts           # Continuity + campaign row data
+    ├── tags.ts                 # 10 tags (hostile, ally, divine, etc.)
+    ├── locations.ts            # 12 locations with hierarchy
+    ├── npcs.ts                 # 10 NPCs with relationships
+    ├── items.ts                # 3 items
+    ├── session-logs.ts         # Demo session with @mentions
+    └── images.ts               # Asset require() paths
 
+mobile/src/hooks/useSeedData.ts # Hook for seed data management
+```
+
+### Onboarding Tour (Phase 2) ✅
+```
 mobile/src/onboarding/
-mobile/src/onboarding/TourProvider.tsx
-mobile/src/onboarding/steps.ts
-mobile/src/onboarding/hooks/useTour.ts
-mobile/src/onboarding/components/TourTooltip.tsx
+├── index.ts                    # Module exports
+├── TourProvider.tsx            # Provider + auto-start logic
+├── TourTooltip.tsx             # Themed tooltip component
+├── steps.tsx                   # 11 tour step definitions
+├── useTour.ts                  # Tour state hook
+└── types.ts                    # TOUR_STEP constants
 ```
 
-### Modified Files
+### Modified Files ✅
 ```
-mobile/src/store/index.ts          # Add seeding logic to StoreProvider
-mobile/app/settings.tsx            # Add "Clear Demo Data" option
-mobile/package.json                # Add react-native-spotlight-tour
+mobile/src/store/index.ts       # First-run seeding in StoreProvider
+mobile/src/hooks/index.ts       # Export useSeedData
+mobile/app/_layout.tsx          # Wrap app with TourProvider
+mobile/app/(tabs)/index.tsx     # AttachStep on campaign + stats
+mobile/app/settings.tsx         # Restart Tour + Clear Demo Data
+mobile/package.json             # Added react-native-spotlight-tour
 ```
 
 ---
