@@ -2,8 +2,11 @@
  * Hook for managing tour state.
  */
 
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useStore } from '../store';
+import { createLogger } from '../utils/logger';
+
+const log = createLogger('tour');
 
 export interface UseTourResult {
   /** Whether the tour has been completed at least once */
@@ -33,12 +36,25 @@ export function useTour(): UseTourResult {
   const shouldAutoStartTour = hasSeedData && !hasCompletedTour;
 
   const completeTour = useCallback(() => {
+    log.info('Marking tour as completed');
     store.setValue('tourCompleted', 'true');
   }, [store]);
 
   const resetTour = useCallback(() => {
+    log.info('Resetting tour state');
     store.delValue('tourCompleted');
   }, [store]);
+
+  // Log state on mount and changes
+  useEffect(() => {
+    log.debug('Tour state:', {
+      hasCompletedTour,
+      hasSeedData,
+      shouldAutoStartTour,
+      tourCompletedValue: store.getValue('tourCompleted'),
+      hasSeedDataValue: store.getValue('hasSeedData'),
+    });
+  }, [hasCompletedTour, hasSeedData, shouldAutoStartTour, store]);
 
   return {
     hasCompletedTour,

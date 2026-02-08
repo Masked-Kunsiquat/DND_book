@@ -8,4 +8,11 @@ export { seedLocations } from './locations';
 export { seedNpcs } from './npcs';
 export { seedItems } from './items';
 export { seedSessionLogs } from './session-logs';
-export { NPC_IMAGES, LOCATION_IMAGES, ITEM_IMAGES } from './images';
+export {
+  NPC_IMAGES,
+  LOCATION_IMAGES,
+  ITEM_IMAGES,
+  getNpcImageUris,
+  getLocationImageUris,
+  getItemImageUris,
+} from './images';

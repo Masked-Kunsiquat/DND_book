@@ -12,6 +12,9 @@ import { spacing } from '../theme';
 import { useSeedData } from '../hooks/useSeedData';
 import { createTourSteps } from './steps';
 import { useTour } from './useTour';
+import { createLogger } from '../utils/logger';
+
+const log = createLogger('tour');
 
 interface TourContextValue {
   /** Start the tour from the beginning */
@@ -59,25 +62,34 @@ function TourController({ children, showPrompt, setShowPrompt }: TourControllerP
 
   // Auto-start tour on first run
   useEffect(() => {
+    log.debug('Tour auto-start check:', {
+      shouldAutoStartTour,
+      hasAutoStarted,
+      hasSeedData,
+    });
     if (shouldAutoStartTour && !hasAutoStarted) {
+      log.info('Auto-starting tour...');
       // Small delay to ensure UI is ready
       const timer = setTimeout(() => {
+        log.debug('Starting tour now');
         start();
         setHasAutoStarted(true);
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [shouldAutoStartTour, hasAutoStarted, start]);
+  }, [shouldAutoStartTour, hasAutoStarted, start, hasSeedData]);
 
   // Stop the tour if seed data is cleared while tour is active
   useEffect(() => {
     if (isActive && !hasSeedData) {
+      log.info('Stopping tour - seed data cleared');
       stop();
       completeTour();
     }
   }, [isActive, hasSeedData, stop, completeTour]);
 
   const startTour = useCallback(() => {
+    log.info('Manual tour start requested');
     start();
   }, [start]);
 

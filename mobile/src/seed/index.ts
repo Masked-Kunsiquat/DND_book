@@ -4,7 +4,7 @@
 
 import type { MergeableStore, Row } from 'tinybase';
 import { createLogger } from '../utils/logger';
-import { SEED_CAMPAIGN_ID, SEED_CONTINUITY_ID } from './types';
+import { SEED_CAMPAIGN_ID, SEED_CONTINUITY_ID, NPC_IDS, LOCATION_IDS, ITEM_IDS } from './types';
 import {
   seedContinuity,
   seedCampaign,
@@ -13,6 +13,9 @@ import {
   seedNpcs,
   seedItems,
   seedSessionLogs,
+  getNpcImageUris,
+  getLocationImageUris,
+  getItemImageUris,
 } from './odyssey';
 
 const log = createLogger('seed');
@@ -27,6 +30,46 @@ export function seedOdysseyDemo(store: MergeableStore): void {
   log.info('Seeding Odyssey demo data...');
 
   try {
+    // Resolve image URIs at runtime
+    const npcImages = getNpcImageUris();
+    const locationImages = getLocationImageUris();
+    const itemImages = getItemImageUris();
+
+    // Map NPC IDs to their image keys
+    const npcImageMap: Record<string, string> = {
+      [NPC_IDS.odysseus]: npcImages.odysseus,
+      [NPC_IDS.eurylochus]: npcImages.eurylochus,
+      [NPC_IDS.polyphemus]: npcImages.polyphemus,
+      [NPC_IDS.circe]: npcImages.circe,
+      [NPC_IDS.calypso]: npcImages.calypso,
+      [NPC_IDS.tiresias]: npcImages.tiresias,
+      [NPC_IDS.aeolus]: npcImages.aeolus,
+      [NPC_IDS.poseidon]: npcImages.poseidon,
+      [NPC_IDS.athena]: npcImages.athena,
+      [NPC_IDS.penelope]: npcImages.penelope,
+    };
+
+    // Map location IDs to their image keys
+    const locationImageMap: Record<string, string> = {
+      [LOCATION_IDS.aegeanSea]: locationImages.aegeanSea,
+      [LOCATION_IDS.ithaca]: locationImages.ithaca,
+      [LOCATION_IDS.troy]: locationImages.troy,
+      [LOCATION_IDS.cyclopsIsland]: locationImages.cyclopsIsland,
+      [LOCATION_IDS.sirensStrait]: locationImages.sirensStrait,
+      [LOCATION_IDS.aeolia]: locationImages.aeolia,
+      [LOCATION_IDS.aeaea]: locationImages.aeaea,
+      [LOCATION_IDS.ogygia]: locationImages.ogygia,
+      [LOCATION_IDS.mountOlympus]: locationImages.mountOlympus,
+      [LOCATION_IDS.underworld]: locationImages.underworld,
+    };
+
+    // Map item IDs to their image keys
+    const itemImageMap: Record<string, string> = {
+      [ITEM_IDS.bagOfWinds]: itemImages.bagOfWinds,
+      [ITEM_IDS.molyHerb]: itemImages.molyHerb,
+      [ITEM_IDS.bowOfOdysseus]: itemImages.bowOfOdysseus,
+    };
+
     // Seed continuity
     store.setRow('continuities', seedContinuity.id, seedContinuity as unknown as Row);
     log.debug('Seeded continuity:', seedContinuity.name);
@@ -41,21 +84,34 @@ export function seedOdysseyDemo(store: MergeableStore): void {
     }
     log.debug(`Seeded ${seedTags.length} tags`);
 
-    // Seed locations
+    // Seed locations with images
     for (const location of seedLocations) {
-      store.setRow('locations', location.id, location as unknown as Row);
+      const imageUri = locationImageMap[location.id];
+      const locationWithImage = {
+        ...location,
+        images: imageUri ? JSON.stringify([imageUri]) : '[]',
+      };
+      store.setRow('locations', location.id, locationWithImage as unknown as Row);
     }
     log.debug(`Seeded ${seedLocations.length} locations`);
 
-    // Seed NPCs
+    // Seed NPCs with images
     for (const npc of seedNpcs) {
-      store.setRow('npcs', npc.id, npc as unknown as Row);
+      const npcWithImage = {
+        ...npc,
+        image: npcImageMap[npc.id] || '',
+      };
+      store.setRow('npcs', npc.id, npcWithImage as unknown as Row);
     }
     log.debug(`Seeded ${seedNpcs.length} NPCs`);
 
-    // Seed items
+    // Seed items with images
     for (const item of seedItems) {
-      store.setRow('items', item.id, item as unknown as Row);
+      const itemWithImage = {
+        ...item,
+        image: itemImageMap[item.id] || '',
+      };
+      store.setRow('items', item.id, itemWithImage as unknown as Row);
     }
     log.debug(`Seeded ${seedItems.length} items`);
 
