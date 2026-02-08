@@ -8,6 +8,7 @@ import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppCard } from './AppCard';
 import { TagChip } from '../chips/TagChip';
+import { DemoBadge } from '../chips/DemoBadge';
 import { StyledBadge } from '../shared/StyledBadge';
 import { iconSizes, semanticColors, spacing } from '../../theme';
 import type { Location, Tag } from '../../types/schema';
@@ -27,6 +28,8 @@ export interface LocationCardProps {
   onTagPress?: (tagId: string) => void;
   /** Called when card is pressed */
   onPress?: () => void;
+  /** Whether this entity is demo data */
+  isDemo?: boolean;
   /** Additional style for the card container */
   style?: object;
 }
@@ -53,6 +56,7 @@ export function LocationCard({
   statusTone = 'warning',
   onTagPress,
   onPress,
+  isDemo,
   style,
 }: LocationCardProps) {
   const subtitle = parentName ? `Parent: ${parentName}` : undefined;
@@ -73,6 +77,11 @@ export function LocationCard({
       onPress={onPress}
       style={style}
     >
+      {isDemo && (
+        <View style={styles.statusRow}>
+          <DemoBadge />
+        </View>
+      )}
       {statusLabel && (
         <View style={styles.statusRow}>
           <MaterialCommunityIcons

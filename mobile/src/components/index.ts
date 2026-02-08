@@ -13,6 +13,7 @@ export { NPCCard, type NPCCardProps } from './cards/NPCCard';
 
 // Chips/Tags
 export { ComingSoonBadge, type ComingSoonBadgeProps } from './chips/ComingSoonBadge';
+export { DemoBadge, type DemoBadgeProps } from './chips/DemoBadge';
 export { TagChip, type TagChipProps } from './chips/TagChip';
 
 // Mentions

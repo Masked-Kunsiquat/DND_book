@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, SectionList, StyleSheet, View } from 'react-native';
 import { Button, FAB, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { AttachStep } from 'react-native-spotlight-tour';
 import {
   FilterHeader,
   FormModal,
@@ -18,6 +19,7 @@ import {
   StatCard,
   TagFilterSection,
 } from '../../src/components';
+import { TOUR_STEP, registerScrollViewRef, unregisterScrollViewRef } from '../../src/onboarding';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { commonStyles, iconSizes, layout, semanticColors, spacing } from '../../src/theme';
 import {
@@ -27,6 +29,7 @@ import {
   useListEmptyState,
   useLocations,
   usePullToRefresh,
+  useSeedData,
   useTags,
 } from '../../src/hooks';
 import type { EntityScope, Location, LocationType, Tag } from '../../src/types/schema';
@@ -76,6 +79,8 @@ export default function LocationsScreen() {
   const { theme } = useTheme();
   const currentCampaign = useCurrentCampaign();
   const campaigns = useCampaigns();
+  const { isSeedContinuity } = useSeedData();
+  const sectionListRef = useRef<SectionList>(null);
   const [typeFilter, setTypeFilter] = useState<LocationType | 'all'>('all');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
@@ -97,6 +102,12 @@ export default function LocationsScreen() {
   const locations = useLocations(effectiveCampaignId);
   const params = useLocalSearchParams<{ tagId?: string | string[] }>();
   const continuityId = currentCampaign?.continuityId ?? '';
+
+  // Register scroll ref for tour
+  useEffect(() => {
+    registerScrollViewRef('locations', sectionListRef);
+    return () => unregisterScrollViewRef('locations');
+  }, []);
 
   const continuityLocations = useMemo(() => {
     if (!currentCampaign) return [];
@@ -536,6 +547,7 @@ export default function LocationsScreen() {
     <>
       <Screen scroll={false}>
         <SectionList
+          ref={sectionListRef}
           sections={sections}
           keyExtractor={(item) => item.id}
           contentContainerStyle={commonStyles.listContent}
@@ -689,36 +701,38 @@ export default function LocationsScreen() {
                   </Button>
                 </View>
               </FilterHeader>
-              <View style={commonStyles.flexRowBetween}>
-                <View style={commonStyles.flexRow}>
-                  <MaterialCommunityIcons
-                    name="map-marker"
-                    size={18}
-                    color={theme.colors.primary}
-                    style={styles.listHeaderIcon}
-                  />
-                  <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-                    {listTitle}
-                  </Text>
-                </View>
-                <View style={styles.listHeaderMeta}>
+              <AttachStep index={TOUR_STEP.LOCATIONS_TAB} fill>
+                <View style={commonStyles.flexRowBetween}>
                   <View style={commonStyles.flexRow}>
-                    <Pressable onPress={openLibrary} hitSlop={8}>
-                      <Text variant="labelMedium" style={{ color: theme.colors.primary }}>
-                        Library
-                      </Text>
-                    </Pressable>
-                    <Pressable onPress={openCreateModal} hitSlop={8}>
-                      <Text variant="labelMedium" style={{ color: theme.colors.primary }}>
-                        New
-                      </Text>
-                    </Pressable>
+                    <MaterialCommunityIcons
+                      name="map-marker"
+                      size={18}
+                      color={theme.colors.primary}
+                      style={styles.listHeaderIcon}
+                    />
+                    <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+                      {listTitle}
+                    </Text>
                   </View>
-                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    {listCountLabel}
-                  </Text>
+                  <View style={styles.listHeaderMeta}>
+                    <View style={commonStyles.flexRow}>
+                      <Pressable onPress={openLibrary} hitSlop={8}>
+                        <Text variant="labelMedium" style={{ color: theme.colors.primary }}>
+                          Library
+                        </Text>
+                      </Pressable>
+                      <Pressable onPress={openCreateModal} hitSlop={8}>
+                        <Text variant="labelMedium" style={{ color: theme.colors.primary }}>
+                          New
+                        </Text>
+                      </Pressable>
+                    </View>
+                    <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                      {listCountLabel}
+                    </Text>
+                  </View>
                 </View>
-              </View>
+              </AttachStep>
             </View>
           }
           renderSectionHeader={({ section }) => (
@@ -803,6 +817,7 @@ export default function LocationsScreen() {
                   statusLabel={statusLabel}
                   onPress={() => router.push(`/location/${item.id}`)}
                   onTagPress={(tagId) => router.push(`/tag/${tagId}`)}
+                  isDemo={isSeedContinuity(item.continuityId)}
                 />
               </View>
             );

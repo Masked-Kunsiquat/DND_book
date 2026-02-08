@@ -9,6 +9,7 @@ import { createPersister, type Persister } from './persistence';
 import { generateDeviceId, generateId, now } from '../utils/id';
 import { createLogger } from '../utils/logger';
 import { DEFAULT_MENTION_SETTINGS } from '../utils/mentions';
+import { seedOdysseyDemo } from '../seed';
 
 // Context for the store
 const StoreContext = createContext<AppStore | null>(null);
@@ -72,10 +73,21 @@ export function StoreProvider({ children }: StoreProviderProps) {
           didMigrateMentionSettings = true;
         }
 
-        // Ensure at least one continuity exists
+        // Check if this is a first run (no persisted data)
+        // If so, seed with demo data instead of creating empty default continuity
         const continuitiesTable = appStore.getTable('continuities');
         let defaultContinuityId = Object.keys(continuitiesTable)[0];
-        if (!defaultContinuityId) {
+        const isFirstRun = !hadData && !defaultContinuityId;
+
+        if (isFirstRun) {
+          // Seed demo data on first run
+          log.info('First run detected, seeding Odyssey demo data');
+          seedOdysseyDemo(appStore);
+          // Get the seed continuity as the default
+          const seededContinuities = appStore.getTable('continuities');
+          defaultContinuityId = Object.keys(seededContinuities)[0];
+        } else if (!defaultContinuityId) {
+          // Fallback: create empty default continuity if somehow none exists
           defaultContinuityId = generateId();
           const timestamp = now();
           appStore.setRow('continuities', defaultContinuityId, {
@@ -277,9 +289,9 @@ export function StoreProvider({ children }: StoreProviderProps) {
         // Start auto-saving changes
         persister.startAutoSave();
 
-        // Save immediately if this is first run or device ID was newly set
+        // Save immediately if this is first run or any migration occurred
         if (
-          !hadData ||
+          isFirstRun ||
           didSetDeviceId ||
           didMigrateContinuity ||
           didMigrateMentionSettings ||

@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { StoreProvider } from '../src/store';
 import { ThemeProvider, useTheme } from '../src/theme/ThemeProvider';
+import { TourProvider } from '../src/onboarding';
 
 function AppStack() {
   const { theme, isDark } = useTheme();
@@ -33,7 +34,9 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <StoreProvider>
-        <AppStack />
+        <TourProvider>
+          <AppStack />
+        </TourProvider>
       </StoreProvider>
     </ThemeProvider>
   );

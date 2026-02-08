@@ -7,6 +7,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Text } from 'react-native-paper';
 import { TagChip } from '../chips/TagChip';
+import { DemoBadge } from '../chips/DemoBadge';
 import { StyledBadge } from '../shared/StyledBadge';
 import { useTheme } from '../../theme/ThemeProvider';
 import { iconSizes, layout, semanticColors, spacing } from '../../theme';
@@ -27,6 +28,8 @@ export interface LocationRowProps {
   onTagPress?: (tagId: string) => void;
   /** Called when row is pressed */
   onPress?: () => void;
+  /** Whether this entity is demo data */
+  isDemo?: boolean;
   /** Additional style for the row container */
   style?: object;
 }
@@ -57,6 +60,7 @@ export function LocationRow({
   statusTone = 'warning',
   onTagPress,
   onPress,
+  isDemo,
   style,
 }: LocationRowProps) {
   const { theme } = useTheme();
@@ -93,6 +97,7 @@ export function LocationRow({
           </Text>
         </View>
         <View style={styles.headerRight}>
+          {isDemo && <DemoBadge />}
           {location.scope === 'continuity' && <StyledBadge label="Shared" variant="primary" />}
           {location.status === 'shadow' && <StyledBadge label="Shadow" variant="shadow" />}
           <StyledBadge label={location.type} />

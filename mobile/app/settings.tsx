@@ -1,9 +1,15 @@
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { Text } from 'react-native-paper';
+import { Button, Snackbar, Text } from 'react-native-paper';
 import { AppCard, ComingSoonBadge, Screen, Section } from '../src/components';
 import { useTheme } from '../src/theme/ThemeProvider';
 import { spacing } from '../src/theme';
+import { useTour, useTourControls } from '../src/onboarding';
+import { useSeedData } from '../src/hooks';
+import { createLogger } from '../src/utils/logger';
+
+const log = createLogger('settings');
 
 const SETTINGS_ITEMS = [
   {
@@ -28,6 +34,42 @@ const SETTINGS_ITEMS = [
 
 export default function SettingsScreen() {
   const { theme } = useTheme();
+  const { resetTour } = useTour();
+  const { requestTourStart } = useTourControls();
+  const { hasSeedData, loadSeedData, clearSeedData } = useSeedData();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const handleRestartTour = () => {
+    resetTour();
+    // Request tour start on next dashboard focus instead of using setTimeout
+    requestTourStart();
+    router.back();
+  };
+
+  const handleLoadDemoData = () => {
+    try {
+      loadSeedData();
+      resetTour();
+      // Request tour start on next dashboard focus instead of using setTimeout
+      requestTourStart();
+      router.replace('/');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to load demo data.';
+      log.error('Failed to load demo data:', error);
+      setErrorMessage(message);
+    }
+  };
+
+  const handleClearDemoData = () => {
+    try {
+      clearSeedData();
+      router.replace('/');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to clear demo data.';
+      log.error('Failed to clear demo data:', error);
+      setErrorMessage(message);
+    }
+  };
 
   return (
     <Screen>
@@ -48,6 +90,39 @@ export default function SettingsScreen() {
           </Text>
         </View>
       </Section>
+
+      <Section title="Onboarding" icon="school-outline">
+        <AppCard
+          title="Restart Tour"
+          subtitle="Walk through the app features again."
+          onPress={handleRestartTour}
+        />
+        {hasSeedData ? (
+          <AppCard
+            title="Clear Demo Data"
+            subtitle="Remove the Odyssey demo campaign and start fresh."
+            onPress={handleClearDemoData}
+          />
+        ) : (
+          <AppCard
+            title="Load Demo Data"
+            subtitle="Load the Odyssey demo campaign and restart the tour."
+            onPress={handleLoadDemoData}
+          />
+        )}
+      </Section>
+
+      <Snackbar
+        visible={Boolean(errorMessage)}
+        onDismiss={() => setErrorMessage(null)}
+        duration={4000}
+        action={{
+          label: 'Dismiss',
+          onPress: () => setErrorMessage(null),
+        }}
+      >
+        {errorMessage}
+      </Snackbar>
     </Screen>
   );
 }

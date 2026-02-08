@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { Button, FAB, Text, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { AttachStep } from 'react-native-spotlight-tour';
 import {
   AppCard,
   FilterHeader,
@@ -19,6 +20,7 @@ import {
   TagInput,
   EmptyState,
 } from '../../src/components';
+import { TOUR_STEP, registerScrollViewRef, unregisterScrollViewRef } from '../../src/onboarding';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { commonStyles, spacing } from '../../src/theme';
 import type { EntityScope, Tag } from '../../src/types/schema';
@@ -32,6 +34,7 @@ import {
   useNotes,
   useNpcs,
   usePullToRefresh,
+  useSeedData,
   useTags,
 } from '../../src/hooks';
 
@@ -46,6 +49,8 @@ import {
 export default function NpcsScreen() {
   const { theme } = useTheme();
   const currentCampaign = useCurrentCampaign();
+  const { isSeedContinuity } = useSeedData();
+  const flatListRef = useRef<FlatList>(null);
   const [query, setQuery] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
@@ -80,6 +85,12 @@ export default function NpcsScreen() {
   const npcs = useNpcs(effectiveCampaignId);
   const params = useLocalSearchParams<{ tagId?: string | string[] }>();
   const continuityId = currentCampaign?.continuityId ?? '';
+
+  // Register scroll ref for tour
+  useEffect(() => {
+    registerScrollViewRef('npcs', flatListRef);
+    return () => unregisterScrollViewRef('npcs');
+  }, []);
 
   const continuityCampaigns = useMemo(() => {
     if (!continuityId) return campaigns;
@@ -527,6 +538,7 @@ export default function NpcsScreen() {
     <>
       <Screen scroll={false}>
         <FlatList
+          ref={flatListRef}
           data={filteredNpcs}
           keyExtractor={(npc) => npc.id}
           contentContainerStyle={commonStyles.listContent}
@@ -573,48 +585,57 @@ export default function NpcsScreen() {
                   </Button>
                 </View>
               </FilterHeader>
-              <View style={commonStyles.flexRowBetween}>
-                <View style={commonStyles.flexRow}>
-                  <MaterialCommunityIcons
-                    name="account-group"
-                    size={18}
-                    color={theme.colors.primary}
-                    style={styles.listHeaderIcon}
-                  />
-                  <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-                    NPCs
-                  </Text>
-                </View>
-                <View style={commonStyles.flexRow}>
-                  <Pressable onPress={openLibrary} hitSlop={8}>
-                    <Text variant="labelMedium" style={{ color: theme.colors.primary }}>
-                      Library
+              <AttachStep index={TOUR_STEP.NPCS_TAB} fill>
+                <View style={commonStyles.flexRowBetween}>
+                  <View style={commonStyles.flexRow}>
+                    <MaterialCommunityIcons
+                      name="account-group"
+                      size={18}
+                      color={theme.colors.primary}
+                      style={styles.listHeaderIcon}
+                    />
+                    <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+                      NPCs
                     </Text>
-                  </Pressable>
-                  <Pressable onPress={openCreateModal} hitSlop={8}>
-                    <Text variant="labelMedium" style={{ color: theme.colors.primary }}>
-                      New
-                    </Text>
-                  </Pressable>
+                  </View>
+                  <View style={commonStyles.flexRow}>
+                    <Pressable onPress={openLibrary} hitSlop={8}>
+                      <Text variant="labelMedium" style={{ color: theme.colors.primary }}>
+                        Library
+                      </Text>
+                    </Pressable>
+                    <Pressable onPress={openCreateModal} hitSlop={8}>
+                      <Text variant="labelMedium" style={{ color: theme.colors.primary }}>
+                        New
+                      </Text>
+                    </Pressable>
+                  </View>
                 </View>
-              </View>
+              </AttachStep>
             </View>
           }
-          renderItem={({ item }) => {
+          renderItem={({ item, index }) => {
             const resolvedTags = item.tagIds
               .map((tagId) => tagById.get(tagId))
               .filter((tag): tag is Tag => tag !== undefined);
 
-            return (
+            const card = (
               <View style={styles.cardWrapper}>
                 <NPCCard
                   npc={item}
                   tags={resolvedTags}
                   onPress={() => router.push(`/npc/${item.id}`)}
                   onTagPress={(tagId) => router.push(`/tag/${tagId}`)}
+                  isDemo={isSeedContinuity(item.continuityId)}
                 />
               </View>
             );
+
+            // Wrap first NPC card for tour highlight
+            if (index === 0) {
+              return <AttachStep index={TOUR_STEP.NPC_CARD} fill>{card}</AttachStep>;
+            }
+            return card;
           }}
         />
         <FAB

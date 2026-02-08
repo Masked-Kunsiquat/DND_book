@@ -8,6 +8,7 @@ import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppCard } from './AppCard';
 import { TagChip } from '../chips/TagChip';
+import { DemoBadge } from '../chips/DemoBadge';
 import { useTheme } from '../../theme/ThemeProvider';
 import { spacing, iconSizes } from '../../theme';
 import type { Npc, Tag } from '../../types/schema';
@@ -21,6 +22,8 @@ export interface NPCCardProps {
   onTagPress?: (tagId: string) => void;
   /** Called when card is pressed */
   onPress?: () => void;
+  /** Whether this entity is demo data */
+  isDemo?: boolean;
   /** Additional style for the card container */
   style?: object;
 }
@@ -76,7 +79,7 @@ function NpcAvatar({ imageUri }: { imageUri?: string }) {
  *
  * @returns The rendered NPC card element.
  */
-export function NPCCard({ npc, tags = [], onTagPress, onPress, style }: NPCCardProps) {
+export function NPCCard({ npc, tags = [], onTagPress, onPress, isDemo, style }: NPCCardProps) {
   const { theme } = useTheme();
   const isShadow = npc.status === 'shadow';
 
@@ -88,16 +91,21 @@ export function NPCCard({ npc, tags = [], onTagPress, onPress, style }: NPCCardP
       onPress={onPress}
       style={style}
     >
-      {isShadow && (
+      {(isShadow || isDemo) && (
         <View style={styles.statusRow}>
-          <MaterialCommunityIcons
-            name="circle-outline"
-            size={iconSizes.sm}
-            color={theme.colors.onSurfaceVariant}
-          />
-          <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-            Shadow
-          </Text>
+          {isShadow && (
+            <>
+              <MaterialCommunityIcons
+                name="circle-outline"
+                size={iconSizes.sm}
+                color={theme.colors.onSurfaceVariant}
+              />
+              <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                Shadow
+              </Text>
+            </>
+          )}
+          {isDemo && <DemoBadge />}
         </View>
       )}
       {tags.length > 0 && (

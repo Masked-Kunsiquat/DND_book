@@ -1,8 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, List, Modal, Portal, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
+import { AttachStep } from 'react-native-spotlight-tour';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { Screen, AppCard, Section, StatCard } from '../../src/components';
 import { useCurrentCampaign } from '../../src/hooks/useCampaigns';
@@ -12,6 +14,7 @@ import { useLocations } from '../../src/hooks/useLocations';
 import { useItems } from '../../src/hooks/useItems';
 import { useTags } from '../../src/hooks/useTags';
 import { iconSizes, spacing, semanticColors } from '../../src/theme';
+import { TOUR_STEP, useTourControls } from '../../src/onboarding';
 
 /**
  * Renders the Home dashboard screen for the app.
@@ -25,7 +28,21 @@ import { iconSizes, spacing, semanticColors } from '../../src/theme';
  */
 export default function Home() {
   const { theme } = useTheme();
+  const { isActive: isTourActive, startTour, consumeTourStartRequest } = useTourControls();
   const currentCampaign = useCurrentCampaign();
+
+  // Check for pending tour start request when dashboard gains focus
+  useFocusEffect(
+    useCallback(() => {
+      if (consumeTourStartRequest()) {
+        // Small delay to ensure the screen is fully mounted
+        const timer = setTimeout(() => {
+          startTour();
+        }, 100);
+        return () => clearTimeout(timer);
+      }
+    }, [consumeTourStartRequest, startTour])
+  );
   const notes = useNotes(currentCampaign?.continuityId, currentCampaign?.id);
   const npcs = useNpcs(currentCampaign?.id);
   const locations = useLocations(currentCampaign?.id);
@@ -70,105 +87,133 @@ export default function Home() {
   };
 
   return (
-    <Screen>
-      <Section title="Current Campaign" icon="compass">
-        <AppCard
-          title={currentCampaign?.name || 'No campaign selected'}
-          subtitle={
-            currentCampaign ? 'Tap to switch campaigns' : 'Create or select a campaign to start'
-          }
-          onPress={() => router.push('/campaigns')}
-          right={
-            currentCampaign ? (
-              <MaterialCommunityIcons
-                name="check-circle"
-                size={18}
-                color={semanticColors.success.main}
-              />
-            ) : (
-              <MaterialCommunityIcons
-                name="alert-circle-outline"
-                size={18}
-                color={theme.colors.onSurfaceVariant}
-              />
-            )
-          }
-        />
-      </Section>
+    <Screen tourScrollKey="dashboard">
+      <AttachStep index={TOUR_STEP.DASHBOARD_WELCOME} fill>
+        <View style={styles.welcomeSection}>
+          <Text variant="headlineMedium" style={{ color: theme.colors.onSurface }}>
+            Welcome
+          </Text>
+          <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+            Your campaign dashboard at a glance
+          </Text>
+        </View>
+      </AttachStep>
 
-      <Section title="Stats" icon="chart-box-outline">
-        <View style={styles.statsRow}>
-          <StatCard
-            label="Notes"
-            value={notes.length}
-            onPress={() => router.push('/notes')}
-            layout="compact"
-            icon={
-              <MaterialCommunityIcons
-                name="note-text-outline"
-                size={iconSizes.md}
-                color={theme.colors.primary}
-              />
+      {isTourActive && (
+        <AttachStep index={TOUR_STEP.TOUR_COMPLETE} fill>
+          <View style={styles.tourCompleteSection}>
+            <Text variant="titleMedium" style={{ color: theme.colors.primary }}>
+              Ready to Go!
+            </Text>
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+              You've learned the basics of DND Book
+            </Text>
+          </View>
+        </AttachStep>
+      )}
+
+      <AttachStep index={TOUR_STEP.DASHBOARD_CAMPAIGN_CARD} fill>
+        <Section title="Current Campaign" icon="compass">
+          <AppCard
+            title={currentCampaign?.name || 'No campaign selected'}
+            subtitle={
+              currentCampaign ? 'Tap to switch campaigns' : 'Create or select a campaign to start'
+            }
+            onPress={() => router.push('/campaigns')}
+            right={
+              currentCampaign ? (
+                <MaterialCommunityIcons
+                  name="check-circle"
+                  size={18}
+                  color={semanticColors.success.main}
+                />
+              ) : (
+                <MaterialCommunityIcons
+                  name="alert-circle-outline"
+                  size={18}
+                  color={theme.colors.onSurfaceVariant}
+                />
+              )
             }
           />
-          <StatCard
-            label="NPCs"
-            value={npcs.length}
-            onPress={() => router.push('/npcs')}
-            layout="compact"
-            icon={
-              <MaterialCommunityIcons
-                name="account-group-outline"
-                size={iconSizes.md}
-                color={theme.colors.primary}
-              />
-            }
-          />
-        </View>
-        <View style={styles.statsRow}>
-          <StatCard
-            label="Locations"
-            value={locations.length}
-            onPress={() => router.push('/locations')}
-            layout="compact"
-            icon={
-              <MaterialCommunityIcons
-                name="map-marker-outline"
-                size={iconSizes.md}
-                color={theme.colors.primary}
-              />
-            }
-          />
-          <StatCard
-            label="Items"
-            value={items.length}
-            onPress={() => router.push('/items')}
-            layout="compact"
-            icon={
-              <MaterialCommunityIcons
-                name="treasure-chest-outline"
-                size={iconSizes.md}
-                color={theme.colors.primary}
-              />
-            }
-          />
-        </View>
-        <View style={styles.statsRow}>
-          <StatCard
-            label="Tags"
-            value={tags.length}
-            onPress={() => router.push('/tags')}
-            layout="compact"
-            icon={
-              <MaterialCommunityIcons
-                name="tag-outline"
-                size={iconSizes.md}
-                color={theme.colors.primary}
-              />
-            }
-          />
-        </View>
-      </Section>
+        </Section>
+      </AttachStep>
+
+      <AttachStep index={TOUR_STEP.DASHBOARD_STATS} fill>
+        <Section title="Stats" icon="chart-box-outline">
+          <View style={styles.statsRow}>
+            <StatCard
+              label="Notes"
+              value={notes.length}
+              onPress={() => router.push('/notes')}
+              layout="compact"
+              icon={
+                <MaterialCommunityIcons
+                  name="note-text-outline"
+                  size={iconSizes.md}
+                  color={theme.colors.primary}
+                />
+              }
+            />
+            <StatCard
+              label="NPCs"
+              value={npcs.length}
+              onPress={() => router.push('/npcs')}
+              layout="compact"
+              icon={
+                <MaterialCommunityIcons
+                  name="account-group-outline"
+                  size={iconSizes.md}
+                  color={theme.colors.primary}
+                />
+              }
+            />
+          </View>
+          <View style={styles.statsRow}>
+            <StatCard
+              label="Locations"
+              value={locations.length}
+              onPress={() => router.push('/locations')}
+              layout="compact"
+              icon={
+                <MaterialCommunityIcons
+                  name="map-marker-outline"
+                  size={iconSizes.md}
+                  color={theme.colors.primary}
+                />
+              }
+            />
+            <StatCard
+              label="Items"
+              value={items.length}
+              onPress={() => router.push('/items')}
+              layout="compact"
+              icon={
+                <MaterialCommunityIcons
+                  name="treasure-chest-outline"
+                  size={iconSizes.md}
+                  color={theme.colors.primary}
+                />
+              }
+            />
+          </View>
+          <View style={styles.statsRow}>
+            <StatCard
+              label="Tags"
+              value={tags.length}
+              onPress={() => router.push('/tags')}
+              layout="compact"
+              icon={
+                <MaterialCommunityIcons
+                  name="tag-outline"
+                  size={iconSizes.md}
+                  color={theme.colors.primary}
+                />
+              }
+            />
+          </View>
+        </Section>
+      </AttachStep>
 
       <Section
         title="Recent Notes"
@@ -225,6 +270,7 @@ export default function Home() {
           </Button>
         </View>
       </Section>
+
       <Portal>
         <Modal
           visible={newMenuVisible}
@@ -258,6 +304,14 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
+  welcomeSection: {
+    marginBottom: spacing[4],
+  },
+  tourCompleteSection: {
+    marginBottom: spacing[4],
+    paddingVertical: spacing[2],
+    alignItems: 'center',
+  },
   statsRow: {
     flexDirection: 'row',
     gap: spacing[3],
