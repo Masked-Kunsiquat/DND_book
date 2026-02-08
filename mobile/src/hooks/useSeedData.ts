@@ -8,6 +8,7 @@ import {
   clearSeedData as clearSeedDataFn,
   hasSeedData as hasSeedDataFn,
   getSeedContinuityId,
+  seedOdysseyDemo,
   SEED_CONTINUITY_ID,
 } from '../seed';
 
@@ -16,6 +17,8 @@ export interface UseSeedDataResult {
   hasSeedData: boolean;
   /** The continuity ID of the seed data (if present) */
   seedContinuityId: string | undefined;
+  /** Loads the Odyssey demo data into the store */
+  loadSeedData: () => void;
   /** Clears all seed/demo data from the store */
   clearSeedData: () => void;
   /** Checks if a given continuity ID is the seed data continuity */
@@ -33,6 +36,10 @@ export function useSeedData(): UseSeedDataResult {
   const hasSeedData = hasSeedDataFn(store);
   const seedContinuityId = getSeedContinuityId(store);
 
+  const loadSeedData = useCallback(() => {
+    seedOdysseyDemo(store);
+  }, [store]);
+
   const clearSeedData = useCallback(() => {
     clearSeedDataFn(store);
   }, [store]);
@@ -45,6 +52,7 @@ export function useSeedData(): UseSeedDataResult {
   return {
     hasSeedData,
     seedContinuityId,
+    loadSeedData,
     clearSeedData,
     isSeedContinuity,
   };

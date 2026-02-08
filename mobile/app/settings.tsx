@@ -32,11 +32,21 @@ export default function SettingsScreen() {
   const { theme } = useTheme();
   const { resetTour, hasCompletedTour } = useTour();
   const { startTour } = useTourControls();
-  const { hasSeedData, clearSeedData } = useSeedData();
+  const { hasSeedData, loadSeedData, clearSeedData } = useSeedData();
 
   const handleRestartTour = () => {
     resetTour();
     router.back();
+    // Small delay to ensure navigation completes before starting tour
+    setTimeout(() => {
+      startTour();
+    }, 300);
+  };
+
+  const handleLoadDemoData = () => {
+    loadSeedData();
+    resetTour();
+    router.replace('/');
     // Small delay to ensure navigation completes before starting tour
     setTimeout(() => {
       startTour();
@@ -74,11 +84,17 @@ export default function SettingsScreen() {
           subtitle="Walk through the app features again."
           onPress={handleRestartTour}
         />
-        {hasSeedData && (
+        {hasSeedData ? (
           <AppCard
             title="Clear Demo Data"
             subtitle="Remove the Odyssey demo campaign and start fresh."
             onPress={handleClearDemoData}
+          />
+        ) : (
+          <AppCard
+            title="Load Demo Data"
+            subtitle="Load the Odyssey demo campaign and restart the tour."
+            onPress={handleLoadDemoData}
           />
         )}
       </Section>
