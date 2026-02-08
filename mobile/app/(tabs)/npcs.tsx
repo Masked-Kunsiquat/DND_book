@@ -537,7 +537,7 @@ export default function NpcsScreen() {
           refreshing={refreshing}
           onRefresh={onRefresh}
           ListHeaderComponent={
-            <AttachStep index={TOUR_STEP.NPCS_TAB}>
+            <AttachStep index={TOUR_STEP.NPCS_TAB} fill>
               <View style={styles.header}>
                 <TextInput
                   value={query}
@@ -625,7 +625,7 @@ export default function NpcsScreen() {
 
             // Wrap first NPC card for tour highlight
             if (index === 0) {
-              return <AttachStep index={TOUR_STEP.NPC_CARD}>{card}</AttachStep>;
+              return <AttachStep index={TOUR_STEP.NPC_CARD} fill>{card}</AttachStep>;
             }
             return card;
           }}

@@ -73,7 +73,7 @@ export default function Home() {
 
   return (
     <Screen>
-      <AttachStep index={TOUR_STEP.DASHBOARD_CAMPAIGN_CARD}>
+      <AttachStep index={TOUR_STEP.DASHBOARD_CAMPAIGN_CARD} fill>
         <Section title="Current Campaign" icon="compass">
           <AppCard
             title={currentCampaign?.name || 'No campaign selected'}
@@ -100,7 +100,7 @@ export default function Home() {
         </Section>
       </AttachStep>
 
-      <AttachStep index={TOUR_STEP.DASHBOARD_STATS}>
+      <AttachStep index={TOUR_STEP.DASHBOARD_STATS} fill>
         <Section title="Stats" icon="chart-box-outline">
           <View style={styles.statsRow}>
             <StatCard

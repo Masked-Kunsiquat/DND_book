@@ -232,7 +232,7 @@ export default function SessionsScreen() {
           refreshing={refreshing}
           onRefresh={onRefresh}
           ListHeaderComponent={
-            <AttachStep index={TOUR_STEP.SESSIONS_TAB}>
+            <AttachStep index={TOUR_STEP.SESSIONS_TAB} fill>
               <View style={styles.header}>
                 <Section title="Sessions" icon="calendar-blank-outline">
                   <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>

@@ -834,7 +834,7 @@ export default function SessionDetailScreen() {
     <>
       <Stack.Screen options={{ title: session.title || 'Session' }} />
       <Screen>
-        <AttachStep index={TOUR_STEP.SESSION_DETAIL}>
+        <AttachStep index={TOUR_STEP.SESSION_DETAIL} fill>
           <View style={styles.headerRow}>
             <View style={styles.headerText}>
               {isEditing ? (
@@ -870,7 +870,7 @@ export default function SessionDetailScreen() {
           </View>
         </AttachStep>
 
-        <AttachStep index={TOUR_STEP.SESSION_MENTIONS}>
+        <AttachStep index={TOUR_STEP.SESSION_MENTIONS} fill>
           <Section title="Session Log" icon="text-box-outline">
             {isEditing ? (
               <>

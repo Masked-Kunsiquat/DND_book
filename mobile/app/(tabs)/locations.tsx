@@ -548,7 +548,7 @@ export default function LocationsScreen() {
           refreshing={refreshing}
           onRefresh={onRefresh}
           ListHeaderComponent={
-            <AttachStep index={TOUR_STEP.LOCATIONS_TAB}>
+            <AttachStep index={TOUR_STEP.LOCATIONS_TAB} fill>
               <View style={styles.header}>
                 <Section title="Overview" icon="chart-box-outline">
                   <View style={[commonStyles.flexRow, styles.statsRow]}>

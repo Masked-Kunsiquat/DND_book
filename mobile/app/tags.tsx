@@ -268,7 +268,7 @@ export default function TagsScreen() {
           refreshing={refreshing}
           onRefresh={onRefresh}
           ListHeaderComponent={
-            <AttachStep index={TOUR_STEP.TAGS_USAGE}>
+            <AttachStep index={TOUR_STEP.TAGS_USAGE} fill>
               <View style={styles.header}>
                 <View style={commonStyles.flexRow}>
                   <MaterialCommunityIcons
