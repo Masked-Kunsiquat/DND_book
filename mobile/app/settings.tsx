@@ -1,9 +1,11 @@
 import { StyleSheet, View } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { Text } from 'react-native-paper';
+import { Button, Text } from 'react-native-paper';
 import { AppCard, ComingSoonBadge, Screen, Section } from '../src/components';
 import { useTheme } from '../src/theme/ThemeProvider';
 import { spacing } from '../src/theme';
+import { useTour, useTourControls } from '../src/onboarding';
+import { useSeedData } from '../src/hooks';
 
 const SETTINGS_ITEMS = [
   {
@@ -28,6 +30,23 @@ const SETTINGS_ITEMS = [
 
 export default function SettingsScreen() {
   const { theme } = useTheme();
+  const { resetTour, hasCompletedTour } = useTour();
+  const { startTour } = useTourControls();
+  const { hasSeedData, clearSeedData } = useSeedData();
+
+  const handleRestartTour = () => {
+    resetTour();
+    router.back();
+    // Small delay to ensure navigation completes before starting tour
+    setTimeout(() => {
+      startTour();
+    }, 300);
+  };
+
+  const handleClearDemoData = () => {
+    clearSeedData();
+    router.replace('/');
+  };
 
   return (
     <Screen>
@@ -47,6 +66,21 @@ export default function SettingsScreen() {
             More settings are coming soon.
           </Text>
         </View>
+      </Section>
+
+      <Section title="Onboarding" icon="school-outline">
+        <AppCard
+          title="Restart Tour"
+          subtitle="Walk through the app features again."
+          onPress={handleRestartTour}
+        />
+        {hasSeedData && (
+          <AppCard
+            title="Clear Demo Data"
+            subtitle="Remove the Odyssey demo campaign and start fresh."
+            onPress={handleClearDemoData}
+          />
+        )}
       </Section>
     </Screen>
   );

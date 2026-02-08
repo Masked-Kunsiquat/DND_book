@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { Button, List, Modal, Portal, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { AttachStep } from 'react-native-spotlight-tour';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { Screen, AppCard, Section, StatCard } from '../../src/components';
 import { useCurrentCampaign } from '../../src/hooks/useCampaigns';
@@ -12,6 +13,7 @@ import { useLocations } from '../../src/hooks/useLocations';
 import { useItems } from '../../src/hooks/useItems';
 import { useTags } from '../../src/hooks/useTags';
 import { iconSizes, spacing, semanticColors } from '../../src/theme';
+import { TOUR_STEP } from '../../src/onboarding';
 
 /**
  * Renders the Home dashboard screen for the app.
@@ -71,33 +73,36 @@ export default function Home() {
 
   return (
     <Screen>
-      <Section title="Current Campaign" icon="compass">
-        <AppCard
-          title={currentCampaign?.name || 'No campaign selected'}
-          subtitle={
-            currentCampaign ? 'Tap to switch campaigns' : 'Create or select a campaign to start'
-          }
-          onPress={() => router.push('/campaigns')}
-          right={
-            currentCampaign ? (
-              <MaterialCommunityIcons
-                name="check-circle"
-                size={18}
-                color={semanticColors.success.main}
-              />
-            ) : (
-              <MaterialCommunityIcons
-                name="alert-circle-outline"
-                size={18}
-                color={theme.colors.onSurfaceVariant}
-              />
-            )
-          }
-        />
-      </Section>
+      <AttachStep index={TOUR_STEP.DASHBOARD_CAMPAIGN_CARD}>
+        <Section title="Current Campaign" icon="compass">
+          <AppCard
+            title={currentCampaign?.name || 'No campaign selected'}
+            subtitle={
+              currentCampaign ? 'Tap to switch campaigns' : 'Create or select a campaign to start'
+            }
+            onPress={() => router.push('/campaigns')}
+            right={
+              currentCampaign ? (
+                <MaterialCommunityIcons
+                  name="check-circle"
+                  size={18}
+                  color={semanticColors.success.main}
+                />
+              ) : (
+                <MaterialCommunityIcons
+                  name="alert-circle-outline"
+                  size={18}
+                  color={theme.colors.onSurfaceVariant}
+                />
+              )
+            }
+          />
+        </Section>
+      </AttachStep>
 
-      <Section title="Stats" icon="chart-box-outline">
-        <View style={styles.statsRow}>
+      <AttachStep index={TOUR_STEP.DASHBOARD_STATS}>
+        <Section title="Stats" icon="chart-box-outline">
+          <View style={styles.statsRow}>
           <StatCard
             label="Notes"
             value={notes.length}
@@ -168,7 +173,8 @@ export default function Home() {
             }
           />
         </View>
-      </Section>
+        </Section>
+      </AttachStep>
 
       <Section
         title="Recent Notes"
