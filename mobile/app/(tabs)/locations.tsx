@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, SectionList, StyleSheet, View } from 'react-native';
 import { Button, FAB, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -19,7 +19,7 @@ import {
   StatCard,
   TagFilterSection,
 } from '../../src/components';
-import { TOUR_STEP } from '../../src/onboarding';
+import { TOUR_STEP, registerScrollViewRef, unregisterScrollViewRef } from '../../src/onboarding';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { commonStyles, iconSizes, layout, semanticColors, spacing } from '../../src/theme';
 import {
@@ -80,6 +80,7 @@ export default function LocationsScreen() {
   const currentCampaign = useCurrentCampaign();
   const campaigns = useCampaigns();
   const { isSeedContinuity } = useSeedData();
+  const sectionListRef = useRef<SectionList>(null);
   const [typeFilter, setTypeFilter] = useState<LocationType | 'all'>('all');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
@@ -101,6 +102,12 @@ export default function LocationsScreen() {
   const locations = useLocations(effectiveCampaignId);
   const params = useLocalSearchParams<{ tagId?: string | string[] }>();
   const continuityId = currentCampaign?.continuityId ?? '';
+
+  // Register scroll ref for tour
+  useEffect(() => {
+    registerScrollViewRef('locations', sectionListRef);
+    return () => unregisterScrollViewRef('locations');
+  }, []);
 
   const continuityLocations = useMemo(() => {
     if (!currentCampaign) return [];
@@ -540,6 +547,7 @@ export default function LocationsScreen() {
     <>
       <Screen scroll={false}>
         <SectionList
+          ref={sectionListRef}
           sections={sections}
           keyExtractor={(item) => item.id}
           contentContainerStyle={commonStyles.listContent}

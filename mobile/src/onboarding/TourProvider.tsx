@@ -103,8 +103,14 @@ function TourController({ children, showPrompt, setShowPrompt }: TourControllerP
 
   const startTour = useCallback(() => {
     log.info('Manual tour start requested');
-    start();
-  }, [start]);
+    // Navigate to dashboard first to ensure tour starts from the right place
+    router.push('/(tabs)');
+    // Small delay to let navigation complete before starting tour
+    setTimeout(() => {
+      setHadSeedDataOnStart(hasSeedData);
+      start();
+    }, 300);
+  }, [start, hasSeedData]);
 
   const handleKeepDemo = useCallback(() => {
     setShowPrompt(false);

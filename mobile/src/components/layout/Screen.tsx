@@ -2,11 +2,12 @@
  * Base screen wrapper with consistent padding and background.
  */
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { StyleSheet, View, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../theme/ThemeProvider';
 import { layout } from '../../theme';
+import { registerScrollViewRef, unregisterScrollViewRef } from '../../onboarding';
 
 export interface ScreenProps {
   /** Screen content */
@@ -25,6 +26,8 @@ export interface ScreenProps {
   stickyHeaderIndices?: number[];
   /** Additional style for the container */
   style?: object;
+  /** Key for registering scroll ref with tour system */
+  tourScrollKey?: string;
 }
 
 export function Screen({
@@ -36,8 +39,18 @@ export function Screen({
   onRefresh,
   stickyHeaderIndices,
   style,
+  tourScrollKey,
 }: ScreenProps) {
   const { theme } = useTheme();
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  // Register scroll ref with tour system if a key is provided
+  useEffect(() => {
+    if (tourScrollKey && scroll) {
+      registerScrollViewRef(tourScrollKey, scrollViewRef);
+      return () => unregisterScrollViewRef(tourScrollKey);
+    }
+  }, [tourScrollKey, scroll]);
 
   const containerStyle = [
     styles.container,
@@ -47,6 +60,7 @@ export function Screen({
 
   const content = scroll ? (
     <ScrollView
+      ref={scrollViewRef}
       style={styles.scrollView}
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}

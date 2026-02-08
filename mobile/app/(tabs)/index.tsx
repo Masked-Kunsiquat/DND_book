@@ -72,7 +72,7 @@ export default function Home() {
   };
 
   return (
-    <Screen>
+    <Screen tourScrollKey="dashboard">
       <AttachStep index={TOUR_STEP.DASHBOARD_CAMPAIGN_CARD} fill>
         <Section title="Current Campaign" icon="compass">
           <AppCard

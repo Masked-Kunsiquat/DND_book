@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { Button, FAB, Text } from 'react-native-paper';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
@@ -14,7 +14,7 @@ import {
   Screen,
   Section,
 } from '../../src/components';
-import { TOUR_STEP } from '../../src/onboarding';
+import { TOUR_STEP, registerScrollViewRef, unregisterScrollViewRef } from '../../src/onboarding';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { commonStyles, layout, spacing } from '../../src/theme';
 import { formatDisplayDate, getTodayDateInput } from '../../src/utils/date';
@@ -48,6 +48,13 @@ export default function SessionsScreen() {
   const party = usePlayerCharacters(campaignId);
   const createSessionLog = useCreateSessionLog();
   const { refreshing, onRefresh } = usePullToRefresh();
+  const flatListRef = useRef<FlatList>(null);
+
+  // Register scroll ref for tour
+  useEffect(() => {
+    registerScrollViewRef('sessions', flatListRef);
+    return () => unregisterScrollViewRef('sessions');
+  }, []);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -226,6 +233,7 @@ export default function SessionsScreen() {
       <Stack.Screen options={{ title: 'Sessions' }} />
       <Screen scroll={false}>
         <FlatList
+          ref={flatListRef}
           data={sessions}
           keyExtractor={(session) => session.id}
           contentContainerStyle={commonStyles.listContent}

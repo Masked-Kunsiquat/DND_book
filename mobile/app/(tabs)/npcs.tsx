@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { Button, FAB, Text, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -20,7 +20,7 @@ import {
   TagInput,
   EmptyState,
 } from '../../src/components';
-import { TOUR_STEP } from '../../src/onboarding';
+import { TOUR_STEP, registerScrollViewRef, unregisterScrollViewRef } from '../../src/onboarding';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { commonStyles, spacing } from '../../src/theme';
 import type { EntityScope, Tag } from '../../src/types/schema';
@@ -50,6 +50,7 @@ export default function NpcsScreen() {
   const { theme } = useTheme();
   const currentCampaign = useCurrentCampaign();
   const { isSeedContinuity } = useSeedData();
+  const flatListRef = useRef<FlatList>(null);
   const [query, setQuery] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
@@ -84,6 +85,12 @@ export default function NpcsScreen() {
   const npcs = useNpcs(effectiveCampaignId);
   const params = useLocalSearchParams<{ tagId?: string | string[] }>();
   const continuityId = currentCampaign?.continuityId ?? '';
+
+  // Register scroll ref for tour
+  useEffect(() => {
+    registerScrollViewRef('npcs', flatListRef);
+    return () => unregisterScrollViewRef('npcs');
+  }, []);
 
   const continuityCampaigns = useMemo(() => {
     if (!continuityId) return campaigns;
@@ -531,6 +538,7 @@ export default function NpcsScreen() {
     <>
       <Screen scroll={false}>
         <FlatList
+          ref={flatListRef}
           data={filteredNpcs}
           keyExtractor={(npc) => npc.id}
           contentContainerStyle={commonStyles.listContent}

@@ -3,9 +3,84 @@
  */
 
 import React from 'react';
+import { FlatList, ScrollView, SectionList } from 'react-native';
+import { router } from 'expo-router';
 import type { TourStep } from 'react-native-spotlight-tour';
 import { TourTooltip } from './TourTooltip';
 import { TOUR_STEP } from './types';
+import { createLogger } from '../utils/logger';
+
+const log = createLogger('tour-steps');
+
+/**
+ * A scrollable component that has a scrollToOffset method (FlatList, SectionList, etc.)
+ * or scrollTo method (ScrollView).
+ */
+interface Scrollable {
+  scrollToOffset?: (params: { offset: number; animated?: boolean }) => void;
+  scrollTo?: (options: { y: number; animated?: boolean }) => void;
+}
+
+/**
+ * Registry for scroll refs that tour steps can use to scroll to top.
+ * Components register their ScrollView or FlatList refs here for the tour to access.
+ */
+const scrollRefs: Map<string, React.RefObject<Scrollable | null>> = new Map();
+
+/**
+ * Register a ScrollView, FlatList, or SectionList ref for a screen so the tour can scroll it.
+ */
+export function registerScrollViewRef(
+  screenKey: string,
+  ref: React.RefObject<ScrollView | FlatList | SectionList | null>
+): void {
+  scrollRefs.set(screenKey, ref as React.RefObject<Scrollable | null>);
+}
+
+/**
+ * Unregister a scroll ref when a screen unmounts.
+ */
+export function unregisterScrollViewRef(screenKey: string): void {
+  scrollRefs.delete(screenKey);
+}
+
+/**
+ * Scroll a registered screen to the top.
+ */
+function scrollToTop(screenKey: string): Promise<void> {
+  return new Promise((resolve) => {
+    const ref = scrollRefs.get(screenKey);
+    if (ref?.current) {
+      log.debug(`Scrolling ${screenKey} to top`);
+      // Handle FlatList (scrollToOffset) vs ScrollView (scrollTo)
+      if (ref.current.scrollToOffset) {
+        ref.current.scrollToOffset({ offset: 0, animated: false });
+      } else if (ref.current.scrollTo) {
+        ref.current.scrollTo({ y: 0, animated: false });
+      }
+      // Small delay to let the scroll complete
+      setTimeout(resolve, 50);
+    } else {
+      log.debug(`No scroll ref for ${screenKey}, skipping scroll`);
+      resolve();
+    }
+  });
+}
+
+/**
+ * Navigate to a tab and optionally scroll to top.
+ */
+function navigateToTab(path: string, screenKey?: string): () => Promise<void> {
+  return async () => {
+    log.debug(`Navigating to ${path}`);
+    router.push(path as '/(tabs)');
+    // Wait for navigation to complete
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    if (screenKey) {
+      await scrollToTop(screenKey);
+    }
+  };
+}
 
 /**
  * Step content definitions.
@@ -81,6 +156,37 @@ const STEP_CONTENT = [
 ];
 
 /**
+ * Before hooks for each step to handle navigation and scrolling.
+ * Maps step index to a function that runs before the step is shown.
+ */
+const STEP_BEFORE_HOOKS: Record<number, () => Promise<void> | void> = {
+  // Dashboard steps - scroll to top
+  [TOUR_STEP.DASHBOARD_WELCOME]: () => scrollToTop('dashboard'),
+  [TOUR_STEP.DASHBOARD_CAMPAIGN_CARD]: () => scrollToTop('dashboard'),
+  [TOUR_STEP.DASHBOARD_STATS]: () => scrollToTop('dashboard'),
+
+  // Sessions tab - navigate there first
+  [TOUR_STEP.SESSIONS_TAB]: navigateToTab('/(tabs)/sessions', 'sessions'),
+
+  // Session detail - navigate to the first session
+  [TOUR_STEP.SESSION_DETAIL]: async () => {
+    log.debug('Navigating to session detail for tour');
+    // This will be handled by the sessions screen which should navigate to the first session
+    // when the tour reaches this step. For now, just ensure we're on sessions tab.
+    await navigateToTab('/(tabs)/sessions', 'sessions')();
+  },
+
+  // NPCs tab
+  [TOUR_STEP.NPCS_TAB]: navigateToTab('/(tabs)/npcs', 'npcs'),
+
+  // Locations tab
+  [TOUR_STEP.LOCATIONS_TAB]: navigateToTab('/(tabs)/locations', 'locations'),
+
+  // Tags - navigate to tags screen
+  [TOUR_STEP.TAGS_USAGE]: navigateToTab('/tags'),
+};
+
+/**
  * Creates the tour steps array for SpotlightTourProvider.
  *
  * @param onComplete - Callback when tour is completed
@@ -90,6 +196,7 @@ export function createTourSteps(onComplete: () => void): TourStep[] {
   const totalSteps = STEP_CONTENT.length;
 
   return STEP_CONTENT.map((content, index) => ({
+    before: STEP_BEFORE_HOOKS[index],
     render: ({ next, previous, stop }) => (
       <TourTooltip
         title={content.title}
