@@ -103,76 +103,76 @@ export default function Home() {
       <AttachStep index={TOUR_STEP.DASHBOARD_STATS}>
         <Section title="Stats" icon="chart-box-outline">
           <View style={styles.statsRow}>
-          <StatCard
-            label="Notes"
-            value={notes.length}
-            onPress={() => router.push('/notes')}
-            layout="compact"
-            icon={
-              <MaterialCommunityIcons
-                name="note-text-outline"
-                size={iconSizes.md}
-                color={theme.colors.primary}
-              />
-            }
-          />
-          <StatCard
-            label="NPCs"
-            value={npcs.length}
-            onPress={() => router.push('/npcs')}
-            layout="compact"
-            icon={
-              <MaterialCommunityIcons
-                name="account-group-outline"
-                size={iconSizes.md}
-                color={theme.colors.primary}
-              />
-            }
-          />
-        </View>
-        <View style={styles.statsRow}>
-          <StatCard
-            label="Locations"
-            value={locations.length}
-            onPress={() => router.push('/locations')}
-            layout="compact"
-            icon={
-              <MaterialCommunityIcons
-                name="map-marker-outline"
-                size={iconSizes.md}
-                color={theme.colors.primary}
-              />
-            }
-          />
-          <StatCard
-            label="Items"
-            value={items.length}
-            onPress={() => router.push('/items')}
-            layout="compact"
-            icon={
-              <MaterialCommunityIcons
-                name="treasure-chest-outline"
-                size={iconSizes.md}
-                color={theme.colors.primary}
-              />
-            }
-          />
-        </View>
-        <View style={styles.statsRow}>
-          <StatCard
-            label="Tags"
-            value={tags.length}
-            onPress={() => router.push('/tags')}
-            layout="compact"
-            icon={
-              <MaterialCommunityIcons
-                name="tag-outline"
-                size={iconSizes.md}
-                color={theme.colors.primary}
-              />
-            }
-          />
-        </View>
+            <StatCard
+              label="Notes"
+              value={notes.length}
+              onPress={() => router.push('/notes')}
+              layout="compact"
+              icon={
+                <MaterialCommunityIcons
+                  name="note-text-outline"
+                  size={iconSizes.md}
+                  color={theme.colors.primary}
+                />
+              }
+            />
+            <StatCard
+              label="NPCs"
+              value={npcs.length}
+              onPress={() => router.push('/npcs')}
+              layout="compact"
+              icon={
+                <MaterialCommunityIcons
+                  name="account-group-outline"
+                  size={iconSizes.md}
+                  color={theme.colors.primary}
+                />
+              }
+            />
+          </View>
+          <View style={styles.statsRow}>
+            <StatCard
+              label="Locations"
+              value={locations.length}
+              onPress={() => router.push('/locations')}
+              layout="compact"
+              icon={
+                <MaterialCommunityIcons
+                  name="map-marker-outline"
+                  size={iconSizes.md}
+                  color={theme.colors.primary}
+                />
+              }
+            />
+            <StatCard
+              label="Items"
+              value={items.length}
+              onPress={() => router.push('/items')}
+              layout="compact"
+              icon={
+                <MaterialCommunityIcons
+                  name="treasure-chest-outline"
+                  size={iconSizes.md}
+                  color={theme.colors.primary}
+                />
+              }
+            />
+          </View>
+          <View style={styles.statsRow}>
+            <StatCard
+              label="Tags"
+              value={tags.length}
+              onPress={() => router.push('/tags')}
+              layout="compact"
+              icon={
+                <MaterialCommunityIcons
+                  name="tag-outline"
+                  size={iconSizes.md}
+                  color={theme.colors.primary}
+                />
+              }
+            />
+          </View>
         </Section>
       </AttachStep>
 

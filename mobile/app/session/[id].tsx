@@ -872,60 +872,60 @@ export default function SessionDetailScreen() {
 
         <AttachStep index={TOUR_STEP.SESSION_MENTIONS}>
           <Section title="Session Log" icon="text-box-outline">
-          {isEditing ? (
-            <>
-              <MentionInput
-                value={content}
-                onChangeText={setContent}
-                placeholder="Capture what happens in the moment..."
-                renderSuggestions={(triggers) => (
-                  <EntitySuggestions
-                    character={triggers.character}
-                    location={triggers.location}
-                    item={triggers.item}
-                    tag={triggers.tag}
-                  />
-                )}
-              />
-              <View style={styles.quickInsertBlock}>
-                <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                  Quick insert
-                </Text>
-                <View style={styles.quickInsertRow}>
-                  {quickInsertItems.map((item) => (
-                    <IconButton
-                      key={item.label}
-                      icon={item.icon}
-                      size={iconSizes.md}
-                      mode="outlined"
-                      onPress={() => handleInsertTrigger(item.trigger)}
-                      accessibilityLabel={`Insert ${item.label} trigger`}
-                      iconColor={theme.colors.primary}
+            {isEditing ? (
+              <>
+                <MentionInput
+                  value={content}
+                  onChangeText={setContent}
+                  placeholder="Capture what happens in the moment..."
+                  renderSuggestions={(triggers) => (
+                    <EntitySuggestions
+                      character={triggers.character}
+                      location={triggers.location}
+                      item={triggers.item}
+                      tag={triggers.tag}
                     />
-                  ))}
+                  )}
+                />
+                <View style={styles.quickInsertBlock}>
+                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Quick insert
+                  </Text>
+                  <View style={styles.quickInsertRow}>
+                    {quickInsertItems.map((item) => (
+                      <IconButton
+                        key={item.label}
+                        icon={item.icon}
+                        size={iconSizes.md}
+                        mode="outlined"
+                        onPress={() => handleInsertTrigger(item.trigger)}
+                        accessibilityLabel={`Insert ${item.label} trigger`}
+                        iconColor={theme.colors.primary}
+                      />
+                    ))}
+                  </View>
+                  <View style={styles.quickInsertLabels}>
+                    {quickInsertItems.map((item) => (
+                      <Text
+                        key={`${item.label}-label`}
+                        variant="labelSmall"
+                        style={{ color: theme.colors.onSurfaceVariant }}
+                      >
+                        {item.trigger} {item.label}
+                      </Text>
+                    ))}
+                  </View>
                 </View>
-                <View style={styles.quickInsertLabels}>
-                  {quickInsertItems.map((item) => (
-                    <Text
-                      key={`${item.label}-label`}
-                      variant="labelSmall"
-                      style={{ color: theme.colors.onSurfaceVariant }}
-                    >
-                      {item.trigger} {item.label}
-                    </Text>
-                  ))}
-                </View>
+              </>
+            ) : session.content?.trim() ? (
+              <MentionRenderer value={session.content} mentions={mentionDerived.mentions} />
+            ) : (
+              <View style={styles.summaryBlock}>
+                <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant }}>
+                  No session log yet.
+                </Text>
               </View>
-            </>
-          ) : session.content?.trim() ? (
-            <MentionRenderer value={session.content} mentions={mentionDerived.mentions} />
-          ) : (
-            <View style={styles.summaryBlock}>
-              <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant }}>
-                No session log yet.
-              </Text>
-            </View>
-          )}
+            )}
           </Section>
         </AttachStep>
 
