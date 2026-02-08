@@ -4,91 +4,159 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-DND Book is a campaign management application for Dungeon Masters and tabletop RPG players. It organizes notes, NPCs, locations, and other campaign data.
+DND Book is an offline-first campaign management app for Dungeon Masters and tabletop RPG players. It organizes notes, NPCs, locations, items, session logs, and other campaign data with P2P sync for table-top play.
 
-**Migration in progress**: Converting from React/Vite web app to offline-first Expo mobile app with P2P sync. See [MIGRATION_PLAN.md](MIGRATION_PLAN.md) for details.
+**Active development**: The Expo mobile app (`mobile/`) is the primary codebase. The legacy `frontend/` web app is deprecated.
 
 ## Development Commands
 
-All frontend commands run from the `frontend/` directory:
+All commands run from the `mobile/` directory:
 
 ```bash
-npm run dev          # Start Vite dev server with hot reload
-npm run build        # TypeScript check + production build
-npm run preview      # Preview production build locally
-npm run typecheck    # TypeScript check only (no emit)
-npm run lint         # Run ESLint
-npm run lint:fix     # ESLint with auto-fix
-npm run format       # Format all files with Prettier
-npm run format:check # Check formatting without writing
+npx expo start              # Start Expo dev server
+npx expo start --go         # Start with Expo Go
+npx expo run:ios            # Run on iOS simulator
+npx expo run:android        # Run on Android emulator
+npm run lint                # Run ESLint
+npm run typecheck           # TypeScript check only
 ```
 
 ## Architecture
 
 ### Monorepo Structure
-- **frontend/** - React application (Vite, TypeScript, TailwindCSS, Flowbite)
-- **backend/** - PocketBase container (Alpine Linux, port 8090)
+- **mobile/** - Expo React Native app (active development)
+- **frontend/** - Legacy React/Vite web app (deprecated)
+- **backend/** - PocketBase container (deprecated, replaced by local TinyBase)
 - **docs/** - Jekyll documentation site for GitHub Pages
 
-### Frontend Organization
+### Mobile App Organization
 ```
-frontend/src/
-├── api/        # PocketBase SDK integration (base.ts initializes client)
-├── components/ # React components
-│   ├── auth/   # Login form
-│   ├── layout/ # MainLayout, Navbar, Sidebar
-│   ├── shared/ # Reusable: ErrorBoundary, Loader, Cards
-│   └── ui/     # RelatedItemsModal
-├── hooks/      # Custom hooks (useAuthUser, useNotes, useLocations, etc.)
-├── pages/      # Page components (Dashboard, Login, Notes, Locations, Profile)
-├── types/      # TypeScript types (includes pocketbase-types.ts)
-└── utils/      # Utilities (colors, iconMap, tagUtils)
+mobile/
+├── app/                    # Expo Router file-based routing
+│   ├── (tabs)/             # Tab navigation (dashboard, sessions, npcs, etc.)
+│   ├── campaign/[id]/      # Campaign detail routes
+│   ├── npc/[id].tsx        # Entity detail screens
+│   ├── location/[id].tsx
+│   ├── session/[id].tsx
+│   ├── settings/           # App settings
+│   └── sync/               # P2P sync screens
+│
+├── src/
+│   ├── components/         # Reusable UI components
+│   │   ├── cards/          # Card components (AppCard, NPCCard, etc.)
+│   │   ├── chips/          # Badges and chips (TagChip, DemoBadge)
+│   │   ├── forms/          # Form inputs (TextInput, Select, Modal)
+│   │   ├── mentions/       # @mention system (MentionInput, Renderer)
+│   │   ├── layout/         # Screen, Section, Breadcrumb
+│   │   └── shared/         # EmptyState, FilterHeader, etc.
+│   │
+│   ├── hooks/              # Data access hooks (useCampaigns, useNpcs, etc.)
+│   ├── store/              # TinyBase store, schema, persistence, sync
+│   ├── theme/              # ThemeProvider, colors, spacing, typography
+│   ├── onboarding/         # Spotlight tour system
+│   ├── seed/               # Demo data (Odyssey campaign)
+│   ├── types/              # TypeScript type definitions
+│   └── utils/              # Utilities (id, mentions, logger, etc.)
 ```
 
 ### Key Patterns
-- **API Layer**: All PocketBase interactions go through `src/api/` modules
-- **Custom Hooks**: Business logic lives in hooks, not components
-- **Type Safety**: PocketBase types are generated in `types/pocketbase-types.ts`
 
-## Environment Variables
+**Data Layer (TinyBase)**
+- All data stored locally in SQLite via TinyBase mergeable store
+- Hooks follow pattern: `useXyz()` for reads, `useCreateXyz()` / `useUpdateXyz()` for writes
+- Arrays stored as JSON strings, parsed at runtime
+- Scope system: entities can be `'campaign'` or `'continuity'` scoped
+- Status field: `'complete'` vs `'shadow'` for incomplete entities
 
-Frontend uses Vite env variables (prefix with `VITE_`):
-- `VITE_API_BASE_URL` - PocketBase API URL (defaults to `http://localhost:8080`)
+**Component Patterns**
+- `Screen` component wraps all screens (handles SafeArea, scroll, pull-to-refresh)
+- Form components prefixed with `Form` (FormTextInput, FormSelect, etc.)
+- Cards display entity data with consistent styling
+
+**Theme System**
+- `useTheme()` hook provides theme colors and dark mode toggle
+- React Native Paper provides Material 3 components
+- Dark theme is default
+
+**Onboarding Tour**
+- Uses `react-native-spotlight-tour` for guided walkthrough
+- `AttachStep` components mark highlight targets
+- Tour auto-starts on first run with demo data
+- Steps defined in `src/onboarding/steps.tsx`
+
+**Mention System**
+- Configurable triggers: `@` (NPC), `$` (location), `!` (item), `#` (tag)
+- `MentionInput` component for editing
+- `MentionRenderer` for display
 
 ## Tech Stack
 
-- **Frontend**: React 18, Vite 5, TypeScript, TailwindCSS, Flowbite React, React Router DOM
-- **Backend**: PocketBase (self-hosted, SQLite database, built-in auth)
-- **CI/CD**: GitHub Actions builds Docker images on release, pushes to GHCR
+| Layer | Technology |
+|-------|-----------|
+| Framework | Expo (React Native) |
+| Routing | expo-router (file-based) |
+| State | TinyBase (mergeable store) |
+| Persistence | expo-sqlite |
+| P2P Sync | Yjs + y-webrtc (web only) |
+| UI | React Native Paper (Material 3) |
+| Icons | Material Community Icons |
+| Tour | react-native-spotlight-tour |
+| Mentions | react-native-controlled-mentions |
 
-## Backend
+## Store Schema
 
-PocketBase runs on port 8090. Database migrations are in `backend/pb_migrations/`. The main schema is defined in `10000_collections_snapshot.js`.
+**Tables:**
+- `continuities` - Campaign universes (supports forking)
+- `campaigns` - Individual campaigns
+- `notes` - Rich notes with @mentions
+- `npcs` - Characters with scope (campaign/continuity)
+- `locations` - Hierarchical (Plane → Realm → Locale → etc.)
+- `items` - Equipment and quest items
+- `tags` - Categories with colors
+- `sessionLogs` - Game session records
+- `playerCharacters` - Player character records
 
-## Deployment
+**Global Values:**
+- `currentCampaignId` - Selected campaign
+- `tourCompleted` - Onboarding state
+- `hasSeedData` - Demo data flag
+- `mentionSettings` - Trigger character config
 
-Docker images are built and pushed to GitHub Container Registry on release:
-- `ghcr.io/{repo}-backend`
-- `ghcr.io/{repo}-frontend`
+## Common Tasks
 
-Both images use semantic versioning tags.
+### Adding a New Entity Type
+1. Add table schema in `src/store/schema.ts`
+2. Add TypeScript types in `src/types/schema.ts`
+3. Create hooks in `src/hooks/useNewEntity.ts`
+4. Export from `src/hooks/index.ts`
 
-## Mobile App (Planned)
+### Adding a Tour Step
+1. Add constant in `src/onboarding/types.ts`
+2. Add step content in `src/onboarding/steps.tsx` (STEP_CONTENT array)
+3. Add before hook if navigation needed (STEP_BEFORE_HOOKS)
+4. Wrap target component with `<AttachStep index={TOUR_STEP.X}>`
 
-Target stack for Expo migration:
-- **Framework**: Expo with expo-router
-- **Data**: TinyBase (offline-first local store)
-- **Sync**: Yjs + y-webrtc (P2P sync at the table)
-- **Persistence**: expo-sqlite
-- **UI**: NativeWind (TailwindCSS for React Native) + React Native Paper
+### Creating a New Screen
+1. Add file in `app/` following expo-router conventions
+2. Use `Screen` component wrapper
+3. Register scroll ref if needed for tour: `registerScrollViewRef('key', ref)`
 
-Key expo modules: `expo-sqlite`, `expo-file-system`, `expo-secure-store`, `expo-network`, `expo-image-picker`
+## Demo Data
 
-### Mobile Commands (once set up)
+First-run seeds an "Odyssey" demo campaign with:
+- NPCs: Odysseus, Circe, Polyphemus, etc.
+- Locations: Ithaca, Troy, Aegean Sea, etc.
+- Session logs with @mentions
+- Tags: Enemy, Ally, Goddess, etc.
+
+Clear via Settings → "Clear Demo Data" or tour completion modal.
+
+## Legacy Web App (Deprecated)
+
+The `frontend/` directory contains the original React/Vite web app. It's no longer actively developed. See [MIGRATION_PLAN.md](MIGRATION_PLAN.md) for migration details.
+
 ```bash
-cd mobile
-npx expo start              # Start dev server
-npx expo start --go         # Start with Expo Go
-npx expo run:ios            # Run on iOS simulator
-npx expo run:android        # Run on Android emulator
+# Legacy commands (frontend/ directory)
+npm run dev          # Vite dev server
+npm run build        # Production build
 ```
