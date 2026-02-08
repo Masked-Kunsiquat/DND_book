@@ -34,6 +34,7 @@ import {
   useNotes,
   useNpcs,
   usePullToRefresh,
+  useSeedData,
   useTags,
 } from '../../src/hooks';
 
@@ -48,6 +49,7 @@ import {
 export default function NpcsScreen() {
   const { theme } = useTheme();
   const currentCampaign = useCurrentCampaign();
+  const { isSeedContinuity } = useSeedData();
   const [query, setQuery] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
@@ -616,6 +618,7 @@ export default function NpcsScreen() {
                   tags={resolvedTags}
                   onPress={() => router.push(`/npc/${item.id}`)}
                   onTagPress={(tagId) => router.push(`/tag/${tagId}`)}
+                  isDemo={isSeedContinuity(item.continuityId)}
                 />
               </View>
             );

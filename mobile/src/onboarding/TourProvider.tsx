@@ -50,9 +50,9 @@ interface TourControllerProps {
  */
 function TourController({ children, showPrompt, setShowPrompt }: TourControllerProps) {
   const { theme } = useTheme();
-  const { start, current } = useSpotlightTour();
-  const { shouldAutoStartTour } = useTour();
-  const { clearSeedData } = useSeedData();
+  const { start, stop, current } = useSpotlightTour();
+  const { shouldAutoStartTour, completeTour } = useTour();
+  const { hasSeedData, clearSeedData } = useSeedData();
   const [hasAutoStarted, setHasAutoStarted] = useState(false);
 
   const isActive = current !== undefined;
@@ -68,6 +68,14 @@ function TourController({ children, showPrompt, setShowPrompt }: TourControllerP
       return () => clearTimeout(timer);
     }
   }, [shouldAutoStartTour, hasAutoStarted, start]);
+
+  // Stop the tour if seed data is cleared while tour is active
+  useEffect(() => {
+    if (isActive && !hasSeedData) {
+      stop();
+      completeTour();
+    }
+  }, [isActive, hasSeedData, stop, completeTour]);
 
   const startTour = useCallback(() => {
     start();

@@ -221,8 +221,8 @@ mobile/src/onboarding/
 ### Phase 3: Polish ✅
 - [x] Add `AttachStep` to more screens (Sessions, NPCs, Locations, Tags)
 - [x] End-of-tour prompt (keep demo / start fresh)
-- [ ] Visual indicator for demo entities (badge or subtle styling)
-- [ ] Handle edge cases (user deletes demo entities mid-tour)
+- [x] Visual indicator for demo entities (DemoBadge with pottery icon)
+- [x] Handle edge cases (tour stops if seed data cleared)
 - [ ] Test full flow on fresh install
 
 ---
@@ -260,17 +260,22 @@ mobile/src/onboarding/
 
 ### Modified Files ✅
 ```
-mobile/src/store/index.ts       # First-run seeding in StoreProvider
-mobile/src/hooks/index.ts       # Export useSeedData
-mobile/app/_layout.tsx          # Wrap app with TourProvider
-mobile/app/(tabs)/index.tsx     # AttachStep on campaign + stats
-mobile/app/(tabs)/sessions.tsx  # AttachStep on sessions header
-mobile/app/(tabs)/npcs.tsx      # AttachStep on NPCs header + first card
-mobile/app/(tabs)/locations.tsx # AttachStep on locations header
-mobile/app/session/[id].tsx     # AttachStep on session detail + mentions
-mobile/app/tags.tsx             # AttachStep on tags header
-mobile/app/settings.tsx         # Restart Tour + Clear Demo Data
-mobile/package.json             # Added react-native-spotlight-tour
+mobile/src/store/index.ts                # First-run seeding in StoreProvider
+mobile/src/hooks/index.ts                # Export useSeedData
+mobile/src/components/index.ts           # Export DemoBadge
+mobile/src/components/chips/DemoBadge.tsx    # Demo entity badge component
+mobile/src/components/cards/NPCCard.tsx      # Added isDemo prop
+mobile/src/components/cards/LocationCard.tsx # Added isDemo prop
+mobile/src/components/cards/LocationRow.tsx  # Added isDemo prop
+mobile/app/_layout.tsx                   # Wrap app with TourProvider
+mobile/app/(tabs)/index.tsx              # AttachStep on campaign + stats
+mobile/app/(tabs)/sessions.tsx           # AttachStep on sessions header
+mobile/app/(tabs)/npcs.tsx               # AttachStep on NPCs header + first card, isDemo
+mobile/app/(tabs)/locations.tsx          # AttachStep on locations header, isDemo
+mobile/app/session/[id].tsx              # AttachStep on session detail + mentions
+mobile/app/tags.tsx                      # AttachStep on tags header
+mobile/app/settings.tsx                  # Restart Tour + Clear Demo Data
+mobile/package.json                      # Added react-native-spotlight-tour
 ```
 
 ---

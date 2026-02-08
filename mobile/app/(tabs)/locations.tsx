@@ -29,6 +29,7 @@ import {
   useListEmptyState,
   useLocations,
   usePullToRefresh,
+  useSeedData,
   useTags,
 } from '../../src/hooks';
 import type { EntityScope, Location, LocationType, Tag } from '../../src/types/schema';
@@ -78,6 +79,7 @@ export default function LocationsScreen() {
   const { theme } = useTheme();
   const currentCampaign = useCurrentCampaign();
   const campaigns = useCampaigns();
+  const { isSeedContinuity } = useSeedData();
   const [typeFilter, setTypeFilter] = useState<LocationType | 'all'>('all');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
@@ -807,6 +809,7 @@ export default function LocationsScreen() {
                   statusLabel={statusLabel}
                   onPress={() => router.push(`/location/${item.id}`)}
                   onTagPress={(tagId) => router.push(`/tag/${tagId}`)}
+                  isDemo={isSeedContinuity(item.continuityId)}
                 />
               </View>
             );
