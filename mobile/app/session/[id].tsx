@@ -4,6 +4,7 @@ import { Button, IconButton, Text } from 'react-native-paper';
 import { triggerRegEx } from 'react-native-controlled-mentions';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { AttachStep } from 'react-native-spotlight-tour';
 import {
   AppCard,
   AvatarGroup,
@@ -25,6 +26,7 @@ import {
   TagChip,
   TagInput,
 } from '../../src/components';
+import { TOUR_STEP } from '../../src/onboarding';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { iconSizes, spacing } from '../../src/theme';
 import { formatDateTime, formatDisplayDate, getTodayDateInput } from '../../src/utils/date';
@@ -832,41 +834,44 @@ export default function SessionDetailScreen() {
     <>
       <Stack.Screen options={{ title: session.title || 'Session' }} />
       <Screen>
-        <View style={styles.headerRow}>
-          <View style={styles.headerText}>
-            {isEditing ? (
-              <>
-                <FormTextInput
-                  label="Title (optional)"
-                  value={title}
-                  onChangeText={setTitle}
-                  placeholder="Session title"
-                />
-                <FormDateTimePicker
-                  label="Date (optional)"
-                  value={date}
-                  onChange={setDate}
-                  mode="date"
-                  helperText="Pick the session date."
-                />
-              </>
-            ) : (
-              <>
-                <Text variant="headlineSmall" style={{ color: theme.colors.onSurface }}>
-                  {session.title || 'Untitled session'}
-                </Text>
-                <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                  {formatDisplayDate(session.date)}
-                </Text>
-              </>
+        <AttachStep index={TOUR_STEP.SESSION_DETAIL}>
+          <View style={styles.headerRow}>
+            <View style={styles.headerText}>
+              {isEditing ? (
+                <>
+                  <FormTextInput
+                    label="Title (optional)"
+                    value={title}
+                    onChangeText={setTitle}
+                    placeholder="Session title"
+                  />
+                  <FormDateTimePicker
+                    label="Date (optional)"
+                    value={date}
+                    onChange={setDate}
+                    mode="date"
+                    helperText="Pick the session date."
+                  />
+                </>
+              ) : (
+                <>
+                  <Text variant="headlineSmall" style={{ color: theme.colors.onSurface }}>
+                    {session.title || 'Untitled session'}
+                  </Text>
+                  <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                    {formatDisplayDate(session.date)}
+                  </Text>
+                </>
+              )}
+            </View>
+            {!isEditing && (
+              <IconButton icon="pencil" onPress={handleEdit} accessibilityLabel="Edit session" />
             )}
           </View>
-          {!isEditing && (
-            <IconButton icon="pencil" onPress={handleEdit} accessibilityLabel="Edit session" />
-          )}
-        </View>
+        </AttachStep>
 
-        <Section title="Session Log" icon="text-box-outline">
+        <AttachStep index={TOUR_STEP.SESSION_MENTIONS}>
+          <Section title="Session Log" icon="text-box-outline">
           {isEditing ? (
             <>
               <MentionInput
@@ -921,7 +926,8 @@ export default function SessionDetailScreen() {
               </Text>
             </View>
           )}
-        </Section>
+          </Section>
+        </AttachStep>
 
         <Section title="Summary" icon="clipboard-text-outline">
           {isEditing ? (

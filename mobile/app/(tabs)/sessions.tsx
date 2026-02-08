@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { Button, FAB, Text } from 'react-native-paper';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { AttachStep } from 'react-native-spotlight-tour';
 import {
   AppCard,
   EmptyState,
@@ -13,6 +14,7 @@ import {
   Screen,
   Section,
 } from '../../src/components';
+import { TOUR_STEP } from '../../src/onboarding';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { commonStyles, layout, spacing } from '../../src/theme';
 import { formatDisplayDate, getTodayDateInput } from '../../src/utils/date';
@@ -230,13 +232,15 @@ export default function SessionsScreen() {
           refreshing={refreshing}
           onRefresh={onRefresh}
           ListHeaderComponent={
-            <View style={styles.header}>
-              <Section title="Sessions" icon="calendar-blank-outline">
-                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                  {sessions.length} session{sessions.length === 1 ? '' : 's'}
-                </Text>
-              </Section>
-            </View>
+            <AttachStep index={TOUR_STEP.SESSIONS_TAB}>
+              <View style={styles.header}>
+                <Section title="Sessions" icon="calendar-blank-outline">
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                    {sessions.length} session{sessions.length === 1 ? '' : 's'}
+                  </Text>
+                </Section>
+              </View>
+            </AttachStep>
           }
           renderItem={({ item }) => (
             <View style={styles.cardWrapper}>

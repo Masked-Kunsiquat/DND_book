@@ -3,6 +3,7 @@ import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { Button, FAB, Text, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { AttachStep } from 'react-native-spotlight-tour';
 import {
   AppCard,
   FilterHeader,
@@ -19,6 +20,7 @@ import {
   TagInput,
   EmptyState,
 } from '../../src/components';
+import { TOUR_STEP } from '../../src/onboarding';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { commonStyles, spacing } from '../../src/theme';
 import type { EntityScope, Tag } from '../../src/types/schema';
@@ -533,79 +535,81 @@ export default function NpcsScreen() {
           refreshing={refreshing}
           onRefresh={onRefresh}
           ListHeaderComponent={
-            <View style={styles.header}>
-              <TextInput
-                value={query}
-                onChangeText={setQuery}
-                mode="outlined"
-                placeholder="Search NPCs..."
-                style={styles.searchInput}
-              />
-              <FilterHeader
-                expanded={filtersOpen}
-                onToggle={() => setFiltersOpen((prev) => !prev)}
-              >
-                <TagFilterSection
-                  tags={tags}
-                  selectedIds={selectedTagIds}
-                  onToggle={toggleTag}
-                  onClear={() => setSelectedTagIds([])}
-                  headerStyle={styles.tagHeader}
+            <AttachStep index={TOUR_STEP.NPCS_TAB}>
+              <View style={styles.header}>
+                <TextInput
+                  value={query}
+                  onChangeText={setQuery}
+                  mode="outlined"
+                  placeholder="Search NPCs..."
+                  style={styles.searchInput}
                 />
-                <View style={[commonStyles.flexRowBetween, styles.statusHeader]}>
-                  <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                    Status
-                  </Text>
-                  {showShadowOnly && (
-                    <Button mode="text" onPress={() => setShowShadowOnly(false)} compact>
-                      Clear
-                    </Button>
-                  )}
-                </View>
-                <View style={[commonStyles.flexRow, styles.statusRow]}>
-                  <Button
-                    mode={showShadowOnly ? 'contained' : 'outlined'}
-                    onPress={() => setShowShadowOnly((prev) => !prev)}
-                    icon="circle-outline"
-                    compact
-                  >
-                    Shadow only
-                  </Button>
-                </View>
-              </FilterHeader>
-              <View style={commonStyles.flexRowBetween}>
-                <View style={commonStyles.flexRow}>
-                  <MaterialCommunityIcons
-                    name="account-group"
-                    size={18}
-                    color={theme.colors.primary}
-                    style={styles.listHeaderIcon}
+                <FilterHeader
+                  expanded={filtersOpen}
+                  onToggle={() => setFiltersOpen((prev) => !prev)}
+                >
+                  <TagFilterSection
+                    tags={tags}
+                    selectedIds={selectedTagIds}
+                    onToggle={toggleTag}
+                    onClear={() => setSelectedTagIds([])}
+                    headerStyle={styles.tagHeader}
                   />
-                  <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-                    NPCs
-                  </Text>
-                </View>
-                <View style={commonStyles.flexRow}>
-                  <Pressable onPress={openLibrary} hitSlop={8}>
-                    <Text variant="labelMedium" style={{ color: theme.colors.primary }}>
-                      Library
+                  <View style={[commonStyles.flexRowBetween, styles.statusHeader]}>
+                    <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                      Status
                     </Text>
-                  </Pressable>
-                  <Pressable onPress={openCreateModal} hitSlop={8}>
-                    <Text variant="labelMedium" style={{ color: theme.colors.primary }}>
-                      New
+                    {showShadowOnly && (
+                      <Button mode="text" onPress={() => setShowShadowOnly(false)} compact>
+                        Clear
+                      </Button>
+                    )}
+                  </View>
+                  <View style={[commonStyles.flexRow, styles.statusRow]}>
+                    <Button
+                      mode={showShadowOnly ? 'contained' : 'outlined'}
+                      onPress={() => setShowShadowOnly((prev) => !prev)}
+                      icon="circle-outline"
+                      compact
+                    >
+                      Shadow only
+                    </Button>
+                  </View>
+                </FilterHeader>
+                <View style={commonStyles.flexRowBetween}>
+                  <View style={commonStyles.flexRow}>
+                    <MaterialCommunityIcons
+                      name="account-group"
+                      size={18}
+                      color={theme.colors.primary}
+                      style={styles.listHeaderIcon}
+                    />
+                    <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+                      NPCs
                     </Text>
-                  </Pressable>
+                  </View>
+                  <View style={commonStyles.flexRow}>
+                    <Pressable onPress={openLibrary} hitSlop={8}>
+                      <Text variant="labelMedium" style={{ color: theme.colors.primary }}>
+                        Library
+                      </Text>
+                    </Pressable>
+                    <Pressable onPress={openCreateModal} hitSlop={8}>
+                      <Text variant="labelMedium" style={{ color: theme.colors.primary }}>
+                        New
+                      </Text>
+                    </Pressable>
+                  </View>
                 </View>
               </View>
-            </View>
+            </AttachStep>
           }
-          renderItem={({ item }) => {
+          renderItem={({ item, index }) => {
             const resolvedTags = item.tagIds
               .map((tagId) => tagById.get(tagId))
               .filter((tag): tag is Tag => tag !== undefined);
 
-            return (
+            const card = (
               <View style={styles.cardWrapper}>
                 <NPCCard
                   npc={item}
@@ -615,6 +619,12 @@ export default function NpcsScreen() {
                 />
               </View>
             );
+
+            // Wrap first NPC card for tour highlight
+            if (index === 0) {
+              return <AttachStep index={TOUR_STEP.NPC_CARD}>{card}</AttachStep>;
+            }
+            return card;
           }}
         />
         <FAB

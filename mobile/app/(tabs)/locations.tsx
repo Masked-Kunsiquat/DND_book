@@ -3,6 +3,7 @@ import { Pressable, ScrollView, SectionList, StyleSheet, View } from 'react-nati
 import { Button, FAB, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { AttachStep } from 'react-native-spotlight-tour';
 import {
   FilterHeader,
   FormModal,
@@ -18,6 +19,7 @@ import {
   StatCard,
   TagFilterSection,
 } from '../../src/components';
+import { TOUR_STEP } from '../../src/onboarding';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { commonStyles, iconSizes, layout, semanticColors, spacing } from '../../src/theme';
 import {
@@ -544,8 +546,9 @@ export default function LocationsScreen() {
           refreshing={refreshing}
           onRefresh={onRefresh}
           ListHeaderComponent={
-            <View style={styles.header}>
-              <Section title="Overview" icon="chart-box-outline">
+            <AttachStep index={TOUR_STEP.LOCATIONS_TAB}>
+              <View style={styles.header}>
+                <Section title="Overview" icon="chart-box-outline">
                 <View style={[commonStyles.flexRow, styles.statsRow]}>
                   <StatCard
                     label={pluralize('Location', locations.length)}
@@ -719,7 +722,8 @@ export default function LocationsScreen() {
                   </Text>
                 </View>
               </View>
-            </View>
+              </View>
+            </AttachStep>
           }
           renderSectionHeader={({ section }) => (
             <Pressable

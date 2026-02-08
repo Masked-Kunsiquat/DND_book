@@ -4,6 +4,7 @@ import { FAB, Text, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import ColorPicker, { Swatches } from 'reanimated-color-picker';
+import { AttachStep } from 'react-native-spotlight-tour';
 import {
   AppCard,
   EmptyState,
@@ -14,6 +15,7 @@ import {
   Screen,
   TagChip,
 } from '../src/components';
+import { TOUR_STEP } from '../src/onboarding';
 import { useTheme } from '../src/theme/ThemeProvider';
 import { commonStyles, layout, spacing, tagColors } from '../src/theme';
 import {
@@ -266,25 +268,27 @@ export default function TagsScreen() {
           refreshing={refreshing}
           onRefresh={onRefresh}
           ListHeaderComponent={
-            <View style={styles.header}>
-              <View style={commonStyles.flexRow}>
-                <MaterialCommunityIcons
-                  name="tag-outline"
-                  size={18}
-                  color={theme.colors.primary}
-                  style={styles.listHeaderIcon}
+            <AttachStep index={TOUR_STEP.TAGS_USAGE}>
+              <View style={styles.header}>
+                <View style={commonStyles.flexRow}>
+                  <MaterialCommunityIcons
+                    name="tag-outline"
+                    size={18}
+                    color={theme.colors.primary}
+                    style={styles.listHeaderIcon}
+                  />
+                  <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+                    Tags
+                  </Text>
+                </View>
+                <TextInput
+                  mode="outlined"
+                  value={query}
+                  onChangeText={setQuery}
+                  placeholder="Search tags..."
                 />
-                <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-                  Tags
-                </Text>
               </View>
-              <TextInput
-                mode="outlined"
-                value={query}
-                onChangeText={setQuery}
-                placeholder="Search tags..."
-              />
-            </View>
+            </AttachStep>
           }
           renderItem={({ item }) => {
             const usage = tagUsage.get(item.id) ?? EMPTY_USAGE;
