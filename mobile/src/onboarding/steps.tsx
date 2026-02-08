@@ -156,34 +156,86 @@ const STEP_CONTENT = [
 ];
 
 /**
+ * Seed session ID for tour navigation.
+ * This is the demo session we navigate to during the tour.
+ */
+const SEED_SESSION_ID = 'session-cyclops-encounter';
+
+/**
+ * Helper to create a delay promise.
+ */
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
  * Before hooks for each step to handle navigation and scrolling.
  * Maps step index to a function that runs before the step is shown.
  */
 const STEP_BEFORE_HOOKS: Record<number, () => Promise<void> | void> = {
-  // Dashboard steps - scroll to top
-  [TOUR_STEP.DASHBOARD_WELCOME]: () => scrollToTop('dashboard'),
+  // Dashboard steps - ensure we're on dashboard and scrolled to top
+  [TOUR_STEP.DASHBOARD_WELCOME]: async () => {
+    log.debug('Before DASHBOARD_WELCOME');
+    router.push('/(tabs)');
+    await delay(300);
+    await scrollToTop('dashboard');
+  },
   [TOUR_STEP.DASHBOARD_CAMPAIGN_CARD]: () => scrollToTop('dashboard'),
   [TOUR_STEP.DASHBOARD_STATS]: () => scrollToTop('dashboard'),
 
-  // Sessions tab - navigate there first
-  [TOUR_STEP.SESSIONS_TAB]: navigateToTab('/(tabs)/sessions', 'sessions'),
-
-  // Session detail - navigate to the first session
-  [TOUR_STEP.SESSION_DETAIL]: async () => {
-    log.debug('Navigating to session detail for tour');
-    // This will be handled by the sessions screen which should navigate to the first session
-    // when the tour reaches this step. For now, just ensure we're on sessions tab.
-    await navigateToTab('/(tabs)/sessions', 'sessions')();
+  // Sessions tab - navigate there and scroll to top
+  [TOUR_STEP.SESSIONS_TAB]: async () => {
+    log.debug('Before SESSIONS_TAB');
+    router.push('/(tabs)/sessions');
+    await delay(300);
+    await scrollToTop('sessions');
   },
 
-  // NPCs tab
-  [TOUR_STEP.NPCS_TAB]: navigateToTab('/(tabs)/npcs', 'npcs'),
+  // Session detail - navigate to the seed session
+  [TOUR_STEP.SESSION_DETAIL]: async () => {
+    log.debug('Before SESSION_DETAIL - navigating to seed session');
+    router.push(`/session/${SEED_SESSION_ID}`);
+    await delay(400);
+    await scrollToTop('session-detail');
+  },
 
-  // Locations tab
-  [TOUR_STEP.LOCATIONS_TAB]: navigateToTab('/(tabs)/locations', 'locations'),
+  // Session mentions - same screen, just ensure scrolled to show mentions section
+  [TOUR_STEP.SESSION_MENTIONS]: () => scrollToTop('session-detail'),
 
-  // Tags - navigate to tags screen
-  [TOUR_STEP.TAGS_USAGE]: navigateToTab('/tags'),
+  // NPCs tab - navigate and scroll to top
+  [TOUR_STEP.NPCS_TAB]: async () => {
+    log.debug('Before NPCS_TAB');
+    router.push('/(tabs)/npcs');
+    await delay(300);
+    await scrollToTop('npcs');
+  },
+
+  // NPC card - same screen, scroll to top to show first card
+  [TOUR_STEP.NPC_CARD]: () => scrollToTop('npcs'),
+
+  // Locations tab - navigate and scroll to top
+  [TOUR_STEP.LOCATIONS_TAB]: async () => {
+    log.debug('Before LOCATIONS_TAB');
+    router.push('/(tabs)/locations');
+    await delay(300);
+    await scrollToTop('locations');
+  },
+
+  // Tags screen - navigate there
+  [TOUR_STEP.TAGS_USAGE]: async () => {
+    log.debug('Before TAGS_USAGE');
+    router.push('/tags');
+    await delay(300);
+    await scrollToTop('tags');
+  },
+
+  // Tour complete - navigate back to dashboard
+  [TOUR_STEP.TOUR_COMPLETE]: async () => {
+    log.debug('Before TOUR_COMPLETE - returning to dashboard');
+    router.push('/(tabs)');
+    await delay(300);
+    await scrollToTop('dashboard');
+  },
 };
 
 /**

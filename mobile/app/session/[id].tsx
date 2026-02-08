@@ -833,7 +833,7 @@ export default function SessionDetailScreen() {
   return (
     <>
       <Stack.Screen options={{ title: session.title || 'Session' }} />
-      <Screen>
+      <Screen tourScrollKey="session-detail">
         <AttachStep index={TOUR_STEP.SESSION_DETAIL} fill>
           <View style={styles.headerRow}>
             <View style={styles.headerText}>

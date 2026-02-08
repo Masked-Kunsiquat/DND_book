@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { FAB, Text, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -15,7 +15,7 @@ import {
   Screen,
   TagChip,
 } from '../src/components';
-import { TOUR_STEP } from '../src/onboarding';
+import { TOUR_STEP, registerScrollViewRef, unregisterScrollViewRef } from '../src/onboarding';
 import { useTheme } from '../src/theme/ThemeProvider';
 import { commonStyles, layout, spacing, tagColors } from '../src/theme';
 import {
@@ -74,7 +74,14 @@ export default function TagsScreen() {
   const sessionLogs = useSessionLogs(currentCampaign?.id);
   const createTag = useCreateTag();
   const { refreshing, onRefresh } = usePullToRefresh();
+  const flatListRef = useRef<FlatList>(null);
   const [query, setQuery] = useState('');
+
+  // Register scroll ref for tour
+  useEffect(() => {
+    registerScrollViewRef('tags', flatListRef);
+    return () => unregisterScrollViewRef('tags');
+  }, []);
   const defaultTagColor = TAG_SWATCHES[0] ?? theme.colors.primary;
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -262,6 +269,7 @@ export default function TagsScreen() {
       <Screen scroll={false}>
         <Stack.Screen options={{ title: 'Tags' }} />
         <FlatList
+          ref={flatListRef}
           data={filteredTags}
           keyExtractor={(tag) => tag.id}
           contentContainerStyle={commonStyles.listContent}
