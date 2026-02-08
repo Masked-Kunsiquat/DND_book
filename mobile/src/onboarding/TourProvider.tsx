@@ -220,25 +220,34 @@ function TourController({ children, showPrompt, setShowPrompt }: TourControllerP
  * Wraps children with SpotlightTourProvider and manages tour state.
  */
 export function TourProvider({ children }: TourProviderProps) {
-  const { isDark } = useTheme();
+  const { theme } = useTheme();
   const { hasSeedData } = useSeedData();
   const { completeTour } = useTour();
   const [showPrompt, setShowPrompt] = useState(false);
 
+  // Use a ref to track hasSeedData at call time, so handleTourComplete is stable
+  const hasSeedDataRef = useRef(hasSeedData);
+  hasSeedDataRef.current = hasSeedData;
+
+  // Stable callback that reads hasSeedData from ref at call time
   const handleTourComplete = useCallback(() => {
     completeTour();
-    if (hasSeedData) {
+    if (hasSeedDataRef.current) {
       setShowPrompt(true);
     }
-  }, [completeTour, hasSeedData]);
+  }, [completeTour]);
 
+  // Steps are now stable since handleTourComplete doesn't change with hasSeedData
   const steps = useMemo(() => createTourSteps(handleTourComplete), [handleTourComplete]);
+
+  // Derive overlay color from theme's scrim color with appropriate opacity
+  const overlayColor = theme.colors.scrim;
 
   return (
     <SpotlightTourProvider
       steps={steps}
-      overlayColor={isDark ? 'rgba(0, 0, 0, 0.85)' : 'rgba(0, 0, 0, 0.75)'}
-      overlayOpacity={0.8}
+      overlayColor={overlayColor}
+      overlayOpacity={0.85}
       onBackdropPress="continue"
       motion="bounce"
       shape="rectangle"

@@ -1,11 +1,15 @@
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { Button, Text } from 'react-native-paper';
+import { Button, Snackbar, Text } from 'react-native-paper';
 import { AppCard, ComingSoonBadge, Screen, Section } from '../src/components';
 import { useTheme } from '../src/theme/ThemeProvider';
 import { spacing } from '../src/theme';
 import { useTour, useTourControls } from '../src/onboarding';
 import { useSeedData } from '../src/hooks';
+import { createLogger } from '../src/utils/logger';
+
+const log = createLogger('settings');
 
 const SETTINGS_ITEMS = [
   {
@@ -33,6 +37,7 @@ export default function SettingsScreen() {
   const { resetTour } = useTour();
   const { requestTourStart } = useTourControls();
   const { hasSeedData, loadSeedData, clearSeedData } = useSeedData();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleRestartTour = () => {
     resetTour();
@@ -42,16 +47,28 @@ export default function SettingsScreen() {
   };
 
   const handleLoadDemoData = () => {
-    loadSeedData();
-    resetTour();
-    // Request tour start on next dashboard focus instead of using setTimeout
-    requestTourStart();
-    router.replace('/');
+    try {
+      loadSeedData();
+      resetTour();
+      // Request tour start on next dashboard focus instead of using setTimeout
+      requestTourStart();
+      router.replace('/');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to load demo data.';
+      log.error('Failed to load demo data:', error);
+      setErrorMessage(message);
+    }
   };
 
   const handleClearDemoData = () => {
-    clearSeedData();
-    router.replace('/');
+    try {
+      clearSeedData();
+      router.replace('/');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to clear demo data.';
+      log.error('Failed to clear demo data:', error);
+      setErrorMessage(message);
+    }
   };
 
   return (
@@ -94,6 +111,18 @@ export default function SettingsScreen() {
           />
         )}
       </Section>
+
+      <Snackbar
+        visible={Boolean(errorMessage)}
+        onDismiss={() => setErrorMessage(null)}
+        duration={4000}
+        action={{
+          label: 'Dismiss',
+          onPress: () => setErrorMessage(null),
+        }}
+      >
+        {errorMessage}
+      </Snackbar>
     </Screen>
   );
 }

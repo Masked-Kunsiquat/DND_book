@@ -30,7 +30,7 @@ npm run typecheck           # TypeScript check only
 - **docs/** - Jekyll documentation site for GitHub Pages
 
 ### Mobile App Organization
-```
+```text
 mobile/
 ├── app/                    # Expo Router file-based routing
 │   ├── (tabs)/             # Tab navigation (dashboard, sessions, npcs, etc.)
