@@ -57,6 +57,8 @@ function TourController({ children, showPrompt, setShowPrompt }: TourControllerP
   const { shouldAutoStartTour, completeTour } = useTour();
   const { hasSeedData, clearSeedData } = useSeedData();
   const [hasAutoStarted, setHasAutoStarted] = useState(false);
+  // Track if seed data was present when tour started, to detect clearing
+  const [hadSeedDataOnStart, setHadSeedDataOnStart] = useState(false);
 
   const isActive = current !== undefined;
 
@@ -72,6 +74,7 @@ function TourController({ children, showPrompt, setShowPrompt }: TourControllerP
       // Small delay to ensure UI is ready
       const timer = setTimeout(() => {
         log.debug('Starting tour now');
+        setHadSeedDataOnStart(true);
         start();
         setHasAutoStarted(true);
       }, 500);
@@ -79,14 +82,24 @@ function TourController({ children, showPrompt, setShowPrompt }: TourControllerP
     }
   }, [shouldAutoStartTour, hasAutoStarted, start, hasSeedData]);
 
-  // Stop the tour if seed data is cleared while tour is active
+  // Track when tour becomes active with seed data
   useEffect(() => {
-    if (isActive && !hasSeedData) {
-      log.info('Stopping tour - seed data cleared');
+    if (isActive && hasSeedData && !hadSeedDataOnStart) {
+      log.debug('Tour started with seed data present');
+      setHadSeedDataOnStart(true);
+    }
+  }, [isActive, hasSeedData, hadSeedDataOnStart]);
+
+  // Stop the tour if seed data is cleared while tour is active
+  // Only trigger if we previously had seed data (to avoid false positives)
+  useEffect(() => {
+    if (isActive && hadSeedDataOnStart && !hasSeedData) {
+      log.info('Stopping tour - seed data was cleared');
       stop();
       completeTour();
+      setHadSeedDataOnStart(false);
     }
-  }, [isActive, hasSeedData, stop, completeTour]);
+  }, [isActive, hadSeedDataOnStart, hasSeedData, stop, completeTour]);
 
   const startTour = useCallback(() => {
     log.info('Manual tour start requested');

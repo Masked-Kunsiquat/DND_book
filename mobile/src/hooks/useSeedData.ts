@@ -3,11 +3,10 @@
  */
 
 import { useCallback } from 'react';
+import { useValue } from 'tinybase/ui-react';
 import { useStore } from '../store';
 import {
   clearSeedData as clearSeedDataFn,
-  hasSeedData as hasSeedDataFn,
-  getSeedContinuityId,
   seedOdysseyDemo,
   SEED_CONTINUITY_ID,
 } from '../seed';
@@ -33,8 +32,11 @@ export interface UseSeedDataResult {
 export function useSeedData(): UseSeedDataResult {
   const store = useStore();
 
-  const hasSeedData = hasSeedDataFn(store);
-  const seedContinuityId = getSeedContinuityId(store);
+  // Use reactive hooks for store values
+  const hasSeedDataValue = useValue('hasSeedData', store) as string | undefined;
+  const seedContinuityId = useValue('seedDataContinuityId', store) as string | undefined;
+
+  const hasSeedData = hasSeedDataValue === 'true';
 
   const loadSeedData = useCallback(() => {
     seedOdysseyDemo(store);

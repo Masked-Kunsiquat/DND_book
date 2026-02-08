@@ -3,6 +3,7 @@
  */
 
 import { useCallback, useEffect } from 'react';
+import { useValue } from 'tinybase/ui-react';
 import { useStore } from '../store';
 import { createLogger } from '../utils/logger';
 
@@ -29,8 +30,12 @@ export interface UseTourResult {
 export function useTour(): UseTourResult {
   const store = useStore();
 
-  const hasCompletedTour = store.getValue('tourCompleted') === 'true';
-  const hasSeedData = store.getValue('hasSeedData') === 'true';
+  // Use reactive hooks for store values
+  const tourCompletedValue = useValue('tourCompleted', store) as string | undefined;
+  const hasSeedDataValue = useValue('hasSeedData', store) as string | undefined;
+
+  const hasCompletedTour = tourCompletedValue === 'true';
+  const hasSeedData = hasSeedDataValue === 'true';
 
   // Auto-start if we have seed data but haven't completed the tour
   const shouldAutoStartTour = hasSeedData && !hasCompletedTour;
@@ -51,10 +56,10 @@ export function useTour(): UseTourResult {
       hasCompletedTour,
       hasSeedData,
       shouldAutoStartTour,
-      tourCompletedValue: store.getValue('tourCompleted'),
-      hasSeedDataValue: store.getValue('hasSeedData'),
+      tourCompletedValue,
+      hasSeedDataValue,
     });
-  }, [hasCompletedTour, hasSeedData, shouldAutoStartTour, store]);
+  }, [hasCompletedTour, hasSeedData, shouldAutoStartTour, tourCompletedValue, hasSeedDataValue]);
 
   return {
     hasCompletedTour,
