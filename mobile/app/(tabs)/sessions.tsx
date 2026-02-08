@@ -49,12 +49,21 @@ export default function SessionsScreen() {
   const createSessionLog = useCreateSessionLog();
   const { refreshing, onRefresh } = usePullToRefresh();
   const flatListRef = useRef<FlatList>(null);
+  const isScrollRefRegistered = useRef(false);
 
-  // Register scroll ref for tour
+  // Register scroll ref for tour when FlatList mounts
   useEffect(() => {
-    registerScrollViewRef('sessions', flatListRef);
-    return () => unregisterScrollViewRef('sessions');
-  }, []);
+    if (flatListRef.current && !isScrollRefRegistered.current) {
+      registerScrollViewRef('sessions', flatListRef);
+      isScrollRefRegistered.current = true;
+    }
+    return () => {
+      if (isScrollRefRegistered.current) {
+        unregisterScrollViewRef('sessions');
+        isScrollRefRegistered.current = false;
+      }
+    };
+  }, [sessions.length]); // Re-check when sessions change (affects whether FlatList mounts)
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);

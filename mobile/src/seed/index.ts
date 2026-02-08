@@ -169,8 +169,15 @@ export function clearSeedData(store: MergeableStore): void {
 
     // Delete session logs
     const sessionLogsDeleted = deleteMatchingRows('sessionLogs', (row) => {
-      const campaignIds = JSON.parse((row.campaignIds as string) || '[]');
-      return campaignIds.includes(SEED_CAMPAIGN_ID);
+      let campaignIds: string[] = [];
+      try {
+        campaignIds = JSON.parse((row.campaignIds as string) || '[]');
+      } catch {
+        // Malformed JSON, skip this row
+        log.warn('Skipping sessionLog with malformed campaignIds:', row.campaignIds);
+        return false;
+      }
+      return Array.isArray(campaignIds) && campaignIds.includes(SEED_CAMPAIGN_ID);
     });
     log.debug(`Deleted ${sessionLogsDeleted} session logs`);
 

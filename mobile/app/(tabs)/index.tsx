@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, List, Modal, Portal, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { AttachStep } from 'react-native-spotlight-tour';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { Screen, AppCard, Section, StatCard } from '../../src/components';
@@ -27,8 +28,21 @@ import { TOUR_STEP, useTourControls } from '../../src/onboarding';
  */
 export default function Home() {
   const { theme } = useTheme();
-  const { isActive: isTourActive } = useTourControls();
+  const { isActive: isTourActive, startTour, consumeTourStartRequest } = useTourControls();
   const currentCampaign = useCurrentCampaign();
+
+  // Check for pending tour start request when dashboard gains focus
+  useFocusEffect(
+    useCallback(() => {
+      if (consumeTourStartRequest()) {
+        // Small delay to ensure the screen is fully mounted
+        const timer = setTimeout(() => {
+          startTour();
+        }, 100);
+        return () => clearTimeout(timer);
+      }
+    }, [consumeTourStartRequest, startTour])
+  );
   const notes = useNotes(currentCampaign?.continuityId, currentCampaign?.id);
   const npcs = useNpcs(currentCampaign?.id);
   const locations = useLocations(currentCampaign?.id);

@@ -8,6 +8,7 @@ import { router } from 'expo-router';
 import type { TourStep } from 'react-native-spotlight-tour';
 import { TourTooltip } from './TourTooltip';
 import { TOUR_STEP } from './types';
+import { SESSION_IDS } from '../seed/types';
 import { createLogger } from '../utils/logger';
 
 const log = createLogger('tour-steps');
@@ -159,7 +160,7 @@ const STEP_CONTENT = [
  * Seed session ID for tour navigation.
  * This is the demo session we navigate to during the tour.
  */
-const SEED_SESSION_ID = 'session-cyclops-encounter';
+const SEED_SESSION_ID = SESSION_IDS.cyclopsEncounter;
 
 /**
  * Helper to create a delay promise.

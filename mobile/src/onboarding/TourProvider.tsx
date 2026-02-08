@@ -2,7 +2,15 @@
  * Tour provider component that wraps the app with spotlight tour functionality.
  */
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, Modal, Portal, Text } from 'react-native-paper';
 import { SpotlightTourProvider, useSpotlightTour } from 'react-native-spotlight-tour';
@@ -23,6 +31,10 @@ interface TourContextValue {
   isActive: boolean;
   /** Whether the end-of-tour prompt is showing */
   showingPrompt: boolean;
+  /** Request tour start on next dashboard focus */
+  requestTourStart: () => void;
+  /** Check if tour start was requested and clear the flag */
+  consumeTourStartRequest: () => boolean;
 }
 
 const TourContext = createContext<TourContextValue | null>(null);
@@ -59,6 +71,19 @@ function TourController({ children, showPrompt, setShowPrompt }: TourControllerP
   const [hasAutoStarted, setHasAutoStarted] = useState(false);
   // Track if seed data was present when tour started, to detect clearing
   const [hadSeedDataOnStart, setHadSeedDataOnStart] = useState(false);
+  // Ref for pending tour start request (for focus-based starting)
+  const tourStartRequestedRef = useRef(false);
+  // Ref to track pending timeout for cleanup
+  const startTourTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (startTourTimeoutRef.current) {
+        clearTimeout(startTourTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const isActive = current !== undefined;
 
@@ -103,14 +128,35 @@ function TourController({ children, showPrompt, setShowPrompt }: TourControllerP
 
   const startTour = useCallback(() => {
     log.info('Manual tour start requested');
+    // Clear any pending timeout to prevent duplicate starts
+    if (startTourTimeoutRef.current) {
+      clearTimeout(startTourTimeoutRef.current);
+      startTourTimeoutRef.current = null;
+    }
     // Navigate to dashboard first to ensure tour starts from the right place
     router.push('/(tabs)');
     // Small delay to let navigation complete before starting tour
-    setTimeout(() => {
+    startTourTimeoutRef.current = setTimeout(() => {
+      startTourTimeoutRef.current = null;
       setHadSeedDataOnStart(hasSeedData);
       start();
     }, 300);
   }, [start, hasSeedData]);
+
+  // Request tour start on next dashboard focus (for settings navigation)
+  const requestTourStart = useCallback(() => {
+    log.debug('Tour start requested for next focus');
+    tourStartRequestedRef.current = true;
+  }, []);
+
+  // Check and consume the tour start request (called by dashboard on focus)
+  const consumeTourStartRequest = useCallback(() => {
+    if (tourStartRequestedRef.current) {
+      tourStartRequestedRef.current = false;
+      return true;
+    }
+    return false;
+  }, []);
 
   const handleKeepDemo = useCallback(() => {
     setShowPrompt(false);
@@ -127,8 +173,10 @@ function TourController({ children, showPrompt, setShowPrompt }: TourControllerP
       startTour,
       isActive,
       showingPrompt: showPrompt,
+      requestTourStart,
+      consumeTourStartRequest,
     }),
-    [startTour, isActive, showPrompt]
+    [startTour, isActive, showPrompt, requestTourStart, consumeTourStartRequest]
   );
 
   return (

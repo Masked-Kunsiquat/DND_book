@@ -30,27 +30,23 @@ const SETTINGS_ITEMS = [
 
 export default function SettingsScreen() {
   const { theme } = useTheme();
-  const { resetTour, hasCompletedTour } = useTour();
-  const { startTour } = useTourControls();
+  const { resetTour } = useTour();
+  const { requestTourStart } = useTourControls();
   const { hasSeedData, loadSeedData, clearSeedData } = useSeedData();
 
   const handleRestartTour = () => {
     resetTour();
+    // Request tour start on next dashboard focus instead of using setTimeout
+    requestTourStart();
     router.back();
-    // Small delay to ensure navigation completes before starting tour
-    setTimeout(() => {
-      startTour();
-    }, 300);
   };
 
   const handleLoadDemoData = () => {
     loadSeedData();
     resetTour();
+    // Request tour start on next dashboard focus instead of using setTimeout
+    requestTourStart();
     router.replace('/');
-    // Small delay to ensure navigation completes before starting tour
-    setTimeout(() => {
-      startTour();
-    }, 300);
   };
 
   const handleClearDemoData = () => {
