@@ -119,9 +119,9 @@ const STEP_CONTENT = [
   },
   // SESSION_MENTIONS (5)
   {
-    title: 'The @Mention System',
+    title: 'The Mention System',
     description:
-      'Type @ to mention NPCs or locations. The app suggests existing entities or creates new "shadow" ones you can flesh out later.',
+      'Use @ for NPCs and players, $ for locations, ! for items, and # for tags. The app suggests existing entities or creates new "shadow" ones you can flesh out later.',
   },
   // NPCS_TAB (6)
   {
@@ -171,22 +171,33 @@ function delay(ms: number): Promise<void> {
 /**
  * Before hooks for each step to handle navigation and scrolling.
  * Maps step index to a function that runs before the step is shown.
+ * Uses router.replace to ensure clean navigation when going backwards.
  */
 const STEP_BEFORE_HOOKS: Record<number, () => Promise<void> | void> = {
   // Dashboard steps - ensure we're on dashboard and scrolled to top
   [TOUR_STEP.DASHBOARD_WELCOME]: async () => {
     log.debug('Before DASHBOARD_WELCOME');
-    router.push('/(tabs)');
+    router.replace('/(tabs)');
     await delay(300);
     await scrollToTop('dashboard');
   },
-  [TOUR_STEP.DASHBOARD_CAMPAIGN_CARD]: () => scrollToTop('dashboard'),
-  [TOUR_STEP.DASHBOARD_STATS]: () => scrollToTop('dashboard'),
+  [TOUR_STEP.DASHBOARD_CAMPAIGN_CARD]: async () => {
+    log.debug('Before DASHBOARD_CAMPAIGN_CARD');
+    router.replace('/(tabs)');
+    await delay(300);
+    await scrollToTop('dashboard');
+  },
+  [TOUR_STEP.DASHBOARD_STATS]: async () => {
+    log.debug('Before DASHBOARD_STATS');
+    router.replace('/(tabs)');
+    await delay(300);
+    await scrollToTop('dashboard');
+  },
 
   // Sessions tab - navigate there and scroll to top
   [TOUR_STEP.SESSIONS_TAB]: async () => {
     log.debug('Before SESSIONS_TAB');
-    router.push('/(tabs)/sessions');
+    router.replace('/(tabs)/sessions');
     await delay(300);
     await scrollToTop('sessions');
   },
@@ -194,29 +205,39 @@ const STEP_BEFORE_HOOKS: Record<number, () => Promise<void> | void> = {
   // Session detail - navigate to the seed session
   [TOUR_STEP.SESSION_DETAIL]: async () => {
     log.debug('Before SESSION_DETAIL - navigating to seed session');
-    router.push(`/session/${SEED_SESSION_ID}`);
+    router.replace(`/session/${SEED_SESSION_ID}`);
     await delay(400);
     await scrollToTop('session-detail');
   },
 
   // Session mentions - same screen, just ensure scrolled to show mentions section
-  [TOUR_STEP.SESSION_MENTIONS]: () => scrollToTop('session-detail'),
+  [TOUR_STEP.SESSION_MENTIONS]: async () => {
+    log.debug('Before SESSION_MENTIONS');
+    router.replace(`/session/${SEED_SESSION_ID}`);
+    await delay(300);
+    await scrollToTop('session-detail');
+  },
 
   // NPCs tab - navigate and scroll to top
   [TOUR_STEP.NPCS_TAB]: async () => {
     log.debug('Before NPCS_TAB');
-    router.push('/(tabs)/npcs');
+    router.replace('/(tabs)/npcs');
     await delay(300);
     await scrollToTop('npcs');
   },
 
   // NPC card - same screen, scroll to top to show first card
-  [TOUR_STEP.NPC_CARD]: () => scrollToTop('npcs'),
+  [TOUR_STEP.NPC_CARD]: async () => {
+    log.debug('Before NPC_CARD');
+    router.replace('/(tabs)/npcs');
+    await delay(300);
+    await scrollToTop('npcs');
+  },
 
   // Locations tab - navigate and scroll to top
   [TOUR_STEP.LOCATIONS_TAB]: async () => {
     log.debug('Before LOCATIONS_TAB');
-    router.push('/(tabs)/locations');
+    router.replace('/(tabs)/locations');
     await delay(300);
     await scrollToTop('locations');
   },
@@ -224,7 +245,7 @@ const STEP_BEFORE_HOOKS: Record<number, () => Promise<void> | void> = {
   // Tags screen - navigate there
   [TOUR_STEP.TAGS_USAGE]: async () => {
     log.debug('Before TAGS_USAGE');
-    router.push('/tags');
+    router.replace('/tags');
     await delay(300);
     await scrollToTop('tags');
   },
@@ -232,9 +253,25 @@ const STEP_BEFORE_HOOKS: Record<number, () => Promise<void> | void> = {
   // Tour complete - navigate back to dashboard
   [TOUR_STEP.TOUR_COMPLETE]: async () => {
     log.debug('Before TOUR_COMPLETE - returning to dashboard');
-    router.push('/(tabs)');
+    router.replace('/(tabs)');
     await delay(300);
     await scrollToTop('dashboard');
+  },
+};
+
+/**
+ * Floating UI props for each step to control tooltip positioning.
+ * Maps step index to floatingProps configuration.
+ */
+const STEP_FLOATING_PROPS: Record<number, object> = {
+  // Session mentions step - tooltip should appear below with offset to avoid status bar
+  [TOUR_STEP.SESSION_MENTIONS]: {
+    placement: 'bottom',
+    offset: 20,
+  },
+  // Tour complete step - tooltip should appear below the highlight
+  [TOUR_STEP.TOUR_COMPLETE]: {
+    placement: 'bottom',
   },
 };
 
@@ -249,6 +286,7 @@ export function createTourSteps(onComplete: () => void): TourStep[] {
 
   return STEP_CONTENT.map((content, index) => ({
     before: STEP_BEFORE_HOOKS[index],
+    floatingProps: STEP_FLOATING_PROPS[index],
     render: ({ next, previous, stop }) => (
       <TourTooltip
         title={content.title}

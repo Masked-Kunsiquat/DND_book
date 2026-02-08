@@ -13,7 +13,7 @@ import { useLocations } from '../../src/hooks/useLocations';
 import { useItems } from '../../src/hooks/useItems';
 import { useTags } from '../../src/hooks/useTags';
 import { iconSizes, spacing, semanticColors } from '../../src/theme';
-import { TOUR_STEP } from '../../src/onboarding';
+import { TOUR_STEP, useTourControls } from '../../src/onboarding';
 
 /**
  * Renders the Home dashboard screen for the app.
@@ -27,6 +27,7 @@ import { TOUR_STEP } from '../../src/onboarding';
  */
 export default function Home() {
   const { theme } = useTheme();
+  const { isActive: isTourActive } = useTourControls();
   const currentCampaign = useCurrentCampaign();
   const notes = useNotes(currentCampaign?.continuityId, currentCampaign?.id);
   const npcs = useNpcs(currentCampaign?.id);
@@ -73,6 +74,30 @@ export default function Home() {
 
   return (
     <Screen tourScrollKey="dashboard">
+      <AttachStep index={TOUR_STEP.DASHBOARD_WELCOME} fill>
+        <View style={styles.welcomeSection}>
+          <Text variant="headlineMedium" style={{ color: theme.colors.onSurface }}>
+            Welcome
+          </Text>
+          <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+            Your campaign dashboard at a glance
+          </Text>
+        </View>
+      </AttachStep>
+
+      {isTourActive && (
+        <AttachStep index={TOUR_STEP.TOUR_COMPLETE} fill>
+          <View style={styles.tourCompleteSection}>
+            <Text variant="titleMedium" style={{ color: theme.colors.primary }}>
+              Ready to Go!
+            </Text>
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+              You've learned the basics of DND Book
+            </Text>
+          </View>
+        </AttachStep>
+      )}
+
       <AttachStep index={TOUR_STEP.DASHBOARD_CAMPAIGN_CARD} fill>
         <Section title="Current Campaign" icon="compass">
           <AppCard
@@ -231,6 +256,7 @@ export default function Home() {
           </Button>
         </View>
       </Section>
+
       <Portal>
         <Modal
           visible={newMenuVisible}
@@ -264,6 +290,14 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
+  welcomeSection: {
+    marginBottom: spacing[4],
+  },
+  tourCompleteSection: {
+    marginBottom: spacing[4],
+    paddingVertical: spacing[2],
+    alignItems: 'center',
+  },
   statsRow: {
     flexDirection: 'row',
     gap: spacing[3],

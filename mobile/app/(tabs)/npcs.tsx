@@ -545,47 +545,47 @@ export default function NpcsScreen() {
           refreshing={refreshing}
           onRefresh={onRefresh}
           ListHeaderComponent={
-            <AttachStep index={TOUR_STEP.NPCS_TAB} fill>
-              <View style={styles.header}>
-                <TextInput
-                  value={query}
-                  onChangeText={setQuery}
-                  mode="outlined"
-                  placeholder="Search NPCs..."
-                  style={styles.searchInput}
+            <View style={styles.header}>
+              <TextInput
+                value={query}
+                onChangeText={setQuery}
+                mode="outlined"
+                placeholder="Search NPCs..."
+                style={styles.searchInput}
+              />
+              <FilterHeader
+                expanded={filtersOpen}
+                onToggle={() => setFiltersOpen((prev) => !prev)}
+              >
+                <TagFilterSection
+                  tags={tags}
+                  selectedIds={selectedTagIds}
+                  onToggle={toggleTag}
+                  onClear={() => setSelectedTagIds([])}
+                  headerStyle={styles.tagHeader}
                 />
-                <FilterHeader
-                  expanded={filtersOpen}
-                  onToggle={() => setFiltersOpen((prev) => !prev)}
-                >
-                  <TagFilterSection
-                    tags={tags}
-                    selectedIds={selectedTagIds}
-                    onToggle={toggleTag}
-                    onClear={() => setSelectedTagIds([])}
-                    headerStyle={styles.tagHeader}
-                  />
-                  <View style={[commonStyles.flexRowBetween, styles.statusHeader]}>
-                    <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                      Status
-                    </Text>
-                    {showShadowOnly && (
-                      <Button mode="text" onPress={() => setShowShadowOnly(false)} compact>
-                        Clear
-                      </Button>
-                    )}
-                  </View>
-                  <View style={[commonStyles.flexRow, styles.statusRow]}>
-                    <Button
-                      mode={showShadowOnly ? 'contained' : 'outlined'}
-                      onPress={() => setShowShadowOnly((prev) => !prev)}
-                      icon="circle-outline"
-                      compact
-                    >
-                      Shadow only
+                <View style={[commonStyles.flexRowBetween, styles.statusHeader]}>
+                  <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Status
+                  </Text>
+                  {showShadowOnly && (
+                    <Button mode="text" onPress={() => setShowShadowOnly(false)} compact>
+                      Clear
                     </Button>
-                  </View>
-                </FilterHeader>
+                  )}
+                </View>
+                <View style={[commonStyles.flexRow, styles.statusRow]}>
+                  <Button
+                    mode={showShadowOnly ? 'contained' : 'outlined'}
+                    onPress={() => setShowShadowOnly((prev) => !prev)}
+                    icon="circle-outline"
+                    compact
+                  >
+                    Shadow only
+                  </Button>
+                </View>
+              </FilterHeader>
+              <AttachStep index={TOUR_STEP.NPCS_TAB} fill>
                 <View style={commonStyles.flexRowBetween}>
                   <View style={commonStyles.flexRow}>
                     <MaterialCommunityIcons
@@ -611,8 +611,8 @@ export default function NpcsScreen() {
                     </Pressable>
                   </View>
                 </View>
-              </View>
-            </AttachStep>
+              </AttachStep>
+            </View>
           }
           renderItem={({ item, index }) => {
             const resolvedTags = item.tagIds

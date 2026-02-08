@@ -276,8 +276,8 @@ export default function TagsScreen() {
           refreshing={refreshing}
           onRefresh={onRefresh}
           ListHeaderComponent={
-            <AttachStep index={TOUR_STEP.TAGS_USAGE} fill>
-              <View style={styles.header}>
+            <View style={styles.header}>
+              <AttachStep index={TOUR_STEP.TAGS_USAGE} fill>
                 <View style={commonStyles.flexRow}>
                   <MaterialCommunityIcons
                     name="tag-outline"
@@ -289,14 +289,14 @@ export default function TagsScreen() {
                     Tags
                   </Text>
                 </View>
-                <TextInput
-                  mode="outlined"
-                  value={query}
-                  onChangeText={setQuery}
-                  placeholder="Search tags..."
-                />
-              </View>
-            </AttachStep>
+              </AttachStep>
+              <TextInput
+                mode="outlined"
+                value={query}
+                onChangeText={setQuery}
+                placeholder="Search tags..."
+              />
+            </View>
           }
           renderItem={({ item }) => {
             const usage = tagUsage.get(item.id) ?? EMPTY_USAGE;
