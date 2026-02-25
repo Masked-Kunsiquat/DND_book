@@ -1,0 +1,17 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8090:8080"
+    volumes:
+      - ./pocketbase_data:/app/pb_data
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3110:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
