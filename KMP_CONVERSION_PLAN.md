@@ -867,18 +867,29 @@ Phases are ordered so **a working Android build exists after Phase 2** and iOS f
 
 **Goal**: All tables created, all repositories implemented, seed data loads correctly on Android.
 
-- [ ] Write all `.sq` files in `:shared:data/db/` (core tables + join tables from §4)
-- [ ] Configure SQLDelight driver (`expect/actual` for Android SQLite + iOS SQLite)
-- [ ] Implement SQLDelight migrations directory (`V1__initial_schema.sq`)
-- [ ] Implement DataStore with all preference keys from §4
-- [ ] Implement all repository interfaces (`ContinuityRepository`, `CampaignRepository`, `NpcRepository`, `LocationRepository`, `ItemRepository`, `TagRepository`, `SessionLogRepository`, `PlayerCharacterRepository`, `PcTemplateRepository`)
-- [ ] Implement `SeedDataLoader` with Odyssey data; verify on fresh install
-- [ ] Implement `MentionParser.extract()` and unit test against token format
-- [ ] Implement `HybridLogicalClock` and unit test (ordering, tiebreak, skew)
-- [ ] Unit tests for all repository CRUD operations (in-memory SQLite driver)
-- [ ] Verify `ON DELETE CASCADE` behavior with repository integration tests
+- [x] Write all `.sq` files in `:shared:data/db/` (core tables + join tables from §4)
+- [x] Configure SQLDelight driver (`expect/actual` for Android SQLite + iOS SQLite)
+- [x] SQLDelight migrations: not applicable at v1 — the `.sq` schema IS the version-1 baseline; the `migrations/` directory will be introduced with the first schema bump (see implementation notes)
+- [x] Implement DataStore with all preference keys from §4
+- [x] Implement all repository interfaces (`ContinuityRepository`, `CampaignRepository`, `NpcRepository`, `LocationRepository`, `ItemRepository`, `TagRepository`, `SessionLogRepository`, `PlayerCharacterRepository`, `PcTemplateRepository`)
+- [x] Implement `SeedDataLoader` with Odyssey data (fresh-install verification lands with the Phase 2 debug/dashboard screen; seed + clear covered by JVM tests)
+- [x] Implement `MentionParser.extract()` and unit test against token format
+- [x] Implement `HybridLogicalClock` and unit test (ordering, tiebreak, skew)
+- [x] Unit tests for all repository CRUD operations (in-memory SQLite driver)
+- [x] Verify `ON DELETE CASCADE` behavior with repository integration tests
 
 **Exit criteria**: All unit tests pass; fresh Android install shows seed data queryable from a debug screen.
+
+#### Phase 1 implementation notes (2026-07-14)
+
+- **Tables**: 11 core (10 entity tables + `blobs`) and 20 relationship tables (the 19 pure join tables from §4 plus `location_images`, which has its own PK). All join-table FKs cascade; `locations.parent_id` and the nullable `campaign_id`/`location_id` columns use `SET NULL` per §4. FK-column indices were added (join-table second columns + core-table FK columns) for cascade performance — §4 did not enumerate indices.
+- **Migrations**: SQLDelight 2.x uses the `.sq` schema as the version-1 baseline; there is no prior version to migrate from, so no `migrations/` directory exists yet. It will be created with the first schema bump.
+- **MentionParser** lives in `:shared:domain` (`com.dndbook.domain.mention.MentionParser`) rather than `:shared:ui` so the data layer can extract mentions without a UI dependency; the `render()` half (AnnotatedString styling) ships with `:shared:ui` in Phase 2 as §6.3 describes.
+- **Seed data** is defined in Kotlin (`SeedDataLoader.kt` + `OdysseySeedIds.kt`) instead of a bundled `odyssey_seed.json` — avoids adding a resource-loading pipeline in Phase 1. Content and fixed entity IDs are 1:1 with the Expo seed. Seed rows carry HLC `0.0.seed` so any real edit wins LWW merges. `clear()` deletes only the seed continuity and relies on FK cascades (validated by test).
+- **Blob store**: `BlobRepositoryImpl` + `expect/actual BlobFileStore` implement put(bytes)→hash, resolvePath(hash)→file path, and GC (deletes unreferenced rows *and* files). SHA-256 is a pure-Kotlin implementation validated against FIPS 180-4 test vectors (no platform crypto dependency).
+- **JVM target**: `:shared:domain` and `:shared:data` gained a `jvm()` target purely for unit tests against an in-memory JDBC SQLite driver. This is not a desktop app target (Q4 unchanged).
+- **Plan inconsistency resolved**: §7 (C5) mentions a `pc_tags` join table, but §1 Q8 resolves that player characters have no tags and §4 defines no such table. Followed §4/Q8 — no `pc_tags` table. The items half of C5 is covered by the `item_tags` cascade (tested).
+- **Q6 honored**: no `getPlayerCharactersByPlayer`-style query was carried over.
 
 ---
 

@@ -1,0 +1,468 @@
+-- Join tables for all entity relationships
+
+CREATE TABLE note_campaigns (
+  note_id     TEXT NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+  campaign_id TEXT NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+  PRIMARY KEY (note_id, campaign_id)
+);
+
+CREATE TABLE note_locations (
+  note_id     TEXT NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+  location_id TEXT NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
+  PRIMARY KEY (note_id, location_id)
+);
+
+CREATE TABLE note_tags (
+  note_id TEXT NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+  tag_id  TEXT NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+  PRIMARY KEY (note_id, tag_id)
+);
+
+CREATE TABLE npc_campaigns (
+  npc_id      TEXT NOT NULL REFERENCES npcs(id) ON DELETE CASCADE,
+  campaign_id TEXT NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+  PRIMARY KEY (npc_id, campaign_id)
+);
+
+CREATE TABLE npc_locations (
+  npc_id      TEXT NOT NULL REFERENCES npcs(id) ON DELETE CASCADE,
+  location_id TEXT NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
+  PRIMARY KEY (npc_id, location_id)
+);
+
+CREATE TABLE npc_notes (
+  npc_id  TEXT NOT NULL REFERENCES npcs(id) ON DELETE CASCADE,
+  note_id TEXT NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+  PRIMARY KEY (npc_id, note_id)
+);
+
+CREATE TABLE npc_tags (
+  npc_id TEXT NOT NULL REFERENCES npcs(id) ON DELETE CASCADE,
+  tag_id TEXT NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+  PRIMARY KEY (npc_id, tag_id)
+);
+
+CREATE TABLE location_campaigns (
+  location_id TEXT NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
+  campaign_id TEXT NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+  PRIMARY KEY (location_id, campaign_id)
+);
+
+CREATE TABLE location_tags (
+  location_id TEXT NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
+  tag_id      TEXT NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+  PRIMARY KEY (location_id, tag_id)
+);
+
+CREATE TABLE location_images (
+  id          TEXT PRIMARY KEY NOT NULL,
+  location_id TEXT NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
+  blob_hash   TEXT NOT NULL,
+  sort_order  INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE item_campaigns (
+  item_id     TEXT NOT NULL REFERENCES items(id) ON DELETE CASCADE,
+  campaign_id TEXT NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+  PRIMARY KEY (item_id, campaign_id)
+);
+
+CREATE TABLE item_tags (
+  item_id TEXT NOT NULL REFERENCES items(id) ON DELETE CASCADE,
+  tag_id  TEXT NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+  PRIMARY KEY (item_id, tag_id)
+);
+
+CREATE TABLE session_locations (
+  session_id  TEXT NOT NULL REFERENCES session_logs(id) ON DELETE CASCADE,
+  location_id TEXT NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
+  PRIMARY KEY (session_id, location_id)
+);
+
+CREATE TABLE session_npcs (
+  session_id TEXT NOT NULL REFERENCES session_logs(id) ON DELETE CASCADE,
+  npc_id     TEXT NOT NULL REFERENCES npcs(id) ON DELETE CASCADE,
+  PRIMARY KEY (session_id, npc_id)
+);
+
+CREATE TABLE session_notes (
+  session_id TEXT NOT NULL REFERENCES session_logs(id) ON DELETE CASCADE,
+  note_id    TEXT NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+  PRIMARY KEY (session_id, note_id)
+);
+
+CREATE TABLE session_player_characters (
+  session_id          TEXT NOT NULL REFERENCES session_logs(id) ON DELETE CASCADE,
+  player_character_id TEXT NOT NULL REFERENCES player_characters(id) ON DELETE CASCADE,
+  PRIMARY KEY (session_id, player_character_id)
+);
+
+CREATE TABLE session_items (
+  session_id TEXT NOT NULL REFERENCES session_logs(id) ON DELETE CASCADE,
+  item_id    TEXT NOT NULL REFERENCES items(id) ON DELETE CASCADE,
+  PRIMARY KEY (session_id, item_id)
+);
+
+CREATE TABLE session_tags (
+  session_id TEXT NOT NULL REFERENCES session_logs(id) ON DELETE CASCADE,
+  tag_id     TEXT NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+  PRIMARY KEY (session_id, tag_id)
+);
+
+CREATE TABLE pc_campaigns (
+  player_character_id TEXT NOT NULL REFERENCES player_characters(id) ON DELETE CASCADE,
+  campaign_id         TEXT NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+  PRIMARY KEY (player_character_id, campaign_id)
+);
+
+CREATE TABLE pc_notes (
+  player_character_id TEXT NOT NULL REFERENCES player_characters(id) ON DELETE CASCADE,
+  note_id             TEXT NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+  PRIMARY KEY (player_character_id, note_id)
+);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Indices: the compound PK covers the first column; the second FK column needs
+-- its own index so ON DELETE CASCADE from the referenced parent doesn't scan.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+CREATE INDEX idx_note_campaigns_campaign ON note_campaigns(campaign_id);
+CREATE INDEX idx_note_locations_location ON note_locations(location_id);
+CREATE INDEX idx_note_tags_tag ON note_tags(tag_id);
+CREATE INDEX idx_npc_campaigns_campaign ON npc_campaigns(campaign_id);
+CREATE INDEX idx_npc_locations_location ON npc_locations(location_id);
+CREATE INDEX idx_npc_notes_note ON npc_notes(note_id);
+CREATE INDEX idx_npc_tags_tag ON npc_tags(tag_id);
+CREATE INDEX idx_location_campaigns_campaign ON location_campaigns(campaign_id);
+CREATE INDEX idx_location_tags_tag ON location_tags(tag_id);
+CREATE INDEX idx_location_images_location ON location_images(location_id);
+CREATE INDEX idx_item_campaigns_campaign ON item_campaigns(campaign_id);
+CREATE INDEX idx_item_tags_tag ON item_tags(tag_id);
+CREATE INDEX idx_session_locations_location ON session_locations(location_id);
+CREATE INDEX idx_session_npcs_npc ON session_npcs(npc_id);
+CREATE INDEX idx_session_notes_note ON session_notes(note_id);
+CREATE INDEX idx_session_pcs_pc ON session_player_characters(player_character_id);
+CREATE INDEX idx_session_items_item ON session_items(item_id);
+CREATE INDEX idx_session_tags_tag ON session_tags(tag_id);
+CREATE INDEX idx_pc_campaigns_campaign ON pc_campaigns(campaign_id);
+CREATE INDEX idx_pc_notes_note ON pc_notes(note_id);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- note_campaigns queries
+-- ─────────────────────────────────────────────────────────────────────────────
+
+insertNoteCampaign:
+INSERT OR IGNORE INTO note_campaigns(note_id, campaign_id) VALUES (?, ?);
+
+deleteNoteCampaign:
+DELETE FROM note_campaigns WHERE note_id = ? AND campaign_id = ?;
+
+selectCampaignsByNote:
+SELECT campaign_id FROM note_campaigns WHERE note_id = ?;
+
+selectNotesByCampaignJoin:
+SELECT note_id FROM note_campaigns WHERE campaign_id = ?;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- note_locations queries
+-- ─────────────────────────────────────────────────────────────────────────────
+
+insertNoteLocation:
+INSERT OR IGNORE INTO note_locations(note_id, location_id) VALUES (?, ?);
+
+deleteNoteLocation:
+DELETE FROM note_locations WHERE note_id = ? AND location_id = ?;
+
+selectLocationsByNote:
+SELECT location_id FROM note_locations WHERE note_id = ?;
+
+selectNotesByLocation:
+SELECT note_id FROM note_locations WHERE location_id = ?;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- note_tags queries
+-- ─────────────────────────────────────────────────────────────────────────────
+
+insertNoteTag:
+INSERT OR IGNORE INTO note_tags(note_id, tag_id) VALUES (?, ?);
+
+deleteNoteTag:
+DELETE FROM note_tags WHERE note_id = ? AND tag_id = ?;
+
+selectTagsByNote:
+SELECT tag_id FROM note_tags WHERE note_id = ?;
+
+selectNotesByTag:
+SELECT note_id FROM note_tags WHERE tag_id = ?;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- npc_campaigns queries
+-- ─────────────────────────────────────────────────────────────────────────────
+
+insertNpcCampaign:
+INSERT OR IGNORE INTO npc_campaigns(npc_id, campaign_id) VALUES (?, ?);
+
+deleteNpcCampaign:
+DELETE FROM npc_campaigns WHERE npc_id = ? AND campaign_id = ?;
+
+selectCampaignsByNpc:
+SELECT campaign_id FROM npc_campaigns WHERE npc_id = ?;
+
+selectNpcsByCampaign:
+SELECT npc_id FROM npc_campaigns WHERE campaign_id = ?;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- npc_locations queries
+-- ─────────────────────────────────────────────────────────────────────────────
+
+insertNpcLocation:
+INSERT OR IGNORE INTO npc_locations(npc_id, location_id) VALUES (?, ?);
+
+deleteNpcLocation:
+DELETE FROM npc_locations WHERE npc_id = ? AND location_id = ?;
+
+selectLocationsByNpc:
+SELECT location_id FROM npc_locations WHERE npc_id = ?;
+
+selectNpcsByLocation:
+SELECT npc_id FROM npc_locations WHERE location_id = ?;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- npc_notes queries
+-- ─────────────────────────────────────────────────────────────────────────────
+
+insertNpcNote:
+INSERT OR IGNORE INTO npc_notes(npc_id, note_id) VALUES (?, ?);
+
+deleteNpcNote:
+DELETE FROM npc_notes WHERE npc_id = ? AND note_id = ?;
+
+selectNotesByNpc:
+SELECT note_id FROM npc_notes WHERE npc_id = ?;
+
+selectNpcsByNote:
+SELECT npc_id FROM npc_notes WHERE note_id = ?;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- npc_tags queries
+-- ─────────────────────────────────────────────────────────────────────────────
+
+insertNpcTag:
+INSERT OR IGNORE INTO npc_tags(npc_id, tag_id) VALUES (?, ?);
+
+deleteNpcTag:
+DELETE FROM npc_tags WHERE npc_id = ? AND tag_id = ?;
+
+selectTagsByNpc:
+SELECT tag_id FROM npc_tags WHERE npc_id = ?;
+
+selectNpcsByTag:
+SELECT npc_id FROM npc_tags WHERE tag_id = ?;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- location_campaigns queries
+-- ─────────────────────────────────────────────────────────────────────────────
+
+insertLocationCampaign:
+INSERT OR IGNORE INTO location_campaigns(location_id, campaign_id) VALUES (?, ?);
+
+deleteLocationCampaign:
+DELETE FROM location_campaigns WHERE location_id = ? AND campaign_id = ?;
+
+selectCampaignsByLocation:
+SELECT campaign_id FROM location_campaigns WHERE location_id = ?;
+
+selectLocationsByCampaign:
+SELECT location_id FROM location_campaigns WHERE campaign_id = ?;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- location_tags queries
+-- ─────────────────────────────────────────────────────────────────────────────
+
+insertLocationTag:
+INSERT OR IGNORE INTO location_tags(location_id, tag_id) VALUES (?, ?);
+
+deleteLocationTag:
+DELETE FROM location_tags WHERE location_id = ? AND tag_id = ?;
+
+selectTagsByLocation:
+SELECT tag_id FROM location_tags WHERE location_id = ?;
+
+selectLocationsByTag:
+SELECT location_id FROM location_tags WHERE tag_id = ?;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- location_images queries
+-- ─────────────────────────────────────────────────────────────────────────────
+
+insertLocationImage:
+INSERT OR IGNORE INTO location_images(id, location_id, blob_hash, sort_order) VALUES (?, ?, ?, ?);
+
+deleteLocationImage:
+DELETE FROM location_images WHERE id = ?;
+
+selectImagesByLocation:
+SELECT * FROM location_images WHERE location_id = ? ORDER BY sort_order ASC;
+
+selectAllBlobHashes:
+SELECT blob_hash FROM location_images;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- item_campaigns queries
+-- ─────────────────────────────────────────────────────────────────────────────
+
+insertItemCampaign:
+INSERT OR IGNORE INTO item_campaigns(item_id, campaign_id) VALUES (?, ?);
+
+deleteItemCampaign:
+DELETE FROM item_campaigns WHERE item_id = ? AND campaign_id = ?;
+
+selectCampaignsByItem:
+SELECT campaign_id FROM item_campaigns WHERE item_id = ?;
+
+selectItemsByCampaign:
+SELECT item_id FROM item_campaigns WHERE campaign_id = ?;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- item_tags queries
+-- ─────────────────────────────────────────────────────────────────────────────
+
+insertItemTag:
+INSERT OR IGNORE INTO item_tags(item_id, tag_id) VALUES (?, ?);
+
+deleteItemTag:
+DELETE FROM item_tags WHERE item_id = ? AND tag_id = ?;
+
+selectTagsByItem:
+SELECT tag_id FROM item_tags WHERE item_id = ?;
+
+selectItemsByTag:
+SELECT item_id FROM item_tags WHERE tag_id = ?;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- session_locations queries
+-- ─────────────────────────────────────────────────────────────────────────────
+
+insertSessionLocation:
+INSERT OR IGNORE INTO session_locations(session_id, location_id) VALUES (?, ?);
+
+deleteSessionLocation:
+DELETE FROM session_locations WHERE session_id = ? AND location_id = ?;
+
+selectLocationsBySession:
+SELECT location_id FROM session_locations WHERE session_id = ?;
+
+selectSessionsByLocation:
+SELECT session_id FROM session_locations WHERE location_id = ?;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- session_npcs queries
+-- ─────────────────────────────────────────────────────────────────────────────
+
+insertSessionNpc:
+INSERT OR IGNORE INTO session_npcs(session_id, npc_id) VALUES (?, ?);
+
+deleteSessionNpc:
+DELETE FROM session_npcs WHERE session_id = ? AND npc_id = ?;
+
+selectNpcsBySession:
+SELECT npc_id FROM session_npcs WHERE session_id = ?;
+
+selectSessionsByNpc:
+SELECT session_id FROM session_npcs WHERE npc_id = ?;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- session_notes queries
+-- ─────────────────────────────────────────────────────────────────────────────
+
+insertSessionNote:
+INSERT OR IGNORE INTO session_notes(session_id, note_id) VALUES (?, ?);
+
+deleteSessionNote:
+DELETE FROM session_notes WHERE session_id = ? AND note_id = ?;
+
+selectNotesBySession:
+SELECT note_id FROM session_notes WHERE session_id = ?;
+
+selectSessionsByNote:
+SELECT session_id FROM session_notes WHERE note_id = ?;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- session_player_characters queries
+-- ─────────────────────────────────────────────────────────────────────────────
+
+insertSessionPlayerCharacter:
+INSERT OR IGNORE INTO session_player_characters(session_id, player_character_id) VALUES (?, ?);
+
+deleteSessionPlayerCharacter:
+DELETE FROM session_player_characters WHERE session_id = ? AND player_character_id = ?;
+
+selectPlayerCharactersBySession:
+SELECT player_character_id FROM session_player_characters WHERE session_id = ?;
+
+selectSessionsByPlayerCharacter:
+SELECT session_id FROM session_player_characters WHERE player_character_id = ?;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- session_items queries
+-- ─────────────────────────────────────────────────────────────────────────────
+
+insertSessionItem:
+INSERT OR IGNORE INTO session_items(session_id, item_id) VALUES (?, ?);
+
+deleteSessionItem:
+DELETE FROM session_items WHERE session_id = ? AND item_id = ?;
+
+selectItemsBySession:
+SELECT item_id FROM session_items WHERE session_id = ?;
+
+selectSessionsByItem:
+SELECT session_id FROM session_items WHERE item_id = ?;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- session_tags queries
+-- ─────────────────────────────────────────────────────────────────────────────
+
+insertSessionTag:
+INSERT OR IGNORE INTO session_tags(session_id, tag_id) VALUES (?, ?);
+
+deleteSessionTag:
+DELETE FROM session_tags WHERE session_id = ? AND tag_id = ?;
+
+selectTagsBySession:
+SELECT tag_id FROM session_tags WHERE session_id = ?;
+
+selectSessionsByTag:
+SELECT session_id FROM session_tags WHERE tag_id = ?;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- pc_campaigns queries
+-- ─────────────────────────────────────────────────────────────────────────────
+
+insertPcCampaign:
+INSERT OR IGNORE INTO pc_campaigns(player_character_id, campaign_id) VALUES (?, ?);
+
+deletePcCampaign:
+DELETE FROM pc_campaigns WHERE player_character_id = ? AND campaign_id = ?;
+
+selectCampaignsByPc:
+SELECT campaign_id FROM pc_campaigns WHERE player_character_id = ?;
+
+selectPcsByCampaign:
+SELECT player_character_id FROM pc_campaigns WHERE campaign_id = ?;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- pc_notes queries
+-- ─────────────────────────────────────────────────────────────────────────────
+
+insertPcNote:
+INSERT OR IGNORE INTO pc_notes(player_character_id, note_id) VALUES (?, ?);
+
+deletePcNote:
+DELETE FROM pc_notes WHERE player_character_id = ? AND note_id = ?;
+
+selectNotesByPc:
+SELECT note_id FROM pc_notes WHERE player_character_id = ?;
+
+selectPcsByNote:
+SELECT player_character_id FROM pc_notes WHERE note_id = ?;

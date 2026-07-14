@@ -1,0 +1,21 @@
+package com.dndbook.domain.model
+
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class PcTemplate(
+    val id: String,
+    val name: String,
+    val player: String,
+    val race: String,
+    val className: String,
+    val background: String,
+    val imageHash: String?,
+    val continuityId: String,
+    val originId: String?,
+    val originContinuityId: String?,
+    val forkedAt: String?,
+    val hlc: String,
+    val created: String,
+    val updated: String,
+)

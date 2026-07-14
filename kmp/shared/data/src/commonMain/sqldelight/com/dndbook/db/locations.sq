@@ -1,0 +1,51 @@
+-- Locations table
+
+CREATE TABLE locations (
+  id                    TEXT PRIMARY KEY NOT NULL,
+  name                  TEXT NOT NULL,
+  type                  TEXT NOT NULL,
+  description           TEXT NOT NULL DEFAULT '',
+  status                TEXT NOT NULL DEFAULT 'complete',
+  parent_id             TEXT REFERENCES locations(id) ON DELETE SET NULL,
+  map_hash              TEXT,
+  scope                 TEXT NOT NULL DEFAULT 'campaign',
+  continuity_id         TEXT NOT NULL REFERENCES continuities(id) ON DELETE CASCADE,
+  origin_id             TEXT,
+  origin_continuity_id  TEXT,
+  forked_at             TEXT,
+  hlc                   TEXT NOT NULL,
+  created               TEXT NOT NULL,
+  updated               TEXT NOT NULL
+);
+
+selectAllLocations:
+SELECT * FROM locations ORDER BY updated DESC;
+
+selectLocationById:
+SELECT * FROM locations WHERE id = ?;
+
+selectLocationsByContinuity:
+SELECT * FROM locations WHERE continuity_id = ? ORDER BY updated DESC;
+
+selectLocationsByParent:
+SELECT * FROM locations WHERE parent_id = ? ORDER BY name ASC;
+
+insertLocation:
+INSERT OR REPLACE INTO locations(id, name, type, description, status, parent_id,
+  map_hash, scope, continuity_id, origin_id, origin_continuity_id, forked_at, hlc, created, updated)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateLocation:
+UPDATE locations SET name = ?, type = ?, description = ?, status = ?, parent_id = ?,
+  map_hash = ?, scope = ?, origin_id = ?, origin_continuity_id = ?,
+  forked_at = ?, hlc = ?, updated = ?
+WHERE id = ?;
+
+deleteLocation:
+DELETE FROM locations WHERE id = ?;
+
+selectAllMapHashes:
+SELECT map_hash FROM locations WHERE map_hash IS NOT NULL;
+
+CREATE INDEX idx_locations_continuity ON locations(continuity_id);
+CREATE INDEX idx_locations_parent ON locations(parent_id);

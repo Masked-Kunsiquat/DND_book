@@ -1,0 +1,45 @@
+-- PC Templates table
+
+CREATE TABLE pc_templates (
+  id                    TEXT PRIMARY KEY NOT NULL,
+  name                  TEXT NOT NULL,
+  player                TEXT NOT NULL DEFAULT '',
+  race                  TEXT NOT NULL DEFAULT '',
+  class_name            TEXT NOT NULL DEFAULT '',
+  background            TEXT NOT NULL DEFAULT '',
+  image_hash            TEXT,
+  continuity_id         TEXT NOT NULL REFERENCES continuities(id) ON DELETE CASCADE,
+  origin_id             TEXT,
+  origin_continuity_id  TEXT,
+  forked_at             TEXT,
+  hlc                   TEXT NOT NULL,
+  created               TEXT NOT NULL,
+  updated               TEXT NOT NULL
+);
+
+selectAllPcTemplates:
+SELECT * FROM pc_templates ORDER BY updated DESC;
+
+selectPcTemplateById:
+SELECT * FROM pc_templates WHERE id = ?;
+
+selectPcTemplatesByContinuity:
+SELECT * FROM pc_templates WHERE continuity_id = ? ORDER BY updated DESC;
+
+insertPcTemplate:
+INSERT OR REPLACE INTO pc_templates(id, name, player, race, class_name, background,
+  image_hash, continuity_id, origin_id, origin_continuity_id, forked_at, hlc, created, updated)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updatePcTemplate:
+UPDATE pc_templates SET name = ?, player = ?, race = ?, class_name = ?, background = ?,
+  image_hash = ?, origin_id = ?, origin_continuity_id = ?, forked_at = ?, hlc = ?, updated = ?
+WHERE id = ?;
+
+deletePcTemplate:
+DELETE FROM pc_templates WHERE id = ?;
+
+selectAllImageHashes:
+SELECT image_hash FROM pc_templates WHERE image_hash IS NOT NULL;
+
+CREATE INDEX idx_pc_templates_continuity ON pc_templates(continuity_id);

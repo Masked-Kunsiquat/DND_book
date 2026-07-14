@@ -1,0 +1,24 @@
+-- Blobs table (content-addressed storage, no FK constraints by design)
+
+CREATE TABLE blobs (
+  hash       TEXT PRIMARY KEY NOT NULL,
+  extension  TEXT NOT NULL,
+  size       INTEGER NOT NULL,
+  created    TEXT NOT NULL
+);
+
+selectAllBlobs:
+SELECT * FROM blobs;
+
+selectBlobByHash:
+SELECT * FROM blobs WHERE hash = ?;
+
+selectAllHashes:
+SELECT hash FROM blobs;
+
+insertBlob:
+INSERT OR REPLACE INTO blobs(hash, extension, size, created)
+VALUES (?, ?, ?, ?);
+
+deleteBlob:
+DELETE FROM blobs WHERE hash = ?;

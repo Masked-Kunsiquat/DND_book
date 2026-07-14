@@ -1,0 +1,40 @@
+-- Session Logs table
+
+CREATE TABLE session_logs (
+  id            TEXT PRIMARY KEY NOT NULL,
+  title         TEXT NOT NULL,
+  date          TEXT NOT NULL,
+  content       TEXT NOT NULL DEFAULT '',
+  mentions_json TEXT NOT NULL DEFAULT '[]',
+  summary       TEXT NOT NULL DEFAULT '',
+  key_decisions TEXT NOT NULL DEFAULT '',
+  outcomes      TEXT NOT NULL DEFAULT '',
+  campaign_id   TEXT NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+  hlc           TEXT NOT NULL,
+  created       TEXT NOT NULL,
+  updated       TEXT NOT NULL
+);
+
+selectAllSessionLogs:
+SELECT * FROM session_logs ORDER BY date DESC;
+
+selectSessionLogById:
+SELECT * FROM session_logs WHERE id = ?;
+
+selectSessionLogsByCampaign:
+SELECT * FROM session_logs WHERE campaign_id = ? ORDER BY date DESC;
+
+insertSessionLog:
+INSERT OR REPLACE INTO session_logs(id, title, date, content, mentions_json,
+  summary, key_decisions, outcomes, campaign_id, hlc, created, updated)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateSessionLog:
+UPDATE session_logs SET title = ?, date = ?, content = ?, mentions_json = ?,
+  summary = ?, key_decisions = ?, outcomes = ?, hlc = ?, updated = ?
+WHERE id = ?;
+
+deleteSessionLog:
+DELETE FROM session_logs WHERE id = ?;
+
+CREATE INDEX idx_session_logs_campaign ON session_logs(campaign_id);

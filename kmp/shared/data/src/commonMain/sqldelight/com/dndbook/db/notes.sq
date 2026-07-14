@@ -1,0 +1,44 @@
+-- Notes table
+
+CREATE TABLE notes (
+  id                    TEXT PRIMARY KEY NOT NULL,
+  title                 TEXT NOT NULL DEFAULT '',
+  content               TEXT NOT NULL DEFAULT '',
+  scope                 TEXT NOT NULL DEFAULT 'campaign',
+  continuity_id         TEXT NOT NULL REFERENCES continuities(id) ON DELETE CASCADE,
+  campaign_id           TEXT REFERENCES campaigns(id) ON DELETE SET NULL,
+  origin_id             TEXT,
+  origin_continuity_id  TEXT,
+  forked_at             TEXT,
+  hlc                   TEXT NOT NULL,
+  created               TEXT NOT NULL,
+  updated               TEXT NOT NULL
+);
+
+selectAllNotes:
+SELECT * FROM notes ORDER BY updated DESC;
+
+selectNoteById:
+SELECT * FROM notes WHERE id = ?;
+
+selectNotesByContinuity:
+SELECT * FROM notes WHERE continuity_id = ? ORDER BY updated DESC;
+
+selectNotesByCampaign:
+SELECT * FROM notes WHERE campaign_id = ? ORDER BY updated DESC;
+
+insertNote:
+INSERT OR REPLACE INTO notes(id, title, content, scope, continuity_id, campaign_id,
+  origin_id, origin_continuity_id, forked_at, hlc, created, updated)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateNote:
+UPDATE notes SET title = ?, content = ?, scope = ?, campaign_id = ?,
+  origin_id = ?, origin_continuity_id = ?, forked_at = ?, hlc = ?, updated = ?
+WHERE id = ?;
+
+deleteNote:
+DELETE FROM notes WHERE id = ?;
+
+CREATE INDEX idx_notes_continuity ON notes(continuity_id);
+CREATE INDEX idx_notes_campaign ON notes(campaign_id);

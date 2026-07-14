@@ -1,0 +1,42 @@
+-- Items table
+
+CREATE TABLE items (
+  id             TEXT PRIMARY KEY NOT NULL,
+  name           TEXT NOT NULL,
+  description    TEXT NOT NULL DEFAULT '',
+  value          TEXT NOT NULL DEFAULT '',
+  status         TEXT NOT NULL DEFAULT 'complete',
+  scope          TEXT NOT NULL DEFAULT 'campaign',
+  continuity_id  TEXT NOT NULL REFERENCES continuities(id) ON DELETE CASCADE,
+  owner_id       TEXT,
+  owner_type     TEXT,
+  location_id    TEXT REFERENCES locations(id) ON DELETE SET NULL,
+  hlc            TEXT NOT NULL,
+  created        TEXT NOT NULL,
+  updated        TEXT NOT NULL
+);
+
+selectAllItems:
+SELECT * FROM items ORDER BY updated DESC;
+
+selectItemById:
+SELECT * FROM items WHERE id = ?;
+
+selectItemsByContinuity:
+SELECT * FROM items WHERE continuity_id = ? ORDER BY updated DESC;
+
+insertItem:
+INSERT OR REPLACE INTO items(id, name, description, value, status, scope,
+  continuity_id, owner_id, owner_type, location_id, hlc, created, updated)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateItem:
+UPDATE items SET name = ?, description = ?, value = ?, status = ?, scope = ?,
+  owner_id = ?, owner_type = ?, location_id = ?, hlc = ?, updated = ?
+WHERE id = ?;
+
+deleteItem:
+DELETE FROM items WHERE id = ?;
+
+CREATE INDEX idx_items_continuity ON items(continuity_id);
+CREATE INDEX idx_items_location ON items(location_id);

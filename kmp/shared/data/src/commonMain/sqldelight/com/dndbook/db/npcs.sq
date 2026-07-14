@@ -1,0 +1,47 @@
+-- NPCs table
+
+CREATE TABLE npcs (
+  id                    TEXT PRIMARY KEY NOT NULL,
+  name                  TEXT NOT NULL,
+  race                  TEXT NOT NULL DEFAULT '',
+  role                  TEXT NOT NULL DEFAULT '',
+  background            TEXT NOT NULL DEFAULT '',
+  status                TEXT NOT NULL DEFAULT 'complete',
+  image_hash            TEXT,
+  scope                 TEXT NOT NULL DEFAULT 'campaign',
+  continuity_id         TEXT NOT NULL REFERENCES continuities(id) ON DELETE CASCADE,
+  origin_id             TEXT,
+  origin_continuity_id  TEXT,
+  forked_at             TEXT,
+  hlc                   TEXT NOT NULL,
+  created               TEXT NOT NULL,
+  updated               TEXT NOT NULL
+);
+
+selectAllNpcs:
+SELECT * FROM npcs ORDER BY updated DESC;
+
+selectNpcById:
+SELECT * FROM npcs WHERE id = ?;
+
+selectNpcsByContinuity:
+SELECT * FROM npcs WHERE continuity_id = ? ORDER BY updated DESC;
+
+insertNpc:
+INSERT OR REPLACE INTO npcs(id, name, race, role, background, status, image_hash,
+  scope, continuity_id, origin_id, origin_continuity_id, forked_at, hlc, created, updated)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateNpc:
+UPDATE npcs SET name = ?, race = ?, role = ?, background = ?, status = ?,
+  image_hash = ?, scope = ?, origin_id = ?, origin_continuity_id = ?,
+  forked_at = ?, hlc = ?, updated = ?
+WHERE id = ?;
+
+deleteNpc:
+DELETE FROM npcs WHERE id = ?;
+
+selectAllImageHashes:
+SELECT image_hash FROM npcs WHERE image_hash IS NOT NULL;
+
+CREATE INDEX idx_npcs_continuity ON npcs(continuity_id);

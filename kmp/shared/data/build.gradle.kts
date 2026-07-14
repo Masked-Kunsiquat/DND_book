@@ -12,6 +12,8 @@ kotlin {
         }
     }
 
+    jvm()
+
     iosX64()
     iosArm64()
     iosSimulatorArm64()
@@ -36,6 +38,19 @@ kotlin {
         iosMain.dependencies {
             implementation(libs.sqldelight.native.driver)
             implementation(libs.ktor.client.darwin)
+        }
+
+        val jvmMain by getting {
+            dependencies {
+                implementation(libs.sqldelight.sqlite.driver)
+            }
+        }
+
+        val jvmTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+                implementation(libs.sqldelight.sqlite.driver)
+            }
         }
     }
 }

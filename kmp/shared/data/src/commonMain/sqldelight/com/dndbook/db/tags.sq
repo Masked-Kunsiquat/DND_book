@@ -1,0 +1,44 @@
+-- Tags table
+
+CREATE TABLE tags (
+  id                    TEXT PRIMARY KEY NOT NULL,
+  name                  TEXT NOT NULL,
+  color                 TEXT NOT NULL DEFAULT '#6B7280',
+  scope                 TEXT NOT NULL DEFAULT 'campaign',
+  continuity_id         TEXT NOT NULL REFERENCES continuities(id) ON DELETE CASCADE,
+  campaign_id           TEXT REFERENCES campaigns(id) ON DELETE SET NULL,
+  origin_id             TEXT,
+  origin_continuity_id  TEXT,
+  forked_at             TEXT,
+  hlc                   TEXT NOT NULL,
+  created               TEXT NOT NULL,
+  updated               TEXT NOT NULL
+);
+
+selectAllTags:
+SELECT * FROM tags ORDER BY updated DESC;
+
+selectTagById:
+SELECT * FROM tags WHERE id = ?;
+
+selectTagsByContinuity:
+SELECT * FROM tags WHERE continuity_id = ? ORDER BY name ASC;
+
+selectTagsByCampaign:
+SELECT * FROM tags WHERE campaign_id = ? ORDER BY name ASC;
+
+insertTag:
+INSERT OR REPLACE INTO tags(id, name, color, scope, continuity_id, campaign_id,
+  origin_id, origin_continuity_id, forked_at, hlc, created, updated)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateTag:
+UPDATE tags SET name = ?, color = ?, scope = ?, campaign_id = ?,
+  origin_id = ?, origin_continuity_id = ?, forked_at = ?, hlc = ?, updated = ?
+WHERE id = ?;
+
+deleteTag:
+DELETE FROM tags WHERE id = ?;
+
+CREATE INDEX idx_tags_continuity ON tags(continuity_id);
+CREATE INDEX idx_tags_campaign ON tags(campaign_id);

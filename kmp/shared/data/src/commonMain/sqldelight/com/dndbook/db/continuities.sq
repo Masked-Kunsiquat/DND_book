@@ -1,0 +1,27 @@
+-- Continuities table
+
+CREATE TABLE continuities (
+  id           TEXT PRIMARY KEY NOT NULL,
+  name         TEXT NOT NULL,
+  description  TEXT NOT NULL DEFAULT '',
+  hlc          TEXT NOT NULL,
+  created      TEXT NOT NULL,
+  updated      TEXT NOT NULL
+);
+
+selectAllContinuities:
+SELECT * FROM continuities ORDER BY updated DESC;
+
+selectContinuityById:
+SELECT * FROM continuities WHERE id = ?;
+
+insertContinuity:
+INSERT OR REPLACE INTO continuities(id, name, description, hlc, created, updated)
+VALUES (?, ?, ?, ?, ?, ?);
+
+updateContinuity:
+UPDATE continuities SET name = ?, description = ?, hlc = ?, updated = ?
+WHERE id = ?;
+
+deleteContinuity:
+DELETE FROM continuities WHERE id = ?;
