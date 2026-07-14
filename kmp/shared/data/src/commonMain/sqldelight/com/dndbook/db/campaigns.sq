@@ -1,0 +1,32 @@
+-- Campaigns table
+
+CREATE TABLE campaigns (
+  id             TEXT PRIMARY KEY NOT NULL,
+  name           TEXT NOT NULL,
+  continuity_id  TEXT NOT NULL REFERENCES continuities(id) ON DELETE CASCADE,
+  hlc            TEXT NOT NULL,
+  created        TEXT NOT NULL,
+  updated        TEXT NOT NULL
+);
+
+selectAllCampaigns:
+SELECT * FROM campaigns ORDER BY updated DESC;
+
+selectCampaignById:
+SELECT * FROM campaigns WHERE id = ?;
+
+selectCampaignsByContinuity:
+SELECT * FROM campaigns WHERE continuity_id = ? ORDER BY updated DESC;
+
+insertCampaign:
+INSERT OR REPLACE INTO campaigns(id, name, continuity_id, hlc, created, updated)
+VALUES (?, ?, ?, ?, ?, ?);
+
+updateCampaign:
+UPDATE campaigns SET name = ?, hlc = ?, updated = ?
+WHERE id = ?;
+
+deleteCampaign:
+DELETE FROM campaigns WHERE id = ?;
+
+CREATE INDEX idx_campaigns_continuity ON campaigns(continuity_id);

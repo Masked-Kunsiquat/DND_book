@@ -1,0 +1,36 @@
+-- Player Characters table
+
+CREATE TABLE player_characters (
+  id         TEXT PRIMARY KEY NOT NULL,
+  name       TEXT NOT NULL,
+  player     TEXT NOT NULL DEFAULT '',
+  race       TEXT NOT NULL DEFAULT '',
+  class_name TEXT NOT NULL DEFAULT '',
+  background TEXT NOT NULL DEFAULT '',
+  image_hash TEXT,
+  hlc        TEXT NOT NULL,
+  created    TEXT NOT NULL,
+  updated    TEXT NOT NULL
+);
+
+selectAllPlayerCharacters:
+SELECT * FROM player_characters ORDER BY updated DESC;
+
+selectPlayerCharacterById:
+SELECT * FROM player_characters WHERE id = ?;
+
+insertPlayerCharacter:
+INSERT OR REPLACE INTO player_characters(id, name, player, race, class_name,
+  background, image_hash, hlc, created, updated)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updatePlayerCharacter:
+UPDATE player_characters SET name = ?, player = ?, race = ?, class_name = ?,
+  background = ?, image_hash = ?, hlc = ?, updated = ?
+WHERE id = ?;
+
+deletePlayerCharacter:
+DELETE FROM player_characters WHERE id = ?;
+
+selectAllImageHashes:
+SELECT image_hash FROM player_characters WHERE image_hash IS NOT NULL;

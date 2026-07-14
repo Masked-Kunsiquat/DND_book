@@ -1,0 +1,90 @@
+[versions]
+# --- Core ---
+# Gradle 9.4.0 (current wrapper) forces Kotlin ≥ 2.4.0:
+#   - Kotlin 2.2.x: max Gradle 8.14 → version-constraint conflict on Gradle 9.4
+#   - Kotlin 2.3.x: max Gradle 9.3.0 → still too low for Gradle 9.4
+#   - Kotlin 2.4.0: max Gradle 9.5.0 → covers Gradle 9.4.0 ✓
+# Kotlin 2.4.0 is compatible with AGP 8.5.2–9.1.0; we use AGP 8.10.1 (latest
+# stable 8.x) to avoid the breaking AGP 9.x KMP DSL migration (androidApp can
+# no longer mix com.android.application + kotlin.multiplatform under AGP 9.x).
+# CMP 1.10.3 requires Kotlin 2.1+; works with AGP 8.x (no KMP DSL migration).
+# Next upgrade gate: AGP 9.1+ + Kotlin 2.4 + CMP 1.11 before Phase 3 (iOS, macOS CI).
+kotlin = "2.4.0"
+compose-multiplatform = "1.10.3"
+sqldelight = "2.3.2"
+koin = "4.0.0"
+ktor = "3.0.3"
+coil = "3.0.4"
+datastore = "1.1.1"
+kermit = "2.0.4"
+kotlinx-serialization = "1.7.3"
+kotlinx-datetime = "0.6.1"
+kotlinx-coroutines = "1.10.1"
+navigation-compose = "2.9.2"
+android-gradle-plugin = "8.10.1"
+android-compileSdk = "36"
+android-targetSdk = "36"
+android-minSdk = "26"
+
+[libraries]
+# Kotlin / KMP
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+
+# Compose Multiplatform
+compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "compose-multiplatform" }
+compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "compose-multiplatform" }
+compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "compose-multiplatform" }
+compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "compose-multiplatform" }
+compose-ui-tooling-preview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "compose-multiplatform" }
+
+# Navigation
+navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigation-compose" }
+
+# SQLDelight
+sqldelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqldelight" }
+sqldelight-coroutines = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
+sqldelight-android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
+sqldelight-native-driver = { module = "app.cash.sqldelight:native-driver", version.ref = "sqldelight" }
+sqldelight-sqlite-driver = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
+
+# Koin
+koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
+koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
+koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
+
+# Ktor
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
+ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
+ktor-client-websockets = { module = "io.ktor:ktor-client-websockets", version.ref = "ktor" }
+ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
+ktor-server-cio = { module = "io.ktor:ktor-server-cio", version.ref = "ktor" }
+ktor-server-websockets = { module = "io.ktor:ktor-server-websockets", version.ref = "ktor" }
+ktor-serialization-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+
+# Coil
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
+coil-network-ktor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
+
+# DataStore
+datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
+datastore-preferences-core = { module = "androidx.datastore:datastore-preferences-core", version.ref = "datastore" }
+
+# Kermit
+kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
+
+# Android-specific
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version = "1.9.3" }
+
+[plugins]
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+android-application = { id = "com.android.application", version.ref = "android-gradle-plugin" }
+android-library = { id = "com.android.library", version.ref = "android-gradle-plugin" }
+sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
