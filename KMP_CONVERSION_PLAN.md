@@ -87,7 +87,7 @@ CREATE TABLE blobs (
 | Concern | Choice | One-line rationale | Rejected alternative |
 |---------|--------|-------------------|---------------------|
 | Build tool | **Gradle (Kotlin DSL) + KMP plugin 2.x** | Standard; KMP Gradle plugin ships with the toolchain | Maven (no KMP support) |
-| KMP plugin | **`org.jetbrains.kotlin.multiplatform` 2.2+** | Matches CMP 1.10 compatibility matrix | Older 1.9 plugin (pre-K2) |
+| KMP plugin | **`org.jetbrains.kotlin.multiplatform` 2.4.0** | Kotlin 2.4.0 is the lowest that supports Gradle 9.4 (max Gradle 9.5); pinned version | Older 1.9 plugin (pre-K2) |
 | Version catalog | **`libs.versions.toml`** | Single source of truth for deps across all modules | Per-module buildscript blocks |
 
 ### UI
@@ -109,7 +109,7 @@ CREATE TABLE blobs (
 
 | Concern | Choice | One-line rationale | Rejected alternative |
 |---------|--------|-------------------|---------------------|
-| Local database | **SQLDelight 2.4+** | SQL-first; generates type-safe Kotlin from `.sq` files; mature KMP support since 2.0; coroutine/Flow extensions built-in | Room 3.0 KMP (newer, Google-backed, but Android-first mental model and less `.sq` expressiveness for the FK-heavy schema here) |
+| Local database | **SQLDelight 2.3.2** | SQL-first; generates type-safe Kotlin from `.sq` files; mature KMP support since 2.0; coroutine/Flow extensions built-in | Room 3.0 KMP (newer, Google-backed, but Android-first mental model and less `.sq` expressiveness for the FK-heavy schema here) |
 | ORM style | **Raw SQLDelight queries** | Full control over FK cascades, join tables, and migration scripts | Exposed KMP (alpha, less stable) |
 | Migrations | **SQLDelight `migrations/` directory, numbered** | Version-tracked; run automatically on schema version bump | Manual migration strings |
 
@@ -854,8 +854,8 @@ Phases are ordered so **a working Android build exists after Phase 2** and iOS f
 **Goal**: Empty KMP project compiles and runs "Hello World" on Android and iOS.
 
 - [ ] Create `kmp/` directory at repo root; initialize Gradle multi-project build
-- [ ] Add KMP plugin 2.2+, configure `androidApp` + `iosApp` + `shared:domain` + `shared:data` + `shared:ui` modules
-- [ ] Set up `libs.versions.toml` with all library versions (CMP 1.10, SQLDelight 2.4, Koin 4, Ktor 3, Coil 3, DataStore 1.1, Kermit 2, kotlinx.serialization 1.8, navigation-compose 2.9, dns-sd-kt 1.0.5)
+- [x] Add KMP plugin 2.4.0, configure `androidApp` + `iosApp` + `shared:domain` + `shared:data` + `shared:ui` modules
+- [x] Set up `libs.versions.toml` with all library versions (Kotlin 2.4.0, CMP 1.10.3, SQLDelight 2.3.2, Koin 4.0.0, Ktor 3.0.3, Coil 3.0.4, DataStore 1.1.1, Kermit 2.0.4, kotlinx.serialization 1.7.3, navigation-compose 2.9.2, dns-sd-kt 1.0.5)
 - [ ] Wire Koin initialization in `androidApp` and `iosApp`
 - [ ] Verify `androidApp` runs on emulator, `iosApp` runs on iOS simulator
 
